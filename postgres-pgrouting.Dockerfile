@@ -1,4 +1,7 @@
 FROM postgis/postgis:14-3.4
 
-# pgRouting (for FRAGO 3)
-RUN apt-get update && apt-get install -y postgresql-14-pgrouting && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-14-pgrouting \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*

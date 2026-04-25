@@ -17,10 +17,12 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Env
+# Env / Secrets
 .env
 rclone.conf
 
-plans/
+# Archive
 archive/
 
+# Route-graph-generator tracked via submodule (not .gitignore)
+rclone.conf

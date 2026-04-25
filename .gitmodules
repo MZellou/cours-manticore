@@ -1,0 +1,3 @@
+[submodule "route-graph-generator"]
+	path = route-graph-generator
+	url = https://github.com/IGNF/route-graph-generator.git
