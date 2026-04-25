@@ -20,12 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # --- Build Marp slides → HTML ---
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: npx @marp-team/marp-cli@3 site/_docs/theorie/bdd_nosql.md -o site/_site/theorie/bdd_nosql.html --html
-
       # --- Build Jekyll site ---
       - uses: ruby/setup-ruby@v1
         with:
@@ -34,6 +28,12 @@ jobs:
           working-directory: site
       - run: bundle exec jekyll build
         working-directory: site
+
+      # --- Build Marp slides → HTML (after Jekyll, so it won't be wiped) ---
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npx @marp-team/marp-cli@3 site/_docs/theorie/bdd_nosql.md -o site/_site/theorie/bdd_nosql.html --html
 
       # --- Deploy ---
       - uses: actions/upload-pages-artifact@v3
