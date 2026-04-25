@@ -9,7 +9,7 @@ layout: default
 > *"Construire et interroger un graphe de routes pour naviguer vers vos objectifs."*
 
 **Mode** : Groupe (les 4 rôles fusionnent leurs POIs et travaillent sur le même graphe).
-**Durée estimée** : 2h
+**Durée estimée** : 5h (tâches principales 2h + Cypher approfondi 1h + pgRouting avancé 1h + réflexion 1h)
 
 ---
 
@@ -31,14 +31,14 @@ BDTOPO (PostGIS)                      Pivot (schéma normalisé)
 │ ├─ geometrie (line)  │  ──r2gg──>  │ ├─ id, lon, lat, geom│
 │ ├─ nature            │   sql2pivot  │ edges                │
 │ ├─ vitesse_moyenne   │              │ ├─ source_id → node  │
-│ ├─ largeur_chaussee  │              │ ├─ target_id → node  │
+│ ├─ largeur_de_chaussee  │              │ ├─ target_id → node  │
 │ └─ restriction_*     │              │ ├─ length_m          │
 └──────────────────────┘              │ ├─ cost_car, cost_pieton │
-                                     │ └─ direction (0/1/-1) │
-                                     └──────────────────────┘
+                                      │ └─ direction (0/1/-1) │
+                                      └──────────────────────┘
 ```
 
-**Le pivot** n'est rien d'autre qu'un **modèle de graphe** : une table de nœuds (`nodes`) et une table d'arêtes (`edges`) reliées par `source_id`/`target_id`. C'est le schéma classique d'un ** graphe orienté pondéré**, stocké en SQL.
+**Le pivot** n'est rien d'autre qu'un **modèle de graphe** : une table de nœuds (`nodes`) et une table d'arêtes (`edges`) reliées par `source_id`/`target_id`. C'est le schéma classique d'un **graphe orienté pondéré**, stocké en SQL.
 
 ### Étape 2 : Pivot → Moteurs de routage
 
@@ -78,76 +78,48 @@ C'est l'avantage du **pivot** : une seule extraction, plusieurs formats.
 
 ---
 
-## Tâches
+## Tâches principales (2h)
 
 ### T1 — Explorer le graphe généré par r2gg
 
 r2gg a transformé la BDTOPO en graphe. Observez sa structure :
 
-```sql
--- Les arêtes (routes transformées en arêtes pondérées)
-SELECT id, source, target, cost, reverse_cost, length_m
-FROM ways LIMIT 10;
+**Objectifs** :
+1. Explorer les tables `ways` et `ways_vertices_pgr`
+2. Compter les arêtes et les nœuds
+3. Comparer avec le nombre de tronçons dans `troncon_de_route`
 
--- Les sommets (intersections de routes)
-SELECT id, ST_X(geom) AS lon, ST_Y(geom) AS lat
-FROM ways_vertices_pgr LIMIT 10;
+**Question** : pourquoi le nombre d'arêtes est-il différent du nombre de tronçons ?
+*Indice : r2gg découpe les tronçons aux intersections.*
 
--- Combien de nœuds et d'arêtes dans votre graphe ?
-SELECT
-    (SELECT count(*) FROM ways) AS nb_arretes,
-    (SELECT count(*) FROM ways_vertices_pgr) AS nb_noeuds;
-```
-
-**Question** : comparez `nb_arretes` avec le nombre de tronçons dans `troncon_de_route`.
-Pourquoi sont-ils différents ? (indice : r2gg découpe les tronçons aux intersections pour créer des arêtes atomiques).
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t1--explorer-le-graphe-r2gg)
 
 ### T2 — Associer les POIs aux sommets du graphe
 
 Les POIs sont des points géométriques, pas des nœuds du graphe.
-Il faut les "snapper" au sommet le plus proche :
+Il faut les "snapper" au sommet le plus proche.
 
-```sql
--- Trouver le sommet du graphe le plus proche de chaque POI
-SELECT p.nom, p.role,
-       v.id AS vertex_id,
-       ST_Distance(p.geom, v.geom) AS distance_snap
-FROM mission_pois p
-CROSS JOIN LATERAL (
-    SELECT id, geom FROM ways_vertices_pgr
-    ORDER BY geom <-> p.geom LIMIT 1
-) v
-ORDER BY distance_snap DESC LIMIT 10;
-```
+**Objectif** : trouver le sommet le plus proche de chaque POI.
+*Indice : `CROSS JOIN LATERAL` + `ORDER BY geom <-> p.geom LIMIT 1`.*
 
-Pourquoi les POIs éloignés des routes ont-ils un `distance_snap` élevé ?
-Est-ce un problème pour le routage ?
+Pourquoi les POIs éloignés des routes ont-ils un `distance_snap` élevé ? Est-ce un problème ?
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t2--associer-les-pois-aux-sommets)
 
 ### T3 — Calculer des itinéraires (Dijkstra)
 
-Maintenant que le graphe existe, calculez le plus court chemin entre 2 POIs :
+Maintenant que le graphe existe, calculez le plus court chemin entre 2 POIs.
 
-```sql
-SELECT seq, node, edge, cost, agg_cost
-FROM pgr_dijkstra(
-    'SELECT id, source, target, cost, reverse_cost FROM ways',
-    (SELECT v.id FROM mission_pois p, LATERAL (
-        SELECT id FROM ways_vertices_pgr ORDER BY geom <-> p.geom LIMIT 1
-    ) v WHERE p.role = 'attaque' LIMIT 1),
-    (SELECT v.id FROM mission_pois p, LATERAL (
-        SELECT id FROM ways_vertices_pgr ORDER BY geom <-> p.geom LIMIT 1
-    ) v WHERE p.role = 'defense' LIMIT 1),
-    directed := false
-);
-```
+**Objectif** : utiliser `pgr_dijkstra` entre un POI attaque et un POI défense.
+*Indice : sous-requêtes pour les vertex_ids + `directed := false`.*
 
 Essayez plusieurs paires de rôles (attaque→énergie, ravitaillement→défense...).
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t3--calculer-des-itinraires-dijkstra)
 
 ### T4 — Routage contraint par rôle
 
 Le coût dans le graphe n'est pas fixe — il dépend du **profil** du véhicule.
-r2gg génère plusieurs colonnes de coût (`cost_car`, `cost_pedestrian`...).
-Mais on peut aussi les **recalculer dynamiquement** :
 
 | Rôle | Profil | Clause SQL |
 |------|--------|------------|
@@ -156,18 +128,9 @@ Mais on peut aussi les **recalculer dynamiquement** :
 | **Attaque** | Discrétion (chemins) | `CASE WHEN nature IN ('Chemin','Sentier') THEN cost*0.7 ELSE cost*1.3 END` |
 | **Défense** | Rapidité (grandes routes) | `CASE WHEN importance >= 3 THEN cost*0.5 ELSE cost END` |
 
-```sql
--- Ravitaillement : bloquer les routes interdites aux poids lourds
-SELECT max(agg_cost) FROM pgr_dijkstra(
-    'SELECT id, source, target,
-            CASE WHEN restriction_de_poids_total IS NOT NULL THEN -1 ELSE cost END AS cost,
-            CASE WHEN restriction_de_poids_total IS NOT NULL THEN -1 ELSE reverse_cost END AS reverse_cost
-     FROM ways',
-    source_vertex, target_vertex, directed := false
-);
-```
+**Objectif** : recalculer un itinéraire avec votre contrainte de rôle. Comparez avec le chemin "normal".
 
-Comparez avec le chemin "normal". Quel est le détour imposé par la contrainte ?
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t4--routage-contraint-par-rle)
 
 ### T5 — Migrer dans Neo4j et combiner graphe routier + ontologie
 
@@ -178,23 +141,12 @@ La phase 2 consiste à **connecter les deux mondes** :
 python scripts/02_migrate_to_neo4j.py
 ```
 
-Dans Neo4j Browser :
+**Objectifs dans Neo4j Browser** :
+1. Vérifier les POIs chargés (`MATCH (p:POI)`)
+2. Traverser l'ontologie (`[:EST_SOUS_TYPE_DE*]`)
+3. Calculer un plus court chemin entre POIs (`apoc.algo.dijkstra`)
 
-```cypher
--- Vérifier les POIs chargés
-MATCH (p:POI) RETURN p.role, count(*) ORDER BY count DESC;
-
--- Trouver les sous-types d'un objet (traversée ontologique)
-MATCH path = (d:Detail)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
-RETURN [n IN nodes(path) | n.name] AS hierarchy LIMIT 5;
-
--- Chemin le plus court entre POIs (si distances chargées)
-MATCH (a:POI), (b:POI) WHERE id(a) < id(b)
-CALL apoc.algo.dijkstra(a, b, 'DISTANCE', 'meters')
-YIELD path, weight
-RETURN a.nom, b.nom, weight AS distance_m
-ORDER BY weight DESC LIMIT 10
-```
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t5--migrer-dans-neo4j)
 
 ### T6 — Réflexion : SQL vs Graphe vs Les deux
 
@@ -207,6 +159,93 @@ ORDER BY weight DESC LIMIT 10
 | Trouver tous les chemins entre 2 nœuds d'ontologie | Neo4j (Cypher) | `allShortestPaths` natif |
 
 > **Conclusion** : dans la vraie vie, on combine SQL (géométrie, filtres) et graphe (parcours, routage). Aucun des deux n'est suffisant seul.
+
+---
+
+## Cypher approfondi (1h)
+
+> Maintenant que les données sont dans Neo4j, allez plus loin que les requêtes de base.
+
+### T7 — Créer des nœuds personnalisés (CREATE / MERGE)
+
+Votre groupe a des **bases avancées** et des **points de ralliement** qui ne sont pas dans la BDTOPO. Créez-les.
+
+**Objectifs** :
+1. Créer au moins 2 nœuds `:Base` (base avancée, hôpital de campagne, dépôt...)
+2. Les relier aux POIs proches avec des relations `[:DISTANCE]`
+
+*Indice : `CREATE (b:Base {...})`, puis `MATCH (b:Base), (p:POI) WHERE distance(...) < 10000 MERGE (b)-[r:DISTANCE {meters: ...}]->(p)`*
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t7--crer-des-nuds-personnaliss-create--merge)
+
+### T8 — OPTIONAL MATCH et UNWIND
+
+**Objectifs** :
+1. Trouver les POIs sans connexion (isolés dans le graphe)
+2. Lister les POIs avec leur nombre de voisins (`OPTIONAL MATCH`)
+3. Utiliser `UNWIND` pour aplatir les listes
+
+**Exercice** : combien de POIs sont "isolés" (0 voisins dans le graphe Neo4j) ? Pourquoi ?
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t8--optional-match-et-unwind)
+
+### T9 — Pattern matching avancé
+
+**Objectifs** :
+1. Trouver les chemins entre attaque et défense passant **uniquement** par des POIs énergie
+2. Détecter les triangles (3 POIs mutuellement connectés)
+
+**Défi** : écrivez une requête Cypher qui trouve le chemin le plus court entre un POI attaque et un POI défense, **en évitant** tous les POIs énergie.
+*Indice : `WHERE NOT ... IN` ou `WHERE ALL(n IN nodes(path) WHERE ...)`*
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t9--pattern-matching-avanc)
+
+---
+
+## pgRouting avancé (1h)
+
+### T10 — Matrice de distances entre POIs
+
+**Objectif** : calculer les distances de **chaque source vers chaque cible** en un seul appel.
+*Indice : `pgr_dijkstraCostMatrix` + `array_agg(vid)`.*
+
+**Exercice** : calculez la matrice pour votre rôle. Quel est le POI le plus éloigné des autres ?
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t10--matrice-de-distances)
+
+### T11 — Isochrones (zone accessible en X minutes)
+
+Une isochrone montre la zone atteignable en un temps donné depuis un point.
+
+**Objectif** : trouver tous les sommets atteignables en moins de 10 minutes (cost = secondes).
+*Indice : `pgr_dijkstra` avec `WHERE agg_cost <= 600`.*
+
+**Exercice** : tracez les isochrones à 5 min, 10 min, 15 min depuis le POI défense le plus important.
+
+> **Bonus cartographie** : les sommets atteignables peuvent être convertis en polygone (convex hull) pour affichage sur la carte.
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t11--isochrones)
+
+---
+
+## Réflexion de groupe (1h)
+
+### T12 — Débat : "Quel outil pour quelle question ?"
+
+En groupe, complétez ce tableau pour **votre EPCI** avec vos mesures réelles :
+
+| Question | SQL ? | Cypher ? |pgRouting ? | Temps (ms) | LOC | Résultat |
+|----------|-------|----------|-------------|------------|-----|----------|
+| Top 5 POIs par nombre de voisins | | | | | | |
+| Chemin le plus court A→B via C | | | | | | |
+| POIs isolés (0 connexion) | | | | | | |
+| Zone atteignable en 10 min | | | | | | |
+| Hiérarchie ontologique complète | | | | | | |
+
+**Débattez** :
+1. Y a-t-il des requêtes où SQL est clairement meilleur ?
+2. Y a-t-il des requêtes impossibles dans un des outils ?
+3. Si vous deviez choisir **un seul** outil pour tout faire, lequel ?
 
 ---
 
@@ -224,6 +263,12 @@ si la route a une restriction de poids, le coût est -1 (bloqué).
 Montre comment passer ce coût personnalisé dans la sous-requête SQL."
 ```
 
+```
+"Écris une requête Cypher qui utilise OPTIONAL MATCH pour trouver
+les POIs qui n'ont pas de voisins dans un graphe de distances.
+Puis utilise UNWIND pour lister les noms par rôle."
+```
+
 ---
 
 ## Critères de validation
@@ -233,4 +278,8 @@ Montre comment passer ce coût personnalisé dans la sous-requête SQL."
 - [ ] Dijkstra retourne un chemin valide entre 2 POIs de rôles différents
 - [ ] Le routage contraint montre une différence mesurable vs le routage normal
 - [ ] Neo4j contient les POIs des 4 rôles + requêtes Cypher fonctionnelles
-- [ ] Le tableau comparatif SQL vs Graphe est complété dans le rapport
+- [ ] T7 : au moins 2 nœuds personnalisés créés dans Neo4j
+- [ ] T8 : nombre de POIs isolés identifié
+- [ ] T10 : matrice de distances calculée pour au moins 1 rôle
+- [ ] T11 : isochrone calculée (nombre de sommets atteignables)
+- [ ] T12 : tableau comparatif complété avec mesures réelles

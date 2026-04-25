@@ -37,6 +37,40 @@ FROM aerodrome WHERE categorie IN ('Internationale', 'Nationale');
 CASE WHEN nature IN ('Chemin', 'Sentier') THEN cost * 0.7 ELSE cost * 1.3 END
 ```
 
+## Questions bonus (Phase 1 — Exploration libre)
+
+Résolvez au moins 2 de ces questions. Documentez vos requêtes.
+
+### B1 — Couverture aérienne
+
+> Combien de ports sont à moins de 5 km d'un aérodrome international/national ?
+
+*Indice : joignez `aerodrome` et `equipement_de_transport` avec `ST_DWithin`, filtrez les catégories d'aérodromes et `nature = 'Port'`.*
+
+**Variante** : et dans un rayon de 10 km ? 20 km ? Tracez la courbe.
+
+### B2 — Forces militaires par cluster
+
+> Utilisez ST_ClusterDBSCAN sur les gendarmeries et casernes. Où sont les concentrations ?
+
+*Indice : CTE avec filtre `categorie = 'Administratif ou militaire'`, puis `ST_ClusterDBSCAN(geom, eps := 3000, minpoints := 2) OVER()`.*
+
+### B3 — Tour de contrôle vs aérodromes
+
+> Chaque aérodrome majeur a-t-il une tour de contrôle à proximité ?
+
+*Indice : sous-requête corrélée dans le SELECT — comptez les `construction_ponctuelle` avec `nature ILIKE 'Tour de contrôle%'` à moins de 1 km.*
+
+### B4 — Vitesse d'accès aux cibles
+
+> Quelle est la vitesse moyenne des routes à moins de 2 km de chaque cible ?
+
+*Indice : joignez `mission_pois` (role='attaque') avec `troncon_de_route` via `ST_DWithin` et faites `avg(vitesse_moyenne_vl)`.*
+
+→ [Corrigé]({% link _docs/corriges/corrige_roles_bonus.md %}#-attaque)
+
+---
+
 ## Indice Codestral
 
 ```

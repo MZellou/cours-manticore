@@ -1,0 +1,131 @@
+---
+layout: default
+title: Scripts
+nav_order: 6
+---
+
+# Référence des scripts
+
+> Les scripts sont les outils du TD. Chacun correspond à une phase du cours.
+
+---
+
+## `00_setup.py` — Chargement des données
+
+Charge les données BDTOPO pour un EPCI donné dans PostGIS.
+
+```bash
+# Lister les EPCIs disponibles
+python scripts/00_setup.py --list-epci
+
+# Charger un EPCI
+python scripts/00_setup.py --epci "Brest Métropole"
+
+# Charger par SIREN
+python scripts/00_setup.py --epci 242900314
+```
+
+**Options** :
+
+| Option | Défaut | Description |
+|--------|--------|-------------|
+| `--epci` | requis | Nom ou SIREN de l'EPCI |
+| `--list-epci` | — | Liste les EPCIs disponibles |
+| `--source` | chemin CIFS | Dossier source des Parquets |
+
+**Ce qu'il fait** :
+1. Charge le polygone EPCI depuis `data/epci.parquet`
+2. Crée la table `bdtopo_ontology` (hiérarchie 3 niveaux)
+3. Injecte les centrales nucléaires proches (`mission_custom_pois`)
+4. Filtre spatialement et charge les 22 tables BDTOPO (BBOX pushdown + shapely intersection)
+
+---
+
+## `01_explore_postgis.py` — Phase 1 : Reconnaissance
+
+Requêtes SQL PostGIS par rôle (exploration + clustering).
+
+```bash
+python scripts/01_explore_postgis.py --role attaque
+python scripts/01_explore_postgis.py --role defense
+python scripts/01_explore_postgis.py --role ravitaillement
+python scripts/01_explore_postgis.py --role energie
+```
+
+**Exemples exécutés** :
+- `ex1_ontologie_recursive()` — Traversée `WITH RECURSIVE` de l'ontologie
+- `ex2_poi_by_role(role)` — Requêtes POI spécifiques au rôle + insertion dans `mission_pois`
+- `ex3_clustering()` — `ST_ClusterDBSCAN` sur les POIs
+
+---
+
+## `02_migrate_to_neo4j.py` — Phase 2 : Migration Neo4j
+
+Migre l'ontologie et les POIs de PostGIS vers Neo4j.
+
+```bash
+python scripts/02_migrate_to_neo4j.py
+# (pas d'options — lit tout depuis PostGIS)
+```
+
+**Ce qu'il fait** :
+1. Charge les 3 niveaux d'ontologie → labels `:Database`, `:Object`, `:Detail`
+2. Crée les relations `[:EST_SOUS_TYPE_DE]`
+3. Charge les POIs depuis `mission_pois` → label `:POI`
+4. Crée les relations `[:DISTANCE {meters}]` entre POIs proches
+5. Exécute des requêtes APOC de démo
+
+---
+
+## `03_routing_pgrouting.py` — Phase 2-3 : Routage pgRouting
+
+Calcul d'itinéraires et choke points avec pgRouting.
+
+```bash
+python scripts/03_routing_pgrouting.py --role attaque
+python scripts/03_routing_pgrouting.py --role energie
+```
+
+**Exemples exécutés** :
+- `ex1_dijkstra()` — Plus court chemin entre 2 POIs
+- `ex2_choke_points()` — Identification des nœuds critiques
+- `ex3_constrained_routing(role)` — Routage avec contraintes par rôle
+
+---
+
+## `04_benchmark_comparison.py` — Phase 3 : Benchmark
+
+Compare les performances SQL vs Cypher et génère la carte finale.
+
+```bash
+python scripts/04_benchmark_comparison.py --role attaque
+python scripts/04_benchmark_comparison.py --role attaque --map data/carte.png
+```
+
+**Options** :
+
+| Option | Défaut | Description |
+|--------|--------|-------------|
+| `--role` | requis | Rôle pour le filtrage |
+| `--map` | `data/carte_situation.png` | Chemin de sortie de la carte |
+
+**Ce qu'il fait** :
+1. Benchmark ontologique (SQL `WITH RECURSIVE` vs Cypher traversée)
+2. Benchmark spatial (`ST_DWithin` vs approximation Cypher)
+3. Génère `generate_situation_map()` — carte POIs + routes
+
+---
+
+## `admin_generate_gold_dumps.py` — Instructeur uniquement
+
+Génère les dumps r2gg pour les EPCIs (graphe routier pré-calculé).
+
+```bash
+# Tous les EPCIs
+python scripts/admin_generate_gold_dumps.py --all
+
+# Un seul
+python scripts/admin_generate_gold_dumps.py --epci "Brest Métropole"
+```
+
+> ⚠️ Nécessite r2gg installé et les données source complètes. Réservé à l'instructeur.

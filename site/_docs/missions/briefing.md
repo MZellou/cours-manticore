@@ -36,11 +36,11 @@ Chaque membre du groupe adopte un rôle spécifique :
 
 ## 3 phases de la mission
 
-| Phase | Intitulé | Solo/Groupe | Livrable |
-|-------|----------|-------------|----------|
-| 🔍 Phase 1 | Reconnaissance | Solo (par rôle) | Requêtes SQL + table `mission_pois` |
-| 🗺️ Phase 2 | Cartographie | Groupe (4 rôles fusionnés) | Graphe Neo4j + routes pgRouting |
-| 📊 Phase 3 | Simulation | Groupe | Benchmark SQL/Cypher + carte PNG |
+| Phase | Intitulé | Solo/Groupe | Durée | Livrable |
+|-------|----------|-------------|-------|----------|
+| 🔍 Phase 1 | Reconnaissance | Solo (par rôle) | 4h | Requêtes SQL + table `mission_pois` + questions bonus |
+| 🗺️ Phase 2 | Cartographie | Groupe (4 rôles fusionnés) | 5h | Graphe Neo4j + routes pgRouting + Cypher avancé |
+| 📊 Phase 3 | Simulation | Groupe | 5h | Benchmark SQL/Cypher + simulation destructive + carte PNG |
 
 ## Prérequis
 
@@ -53,3 +53,8 @@ Chaque membre du groupe adopte un rôle spécifique :
 - **Carte PNG** : situation tactique consolidée (4 rôles superposés)
 - **Rapport markdown** : analyse critique (2-3 pages)
 - **Présentation orale** : 10 min (structure libre, mappez vos résultats)
+
+## Corrigés
+
+Les solutions sont disponibles dans la section [Corrigés]({% link _docs/corriges.md %}).
+Si vous êtes bloqué, consultez — l'objectif est de comprendre, pas de bloquer.

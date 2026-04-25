@@ -45,6 +45,42 @@ FROM mission_custom_pois;
 CASE WHEN largeur_de_chaussee >= 4 OR largeur_de_chaussee IS NULL THEN cost ELSE -1 END
 ```
 
+## Questions bonus (Phase 1 — Exploration libre)
+
+Résolvez au moins 2 de ces questions. Documentez vos requêtes.
+
+### B1 — Postes HT et hôpitaux : qui dépend de qui ?
+
+> Quels postes de transformation critiques (importance ≤ 3) sont à moins de 1 km d'un hôpital ?
+
+*Indice : joignez `poste_de_transformation` et `zone_d_activite_ou_d_interet` avec `ST_DWithin`, rayon 1000m, filtrez `CAST(importance AS INTEGER) <= 3`.*
+
+**Question** : si ce poste tombe, quel hôpital est touché ? (début de la simulation Phase 3).
+
+### B2 — Lignes THT : quelles routes croisent-elles ?
+
+> Combien de routes sont croisées par une ligne 400 kV ? Ce sont des points de fragilité.
+
+*Indice : joignez `ligne_electrique` et `troncon_de_route` via `ST_Intersects`, filtrez `voltage IN ('400 kV', '225 kV')`.*
+
+**Variante** : parmi ces routes, combien sont d'importance ≤ 2 ?
+
+### B3 — Centrales nucléaires : rayon d'influence
+
+> Dans un rayon de 20 km autour de chaque centrale, combien de POIs de chaque rôle ?
+
+*Indice : joignez `mission_custom_pois` et `mission_pois` avec `ST_DWithin`, rayon 20000m.*
+
+### B4 — Mix énergétique de l'EPCI
+
+> Comptez les éoliennes, barrages, transformateurs et centrales. Quelle est la répartition ?
+
+*Indice : 4 `SELECT ... UNION ALL` — un par source (`construction_ponctuelle`, `construction_surfacique`, `poste_de_transformation`, `mission_custom_pois`).*
+
+→ [Corrigé]({% link _docs/corriges/corrige_roles_bonus.md %}#-nergie)
+
+---
+
 ## Indice Codestral
 
 ```

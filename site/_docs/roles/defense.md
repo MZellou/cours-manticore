@@ -39,6 +39,40 @@ WHERE nature IN ('Hôpital', 'Établissement hospitalier', 'Maison de retraite')
 CASE WHEN importance >= 3 OR nature = 'Autoroute' THEN cost * 0.5 ELSE cost END
 ```
 
+## Questions bonus (Phase 1 — Exploration libre)
+
+Résolvez au moins 2 de ces questions. Documentez vos requêtes.
+
+### B1 — Hôpitaux et gares : réseau d'évacuation
+
+> Quels hôpitaux sont à moins de 1 km d'une gare (évacuation ferroviaire) ?
+
+*Indice : joignez `zone_d_activite_ou_d_interet` (hôpitaux) et `equipement_de_transport` (gares) avec `ST_DWithin`, rayon 1000m.*
+
+**Variante** : et les hôpitaux SANS gare à moins de 1 km ? (indice : `NOT EXISTS` ou `LEFT JOIN ... WHERE g.id IS NULL`)
+
+### B2 — Ponts critiques sur les axes principaux
+
+> Combien de ponts sont sur des routes d'importance ≤ 2 (nationales) ?
+
+*Indice : joignez `construction_surfacique` (nature='Pont') avec `troncon_de_route` via `ST_Intersects`, filtrez `CAST(importance AS INTEGER) <= 2`.*
+
+### B3 — Buffer de sécurité autour des hôpitaux
+
+> Combien de POIs d'autres rôles tombent dans un rayon de 500m autour d'un hôpital ?
+
+*Indice : CTE avec `ST_Buffer(geometrie, 500)`, puis jointure avec `mission_pois` via `ST_Intersects`, filtrez `role != 'defense'`.*
+
+### B4 — Densité de forces de l'ordre par zone
+
+> Quel est le ratio gendarmerie / caserne par km² dans votre EPCI ?
+
+*Indice : comptez les gendarmeries + casernes, divisez par `ST_Area` du polygone EPCI.*
+
+→ [Corrigé]({% link _docs/corriges/corrige_roles_bonus.md %}#-dfense)
+
+---
+
 ## Indice Codestral
 
 ```

@@ -9,7 +9,7 @@ layout: default
 > *"Simuler une attaque sur le réseau et comparer les approches SQL vs Graphe."*
 
 **Mode** : Groupe (les 4 rôles collaborent sur la simulation).
-**Durée estimée** : 1h30
+**Durée estimée** : 5h (benchmark 1h30 + simulation itérative 2h + analyse réseau 1h + rédaction 30min)
 
 ---
 
@@ -39,195 +39,59 @@ Neo4j :                        PostGIS :
 
 ---
 
-## Tâches
+## Partie A — Benchmark structuré (1h30)
 
 ### T1 — Choke Points : deux approches, deux mondes
 
 Un choke point est un nœud ou une arête dont la suppression **maximise l'impact**
 sur la connectivité du réseau.
 
-#### Approche SQL (PostGIS + pgRouting)
+**Approche SQL** : trouvez un chemin de référence avec `pgr_dijkstra`, puis pour chaque arête, bloquez-la (`cost = -1`) et recalculez.
+*Limitation : nécessite une boucle Python.*
 
-```sql
--- 1. Trouver un chemin
-SELECT edge FROM pgr_dijkstra(
-    'SELECT id, source, target, cost, reverse_cost FROM ways',
-    src, tgt, directed := false
-) WHERE edge > 0;
+**Approche Neo4j** : calcul de **betweenness centrality** en une seule requête APOC.
 
--- 2. Pour chaque arête du chemin, recalculer SANS cette arête
--- (boucle Python nécessaire — SQL seul ne permet pas d'itérer)
-```
-
-**Limitation** : SQL nécessite un script Python qui boucle sur chaque arête,
-exécute N requêtes pgr_dijkstra, et compare les résultats.
-Le calcul de **betweenness centrality** (importance d'un nœud dans tous les chemins)
-n'existe pas nativement en SQL.
-
-#### Approche Graphe (Neo4j + APOC)
-
-```cypher
-// Betweenness centrality : quels POIs sont les plus "entre" les autres ?
-CALL apoc.algo.betweenness('POI', 'DISTANCE', 'meters') YIELD nodeId, score
-MATCH (p:POI) WHERE id(p) = nodeId
-RETURN p.nom, p.role, score AS centralite
-ORDER BY centralite DESC LIMIT 10;
-```
-
-**Une seule requête** pour calculer la centralité de tous les nœuds.
-Pas de boucle, pas de script externe. C'est l'algorithme lui-même qui est intégré au moteur.
-
-**Exécutez les deux approches** et comparez :
-- Temps de développement (combien de lignes de code ?)
-- Temps d'exécution
-- Richesse du résultat (betweenness vs simple allongement)
+→ [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t1--choke-points)
 
 ### T2 — Requêtes croisées : là où Cypher brille
 
 Essayez ces requêtes dans Neo4j Browser et réfléchissez à l'équivalent SQL.
 
-#### 2a — Trouver les chemins entre deux rôles
+#### 2a — Tous les chemins entre deux rôles
 
-```cypher
-// Tous les chemins entre une cible d'attaque et un hôpital (défense)
-MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*]-(d:POI {role: 'defense', nature: 'Hôpital'})
-RETURN
-    [n IN nodes(path) | n.nom] AS etapes,
-    length(path) AS sauts,
-    reduce(total = 0, r IN relationships(path) | total + r.meters) AS distance_m
-ORDER BY distance_m
-LIMIT 5;
-```
+Trouvez tous les chemins entre un POI attaque et un POI défense (Hôpital), avec les étapes et la distance.
+*Indice : `MATCH path = ...-[:DISTANCE*]-(...) RETURN reduce(...)`*
 
-**Équivalent SQL** : il faudrait une CTE récursive qui part d'un POI,
-joint sur la table de distances, vérifie qu'on n'est pas déjà passé par ce nœud,
-et s'arrête quand on atteint un POI défense. ~30 lignes, difficile à maintenir.
+#### 2b — Plus court chemin avec nœud intermédiaire obligatoire
 
-#### 2b — Plus court chemin avec contrainte sur les nœuds intermédiaires
-
-```cypher
-// Chemin le plus court entre attaque et énergie EN PASSANT par au moins un POI ravitaillement
-MATCH (a:POI {role: 'attaque'})
-MATCH (e:POI {role: 'energie'})
-MATCH (r:POI {role: 'ravitaillement'})
-MATCH path = shortestPath((a)-[:DISTANCE*]-(r))
-MATCH path2 = shortestPath((r)-[:DISTANCE*]-(e))
-RETURN
-    [n IN nodes(path) | n.nom] AS leg1,
-    [n IN nodes(path2) | n.nom] AS leg2,
-    reduce(t=0, rel IN relationships(path) | t+rel.meters)
-    + reduce(t=0, rel IN relationships(path2) | t+rel.meters) AS total_m
-ORDER BY total_m LIMIT 1;
-```
-
-**Équivalent SQL** : deux appels pgr_dijkstra avec un nœud intermédiaire obligatoire.
-Faisable mais moins lisible — et si on veut "au moins un" et pas "exactement un" ?
-En Cypher, c'est un changement de pattern. En SQL, c'est une réécriture complète.
+Trouvez le chemin attaque → ravitaillement → énergie le plus court.
+*Indice : deux `shortestPath` enchaînés.*
 
 #### 2c — Sous-graphe accessible depuis un POI
 
-```cypher
-// Tous les POIs accessibles en <= 2 sauts depuis un aérodrome
-MATCH (aero:POI {source: 'aerodrome'})
-CALL apoc.path.subgraphAll(aero, {
-    maxLevel: 2,
-    relationshipFilter: 'DISTANCE',
-    labelFilter: 'POI'
-}) YIELD nodes, relationships
-UNWIND nodes AS n
-RETURN DISTINCT n.role, n.nom, n.source
-ORDER BY n.role;
-```
+Trouvez tous les POIs accessibles en 2 sauts depuis un aérodrome.
+*Indice : `apoc.path.subgraphAll` avec `maxLevel: 2`.*
 
-**Équivalent SQL** : jointure récursive sur la table de distances avec `depth <= 2`.
-Possible mais l'expansion se fait sur toutes les directions à la fois — Cypher
-permet de filtrer par type de relation et de label dès la traversée.
+→ [Corrigé T2a-T2c]({% link _docs/corriges/corrige_phase_3.md %}#t2a--tous-les-chemins-entre-deux-roles)
 
-### T3 — Benchmark structuré
+### T3 — Tableau benchmark
 
-Reproduisez ce tableau avec vos propres mesures (`EXPLAIN ANALYZE` pour SQL, `PROFILE` pour Cypher) :
+Reproduisez ce tableau avec vos mesures (`EXPLAIN ANALYZE` pour SQL, `PROFILE` pour Cypher) :
 
-| # | Requête | SQL (ms) | Cypher (ms) | Lignes de code | Lisibilité |
-|---|---------|----------|-------------|----------------|------------|
-| 1 | Sous-types de "Tronçon de route" | | | | |
-| 2 | Tous les chemins attaque → défense | | | | |
-| 3 | Betweenness centrality (choke points) | | | | |
-| 4 | POIs à < 500m d'une route (`ST_DWithin`) | | | | |
-| 5 | Plus court chemin avec nœud intermédiaire | | | | |
+| # | Requête | SQL (ms) | Cypher (ms) | LOC SQL | LOC Cypher | Gagnant |
+|---|---------|----------|-------------|---------|------------|---------|
+| 1 | Sous-types de "Tronçon de route" | | | | | |
+| 2 | Tous les chemins attaque → défense | | | | | |
+| 3 | Betweenness centrality (choke points) | | | | | |
+| 4 | POIs à < 500m d'une route (`ST_DWithin`) | | | | | |
+| 5 | Plus court chemin avec nœud intermédiaire | | | | | |
 
-Pour chaque requête :
-- Mesurez le temps avec `EXPLAIN ANALYZE` (SQL) et `PROFILE` (Cypher)
-- Comptez les lignes de code nécessaires
-- Notez si la requête est **impossible** ou **très complexe** dans l'autre langage
+**Requête 1** : traversée ontologique ("Tronçon de route" → tous les sous-types)
+**Requête 4** : spatiale — POIs à moins de 500m d'une route (ici SQL gagne)
 
-#### Détail des requêtes à exécuter :
+→ [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t3--requetes-benchmark)
 
-**Requête 1 — Traversée ontologique**
-```sql
--- SQL
-EXPLAIN (ANALYZE)
-WITH RECURSIVE h AS (
-    SELECT id, name, obj_type, parent_id, 0 AS depth
-    FROM bdtopo_ontology WHERE name = 'Tronçon de route'
-    UNION ALL
-    SELECT c.id, c.name, c.obj_type, c.parent_id, h.depth + 1
-    FROM bdtopo_ontology c JOIN h ON c.parent_id = h.id
-)
-SELECT count(*) FROM h;
-```
-```cypher
-// Cypher
-PROFILE MATCH path = (d:Detail)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
-RETURN count(path);
-```
-
-**Requête 4 — Spatial (c'est ici que SQL gagne)**
-```sql
--- SQL
-EXPLAIN (ANALYZE)
-SELECT count(*) FROM mission_pois p
-WHERE EXISTS (
-    SELECT 1 FROM troncon_de_route r
-    WHERE ST_DWithin(p.geom, r.geometrie, 500)
-);
-```
-```cypher
-// Cypher — pas d'équivalent natif (pas d'index spatial)
-// Il faudrait pré-calculer les distances et les stocker en relation
-MATCH (p:POI) WHERE EXISTS { (p)-[:DISTANCE*]-() }
-RETURN count(p);
-// ↑ Cette requête ne filtre pas sur 500m — elle regarde seulement la connectivité
-```
-
-### T4 — Simulation de destruction (les deux approches)
-
-```sql
--- SQL : bloquer une arête dans le graphe pgRouting
-UPDATE ways SET cost = -1, reverse_cost = -1 WHERE id = <edge_id>;
-
--- Mesurer l'impact
-SELECT count(*) FROM pgr_dijkstra(
-    'SELECT id, source, target, cost, reverse_cost FROM ways',
-    src, tgt, directed := false
-) WHERE agg_cost IS NOT NULL;
-```
-
-```cypher
-// Cypher : supprimer une relation dans le graphe Neo4j
-MATCH (a:POI)-[r:DISTANCE]->(b:POI) WHERE r.meters > 10000 DELETE r;
-
-// Vérifier la connectivité résiduelle
-MATCH (a:POI {role: 'attaque'}), (e:POI {role: 'energie'})
-RETURN EXISTS {
-    (a)-[:DISTANCE*]-(e)
-} AS encore_connectes;
-```
-
-**Observez** : en SQL, la destruction est un `UPDATE` sur une colonne (`cost = -1`).
-En Cypher, c'est un `DELETE` sur une relation — plus naturel, plus proche du modèle mental.
-La vérification de connectivité (`EXISTS { path }`) n'a pas d'équivalent SQL simple.
-
-### T5 — Synthèse : quand utiliser quoi
+### T4 — Synthèse : quand utiliser quoi
 
 Complétez ce tableau dans votre rapport :
 
@@ -242,11 +106,123 @@ Complétez ce tableau dans votre rapport :
 | Requête pattern matching (chemin multi-étapes) | | |
 | Agrégation statistique (COUNT, AVG, GROUP BY) | | |
 
-### T6 — Générer la carte de situation
+---
+
+## Partie B — Simulation itérative (2h)
+
+> On passe de la théorie à la pratique : coupez des arêtes et mesurez les conséquences.
+
+### T5 — Couper 1 arête, mesurer l'impact
+
+Choisissez une arête identifiée comme **choke point** (cf. T1) et bloquez-la.
+
+**Objectifs** :
+1. Sauvegarder les coûts originaux (`CREATE TABLE ways_backup AS SELECT * FROM ways`)
+2. Bloquer l'arête (`UPDATE ways SET cost = -1, reverse_cost = -1 WHERE id = ...`)
+3. Mesurer la distance entre 2 POIs avant/après (détour en %)
+4. Comparer le temps de calcul SQL vs Cypher
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t5--couper-1-arte)
+
+### T6 — Couper 3 arêtes, dégradation cumulative
+
+Bloquez 3 arêtes **stratégiquement** et mesurez la dégradation cumulative.
+
+Documentez dans un tableau :
+
+| Arête coupée | Distance A→B | POIs isolés | Composantes connexes |
+|-------------|-------------|-------------|---------------------|
+| Aucune (réf.) | | | |
+| Edge 1 seul | | | |
+| Edge 1 + 2 | | | |
+| Edge 1 + 2 + 3 | | | |
+
+> **Question clé** : la dégradation est-elle linéaire ou exponentielle ?
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t6--couper-3-artes)
+
+### T7 — Stratégie défensive (protéger 5 arêtes)
+
+Vous êtes le **rôle Défense**. Choisissez 5 arêtes à **protéger**.
+
+**Critère** : maximiser le nombre de POIs défense qui restent accessibles après l'attaque.
+
+**Méthode** :
+1. L'agent Attaque identifie ses 5 arêtes cibles
+2. L'agent Défense identifie ses 5 arêtes à protéger
+3. Si une arête est ciblée ET protégée → elle tient
+4. Mesurez l'état final du réseau
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t7--stratgie-dfensive)
+
+### T8 — Stratégie offensive (couper 5 arêtes)
+
+Vous êtes le **rôle Attaque**. Trouvez les 5 arêtes dont la coupure **maximise les dégâts**.
+
+*Indice : pour chaque arête "importante", simuler la coupure et calculer `distance_moyenne_après - distance_moyenne_avant`. Les 5 plus gros impacts = vos cibles.*
+
+**Mesurez** :
+- Nombre de POIs devenus inatteignables
+- Augmentation moyenne de distance entre POIs
+- Nombre de composantes connexes créées
+
+> **Défi** : comparez votre stratégie avec un autre groupe. Qui a causé le plus de dégâts ?
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t8--stratgie-offensive)
+
+---
+
+## Partie C — Analyse de réseau (1h)
+
+### T9 — Composantes connexes avant/après destruction
+
+**Objectif** : utiliser `pgr_connectedComponents` et vérifier la connexité du graphe POI.
+
+**Analysez** :
+1. Combien de composantes avant destruction ?
+2. Et après avoir coupé 3 arêtes ? 5 arêtes ?
+3. Y a-t-il des POIs "îles" (composante de taille 1) ?
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t9--composantes-connexes)
+
+### T10 — Centralité de degré : les hubs du réseau
+
+**Objectif** : calculer le degré de chaque POI (nombre de voisins) et identifier les hubs.
+
+**Interprétation** :
+- Degré élevé = **hub** (bien connecté)
+- Couper un hub → impact maximal
+- Protéger un hub → priorité défensive
+
+**Exercice** : les hubs identifiés correspondent-ils aux choke points de la T1 ? Pourquoi ?
+
+→ [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t10--centralit-de-degr)
+
+### T11 — Carte de situation finale
 
 ```bash
 python scripts/04_benchmark_comparison.py --role <votre_role> --map data/carte_situation.png
 ```
+
+La carte doit montrer :
+- POIs des 4 rôles (couleurs distinctes)
+- Choke points identifiés
+- Routes normales vs contraintes
+- Impact de la destruction (routes coupées, POIs isolés)
+
+---
+
+## Partie D — Rédaction du rapport (30min)
+
+### T12 — Synthèse finale
+
+Complétez le rapport de groupe avec :
+
+1. **Résumé exécutif** : 5 phrases max sur la résilience de votre EPCI
+2. **Chiffres clés** : nombre de POIs, clusters, choke points, % réseau dégradé
+3. **Benchmark** : le tableau T3 complété avec vos mesures
+4. **Leçon apprise** : SQL vs Cypher — dans quel cas chaque outil a gagné ?
+5. **Recommandations** : si vous deviez renforcer le réseau, par où commencer ?
 
 ---
 
@@ -260,9 +236,14 @@ pour comparer la complexité."
 ```
 
 ```
-"Écris une requête Cypher avec APOC pour calculer la betweenness centrality
-des POIs dans un graphe de distances. Explique pourquoi cet algorithme
-n'a pas d'équivalent natif en SQL pur."
+"Comment simuler la destruction d'une arête dans un graphe pgRouting et
+mesurer l'impact sur la connectivité ? Écris une boucle Python qui
+teste chaque arête d'un chemin et calcule le détour moyen."
+```
+
+```
+"Écris une requête Cypher qui calcule la centralité de degré de chaque
+POI dans un réseau, puis identifie les hubs (degré > 2× la moyenne)."
 ```
 
 ---
@@ -272,7 +253,12 @@ n'a pas d'équivalent natif en SQL pur."
 - [ ] Betweenness centrality exécutée sur Neo4j (top 5 POIs identifiés)
 - [ ] Requêtes 2a-2c fonctionnelles dans Neo4j Browser
 - [ ] Tableau benchmark complété (5 requêtes, temps mesurés, LOC comptées)
-- [ ] Requête 4 montre que SQL gagne sur le spatial (pas d'équivalent Cypher natif)
-- [ ] Tableau synthèse "quand utiliser quoi" complété
-- [ ] Choke points identifiés (SQL + Neo4j)
-- [ ] Carte PNG générée
+- [ ] Requête 4 montre que SQL gagne sur le spatial
+- [ ] Tableau synthèse T4 complété
+- [ ] T5-T6 : au moins 3 arêtes coupées, dégradation mesurée et documentée
+- [ ] T7 : stratégie défensive formulée (5 arêtes protégées + justification)
+- [ ] T8 : stratégie offensive formulée (5 arêtes ciblées + impact mesuré)
+- [ ] T9 : composantes connexes avant/après comparées
+- [ ] T10 : hubs identifiés, corrélation avec choke points analysée
+- [ ] T11 : carte PNG générée
+- [ ] T12 : rapport synthèse complété

@@ -51,13 +51,13 @@ Structure suggérée (2-3 pages) :
 # Setup
 python scripts/00_setup.py --epci "<EPCI>"
 
-# Phase 1
+# Phase 1 — Reconnaissance (4h)
 python scripts/01_explore_postgis.py --role <role>
 
-# Phase 2
+# Phase 2 — Cartographie (5h)
 python scripts/02_migrate_to_neo4j.py
 python scripts/03_routing_pgrouting.py --role <role>
 
-# Phase 3
+# Phase 3 — Simulation (5h)
 python scripts/04_benchmark_comparison.py --role <role> --map data/carte_situation.png
 ```

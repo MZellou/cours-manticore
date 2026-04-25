@@ -38,6 +38,40 @@ WHERE nature = 'Port' AND nature_detaillee IN ('Port de commerce', 'Port de pêc
 CASE WHEN restriction_de_poids_total IS NOT NULL THEN -1 ELSE cost END
 ```
 
+## Questions bonus (Phase 1 — Exploration libre)
+
+Résolvez au moins 2 de ces questions. Documentez vos requêtes.
+
+### B1 — Ports et zones industrielles : chaîne logistique
+
+> Quels ports de commerce sont à moins de 3 km d'une zone industrielle ?
+
+*Indice : joignez `equipement_de_transport` (ports) et `zone_d_activite_ou_d_interet` (zones) avec `ST_DWithin`, rayon 3000m.*
+
+### B2 — Voies ferrées fret : accessibilité
+
+> Combien de tronçons de voie ferrée "Fret" croisent votre EPCI ? Quelle est leur longueur totale ?
+
+*Indice : `troncon_de_voie_ferree` avec `usage = 'Fret'`, filtrez par `ST_Intersects` avec l'EPCI, et `sum(ST_Length(...))`.*
+
+**Variante** : combien de gares fret sont sur ces voies ?
+
+### B3 — Capacité de stockage
+
+> Quel est le volume total de réservoirs industriels dans votre EPCI ?
+
+*Indice : `reservoir` avec `nature = 'Réservoir industriel'`, filtrez par EPCI, et `sum(volume)`.*
+
+### B4 — Matrice port ↔ gare fret
+
+> Pour chaque port de commerce, quelle est la gare fret la plus proche ?
+
+*Indice : `CROSS JOIN LATERAL` + `ORDER BY geom <-> ... LIMIT 1`.*
+
+→ [Corrigé]({% link _docs/corriges/corrige_roles_bonus.md %}#-ravitaillement)
+
+---
+
 ## Indice Codestral
 
 ```
