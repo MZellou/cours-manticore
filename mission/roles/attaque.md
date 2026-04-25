@@ -1,3 +1,6 @@
+---
+title: Attaque
+---
 # Rôle ATTAQUE
 
 > *"Identifier les cibles stratégiques à neutraliser."*

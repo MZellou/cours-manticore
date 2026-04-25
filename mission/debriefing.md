@@ -1,3 +1,6 @@
+---
+title: Debriefing
+---
 # Debriefing — Livrable final
 
 > *"Rendez votre rapport tactique et présentez vos conclusions."*

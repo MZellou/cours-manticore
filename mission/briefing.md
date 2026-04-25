@@ -1,3 +1,6 @@
+---
+title: Briefing général
+---
 # OPÉRATION MANTICORE — Briefing Général
 
 > **Vous êtes agents de renseignement. Votre mission : cartographier les infrastructures critiques d'une zone EPCI et évaluer la résilience de son réseau routier face à une simulation d'attaque.**

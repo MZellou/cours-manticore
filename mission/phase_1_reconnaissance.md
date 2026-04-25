@@ -1,3 +1,6 @@
+---
+title: Phase 1 — Reconnaissance
+---
 # Phase 1 — Reconnaissance
 
 > *"Identifier les POIs critiques de votre EPCI selon votre assignation."*

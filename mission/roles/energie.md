@@ -1,3 +1,6 @@
+---
+title: Énergie
+---
 # Rôle ÉNERGIE
 
 > *"Sécuriser le réseau énergétique et les infrastructures de production."*

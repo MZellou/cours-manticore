@@ -1,3 +1,6 @@
+---
+title: Phase 2 — Cartographie
+---
 # Phase 2 — Cartographie
 
 > *"Construire et interroger un graphe de routes pour naviguer vers vos objectifs."*

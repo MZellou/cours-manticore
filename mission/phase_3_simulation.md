@@ -1,3 +1,6 @@
+---
+title: Phase 3 — Simulation
+---
 # Phase 3 — Simulation d'attaque
 
 > *"Simuler une attaque sur le réseau et comparer les approches SQL vs Graphe."*
