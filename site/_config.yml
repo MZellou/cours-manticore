@@ -43,61 +43,9 @@ nav:
 
 color_scheme: dark
 
-defaults:
-  - scope:
-      path: "_docs/missions"
-      type: "docs"
-    values:
-      layout: default
-      parent: Missions
-  - scope:
-      path: "_docs/missions/briefing.md"
-      type: "docs"
-    values:
-      nav_order: 1
-  - scope:
-      path: "_docs/missions/phase_1_reconnaissance.md"
-      type: "docs"
-    values:
-      nav_order: 2
-  - scope:
-      path: "_docs/missions/phase_2_cartographie.md"
-      type: "docs"
-    values:
-      nav_order: 3
-  - scope:
-      path: "_docs/missions/phase_3_simulation.md"
-      type: "docs"
-    values:
-      nav_order: 4
-  - scope:
-      path: "_docs/missions/debriefing.md"
-      type: "docs"
-    values:
-      nav_order: 5
-  - scope:
-      path: "_docs/roles"
-      type: "docs"
-    values:
-      layout: default
-      parent: Rôles
-  - scope:
-      path: "_docs/roles/attaque.md"
-      type: "docs"
-    values:
-      nav_order: 1
-  - scope:
-      path: "_docs/roles/defense.md"
-      type: "docs"
-    values:
-      nav_order: 2
-  - scope:
-      path: "_docs/roles/energie.md"
-      type: "docs"
-    values:
-      nav_order: 3
-  - scope:
-      path: "_docs/roles/ravitaillement.md"
-      type: "docs"
-    values:
-      nav_order: 4
+collections:
+  docs:
+    output: true
+    permalink: /:path/
+
+grand_parent: nav_order
