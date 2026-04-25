@@ -2,6 +2,7 @@
 title: Défense
 parent: Rôles
 nav_order: 2
+layout: default
 ---
 # 🛡️ Rôle DÉFENSE
 

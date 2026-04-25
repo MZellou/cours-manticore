@@ -2,6 +2,7 @@
 title: Attaque
 parent: Rôles
 nav_order: 1
+layout: default
 ---
 # ⚔️ Rôle ATTAQUE
 

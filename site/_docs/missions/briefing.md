@@ -2,6 +2,7 @@
 title: Briefing général
 parent: Missions
 nav_order: 1
+layout: default
 ---
 # OPÉRATION MANTICORE — Briefing Général
 

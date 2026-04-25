@@ -2,6 +2,7 @@
 title: Phase 2 — Cartographie
 parent: Missions
 nav_order: 3
+layout: default
 ---
 # Phase 2 — Cartographie
 

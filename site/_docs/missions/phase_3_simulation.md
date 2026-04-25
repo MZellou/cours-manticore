@@ -2,6 +2,7 @@
 title: Phase 3 — Simulation
 parent: Missions
 nav_order: 4
+layout: default
 ---
 # Phase 3 — Simulation d'attaque
 

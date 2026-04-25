@@ -2,6 +2,7 @@
 title: Phase 1 — Reconnaissance
 parent: Missions
 nav_order: 2
+layout: default
 ---
 # Phase 1 — Reconnaissance
 
