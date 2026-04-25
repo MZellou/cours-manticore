@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  # Moteur OSRM (Statique, très rapide)
+  osrm:
+    image: osrm/osrm-backend
+    container_name: manticore-osrm
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data/gold_dumps:/data
+    command: osrm-routed --algorithm mld /data/manticore.osrm
+
+  # Moteur Valhalla (Dynamique, flexible)
+  valhalla:
+    image: ghcr.io/valhalla/valhalla:latest
+    container_name: manticore-valhalla
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./data/gold_dumps:/custom_files
+    environment:
+      - serve_tiles=True

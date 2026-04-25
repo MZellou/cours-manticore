@@ -1,0 +1,26 @@
+# Data (stored on R2, pulled via rclone)
+data/*
+!data/.gitkeep
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+rclone.conf
+
+plans/
+archive/
+

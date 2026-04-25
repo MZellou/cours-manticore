@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  postgis:
+    build:
+      context: .
+      dockerfile: postgres-pgrouting.Dockerfile
+    image: manticore-postgis-pgrouting:latest
+    container_name: manticore-postgis
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGIS_DB}
+      POSTGRES_USER: ${POSTGIS_USER}
+      POSTGRES_PASSWORD: ${POSTGIS_PASSWORD}
+    ports:
+      - "${POSTGIS_PORT:-5432}:5432"
+    volumes:
+      - ./data:/docker-entrypoint-initdb.d
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGIS_USER} -d ${POSTGIS_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  neo4j:
+    image: neo4j:5
+    container_name: manticore-neo4j
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PASSWORD}
+      NEO4J_server_memory_heap_max__size: 1G
+      NEO4J_PLUGINS: '["apoc"]'
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ./data:/data
+      - neo4j_data:/var/lib/neo4j/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER} -p ${NEO4J_PASSWORD} 'RETURN 1'"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  postgis_data:
+  neo4j_data:
