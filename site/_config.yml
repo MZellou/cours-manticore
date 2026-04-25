@@ -5,24 +5,20 @@ url: "https://cours-manticore.mzellou.pages.dev"
 baseurl: ""
 
 nav:
-  - title: Accueil
-    url: /
   - title: Missions
-    url: /missions/
-    nav_children:
+    children:
       - title: Briefing général
         url: /missions/briefing/
-      - title: Phase 1 — Reconnaissance
-        url: /missions/phase_1/
-      - title: Phase 2 — Cartographie
-        url: /missions/phase_2/
-      - title: Phase 3 — Simulation
-        url: /missions/phase_3/
+      - title: "Phase 1 — Reconnaissance"
+        url: /missions/phase_1_reconnaissance/
+      - title: "Phase 2 — Cartographie"
+        url: /missions/phase_2_cartographie/
+      - title: "Phase 3 — Simulation"
+        url: /missions/phase_3_simulation/
       - title: Debriefing
         url: /missions/debriefing/
   - title: Rôles
-    url: /roles/
-    nav_children:
+    children:
       - title: Attaque
         url: /roles/attaque/
       - title: Défense
@@ -32,8 +28,7 @@ nav:
       - title: Énergie
         url: /roles/energie/
   - title: Théorie
-    url: /theorie/
-    nav_children:
+    children:
       - title: BDD NoSQL (slides)
         url: /theorie/bdd_nosql/
       - title: Contenu des données
