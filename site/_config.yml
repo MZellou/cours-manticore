@@ -4,11 +4,6 @@ theme: just-the-docs
 url: "https://cours-manticore.pages.dev"
 baseurl: ""
 
-collections:
-  docs:
-    output: true
-    permalink: /:path/
-
 nav:
   - title: Missions
     children:
@@ -42,10 +37,3 @@ nav:
     url: /instructor/
 
 color_scheme: dark
-
-collections:
-  docs:
-    output: true
-    permalink: /:path/
-
-grand_parent: nav_order
