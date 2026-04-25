@@ -1,5 +1,6 @@
 ---
 title: Debriefing
+layout: default
 ---
 # Debriefing — Livrable final
 

@@ -1,5 +1,6 @@
 ---
 title: Phase 3 — Simulation
+layout: default
 ---
 # Phase 3 — Simulation d'attaque
 

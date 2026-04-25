@@ -7,28 +7,33 @@ title: Accueil
 
 **Cours BDD NoSQL — Graph + Spatial** | PostGIS + pgRouting + Neo4j
 
-> *Vous êtes agents de renseignement. Votre mission : cartographier les infrastructures critiques d'une zone EPCI et évaluer la résilience de son réseau routier face à une simulation d'attaque.*
+> *Vous êtes agents de renseignement. Cartographiez les infra critiques d'une zone EPCI et évaluez la résilience de son réseau routier.*
 
-## Format
+---
 
-- **0.5J** théorie + **2J** TD
-- **40 étudiants** / 10 groupes × 4 rôles
-- **Stack** : PostGIS + pgRouting + Neo4j + Codestral CLI
+## 4 rôles par groupe
+
+| | Rôle | Mission |
+|--|------|---------|
+| ⚔️ | **Attaque** | Identifier les cibles stratégiques (aérodromes, ports, casernes) |
+| 🛡️ | **Défense** | Protéger les points vitaux (hôpitaux, ponts, gares) |
+| 📦 | **Ravitaillement** | Optimiser les flux logistiques (ports fret, zones industrielles) |
+| ⚡ | **Énergie** | Sécuriser le réseau énergétique (postes HT, lignes THT, centrales) |
 
 ## 3 phases
 
 | Phase | Mode | Thème |
 |-------|------|-------|
-| 1 — Reconnaissance | Solo (par rôle) | POIs critiques (PostGIS) |
-| 2 — Cartographie | Groupe | Routes + graphe (pgRouting + Neo4j) |
-| 3 — Simulation | Groupe | Benchmark SQL vs Cypher |
+| 🔍 Phase 1 — Reconnaissance | Solo (par rôle) | POIs critiques (PostGIS) |
+| 🗺️ Phase 2 — Cartographie | Groupe | Routes + graphe (pgRouting + Neo4j) |
+| 📊 Phase 3 — Simulation | Groupe | Benchmark SQL vs Cypher |
 
 ## Quick start
 
 ```bash
 git clone <repo> && cd cours-manticore
-make setup                    # clone submodules + pull data + docker + uv
+make setup
 python scripts/00_setup.py --epci "<votre EPCI>"
 ```
 
-→ Lire le [Briefing général](/missions/briefing/) pour la suite.
+→ Lancer avec le [Briefing général](/missions/briefing/)

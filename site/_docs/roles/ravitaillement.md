@@ -1,7 +1,8 @@
 ---
 title: Ravitaillement
+layout: default
 ---
-# Rôle RAVITAILLEMENT
+# 📦 Rôle RAVITAILLEMENT
 
 > *"Optimiser les flux logistiques et les chaînes d'approvisionnement."*
 

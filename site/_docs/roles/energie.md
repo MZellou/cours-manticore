@@ -1,7 +1,8 @@
 ---
 title: Énergie
+layout: default
 ---
-# Rôle ÉNERGIE
+# ⚡ Rôle ÉNERGIE
 
 > *"Sécuriser le réseau énergétique et les infrastructures de production."*
 

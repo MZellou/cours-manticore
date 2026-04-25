@@ -1,7 +1,8 @@
 ---
 title: Défense
+layout: default
 ---
-# Rôle DÉFENSE
+# 🛡️ Rôle DÉFENSE
 
 > *"Identifier les points à protéger et les voies d'évacuation."*
 

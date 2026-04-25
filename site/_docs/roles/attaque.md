@@ -1,7 +1,8 @@
 ---
 title: Attaque
+layout: default
 ---
-# Rôle ATTAQUE
+# ⚔️ Rôle ATTAQUE
 
 > *"Identifier les cibles stratégiques à neutraliser."*
 

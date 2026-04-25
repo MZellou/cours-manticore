@@ -1,5 +1,6 @@
 ---
 title: Phase 1 — Reconnaissance
+layout: default
 ---
 # Phase 1 — Reconnaissance
 

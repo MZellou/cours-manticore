@@ -1,5 +1,6 @@
 ---
 title: Phase 2 — Cartographie
+layout: default
 ---
 # Phase 2 — Cartographie
 
