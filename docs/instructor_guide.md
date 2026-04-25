@@ -4,7 +4,6 @@
 
 - [ ] Docker stack fonctionnel (`docker compose up -d`)
 - [ ] Gold Dumps générés pour les 10 EPCIs (`python scripts/admin_generate_gold_dumps.py --all`)
-- [ ] CIFS store monté (`/media/stores/cifs/store-DAI/...`)
 - [ ] Slides Marp buildées (`npx @marp-team/marp-cli slides/theorie_bdd_nosql.md -o slides/output.html`)
 - [ ] Neo4j heap adapté aux laptops (512M si < 8GB RAM)
 
