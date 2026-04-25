@@ -1,7 +1,7 @@
 title: Opération Manticore
 description: Cours BDD NoSQL — Graph + Spatial | PostGIS + pgRouting + Neo4j
 theme: just-the-docs
-url: "https://<mzellou.github.io"
+url: "https://mzellou.github.io"
 baseurl: "/cours-manticore"
 
 nav:
