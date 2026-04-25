@@ -1,6 +1,7 @@
 ---
 title: Énergie
-layout: default
+parent: Rôles
+nav_order: 4
 ---
 # ⚡ Rôle ÉNERGIE
 

@@ -1,6 +1,7 @@
 ---
 title: Phase 3 — Simulation
-layout: default
+parent: Missions
+nav_order: 4
 ---
 # Phase 3 — Simulation d'attaque
 

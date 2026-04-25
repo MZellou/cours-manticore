@@ -1,6 +1,7 @@
 ---
 title: Debriefing
-layout: default
+parent: Missions
+nav_order: 5
 ---
 # Debriefing — Livrable final
 

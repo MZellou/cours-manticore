@@ -1,6 +1,7 @@
 ---
 title: Ravitaillement
-layout: default
+parent: Rôles
+nav_order: 3
 ---
 # 📦 Rôle RAVITAILLEMENT
 

@@ -36,4 +36,4 @@ make setup
 python scripts/00_setup.py --epci "<votre EPCI>"
 ```
 
-→ Lancer avec le [Briefing général](/missions/briefing/)
+→ Lancer avec le [Briefing général]({% link _docs/missions/briefing.md %})
