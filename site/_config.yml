@@ -1,8 +1,8 @@
 title: Opération Manticore
 description: Cours BDD NoSQL — Graph + Spatial | PostGIS + pgRouting + Neo4j
 theme: just-the-docs
-url: ""
-baseurl: "/cours-manticore"
+url: "https://<your-cf-pages-subdomain>.pages.dev"
+baseurl: ""
 
 nav:
   - title: Accueil
