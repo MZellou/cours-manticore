@@ -31,4 +31,4 @@ make setup                    # clone submodules + pull data + docker + uv
 python scripts/00_setup.py --epci "<votre EPCI>"
 ```
 
-→ Lire le [Briefing général](/cours-manticore/missions/briefing/) pour la suite.
+→ Lire le [Briefing général](/missions/briefing/) pour la suite.

@@ -1,39 +1,9 @@
+---
+layout: default
 title: Opération Manticore
 description: Cours BDD NoSQL — Graph + Spatial | PostGIS + pgRouting + Neo4j
 theme: just-the-docs
-url: "https://cours-manticore.mzellou.pages.dev"
+url: "https://cours-manticore.pages.dev"
 baseurl: ""
-
-nav:
-  - title: Missions
-    children:
-      - title: Briefing général
-        url: /missions/briefing/
-      - title: "Phase 1 — Reconnaissance"
-        url: /missions/phase_1_reconnaissance/
-      - title: "Phase 2 — Cartographie"
-        url: /missions/phase_2_cartographie/
-      - title: "Phase 3 — Simulation"
-        url: /missions/phase_3_simulation/
-      - title: Debriefing
-        url: /missions/debriefing/
-  - title: Rôles
-    children:
-      - title: Attaque
-        url: /roles/attaque/
-      - title: Défense
-        url: /roles/defense/
-      - title: Ravitaillement
-        url: /roles/ravitaillement/
-      - title: Énergie
-        url: /roles/energie/
-  - title: Théorie
-    children:
-      - title: BDD NoSQL (slides)
-        url: /theorie/bdd_nosql/
-      - title: Contenu des données
-        url: /theorie/contenu_donnees/
-  - title: Instructeur
-    url: /instructor/
 
 color_scheme: dark
