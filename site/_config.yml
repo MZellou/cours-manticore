@@ -9,4 +9,9 @@ collections:
     output: true
     permalink: /:path/
 
+just_the_docs:
+  collections:
+    docs:
+      nav_exclude: false
+
 color_scheme: dark
