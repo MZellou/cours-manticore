@@ -1,7 +1,7 @@
 ---
 title: Phase 3 — Simulation
 parent: Missions
-nav_order: 4
+nav_order: 8
 layout: default
 ---
 # Phase 3 — Simulation d'attaque
@@ -10,6 +10,18 @@ layout: default
 
 **Mode** : Groupe (les 4 rôles collaborent sur la simulation).
 **Durée estimée** : 5h (benchmark 1h30 + simulation itérative 2h + analyse réseau 1h + rédaction 30min)
+
+<div class="prereq-theorie" markdown="1">
+📚 **Théorie pré-requise** — à parcourir avant cette phase
+
+- [APOC — algorithmes de graphe]({% link _docs/theorie/apoc.md %}) — `betweenness`, `subgraphAll`, `allShortestPaths` (essentiel)
+- [SQL — limites & EXPLAIN]({% link _docs/theorie/sql_recursion_limits.md %}) — lire un plan `EXPLAIN ANALYZE` / `PROFILE`
+- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — `pgr_connectedComponents`, simulation de coupes
+
+**Pré-requis Phase 2** : graphe ways + ways_vertices_pgr OK, Neo4j peuplé ([Checkpoint Phase 2]({% link _docs/missions/checkpoint_phase_2.md %})).
+</div>
+
+[← Transition Phase 2 → Phase 3]({% link _docs/missions/transition_2_3.md %}) — *à lire d'abord pour cadrer la démarche.*
 
 ---
 
@@ -53,6 +65,23 @@ sur la connectivité du réseau.
 
 → [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t1--choke-points)
 
+<div class="reflexion" markdown="1">
+🧠 **Réflexion guidée — dialogue avec le LLM**
+
+**Questions à creuser**
+- Que mesure exactement la **betweenness** d'un nœud ? Pourquoi un score de 0 ne veut **pas** dire "inutile" ?
+- Si vous deviez écrire la betweenness en SQL pur, combien d'appels `pgr_dijkstra` faudrait-il ? (indice : N²/2 pour un graphe non orienté)
+- Est-ce que les choke points (betweenness élevée) sont les mêmes que les **hubs** (degré élevé, T10) ? Pourquoi pas forcément ?
+
+**Prompts LLM suggérés**
+- *"Explique-moi la betweenness centrality avec un schéma à 5 nœuds en chaîne. Pourquoi le nœud du milieu a le score max ?"*
+- *"Compare betweenness, closeness et degree centrality. Quand utiliser laquelle pour identifier des points critiques d'un réseau routier ?"*
+
+**Mini-défi**
+- Top 5 par betweenness vs top 5 par degré : combien de nœuds en commun ? Note la corrélation dans le rapport.
+- Bonus : faites pareil après avoir **coupé** une arête à fort betweenness — les scores sont-ils stables ?
+</div>
+
 ### T2 — Requêtes croisées : là où Cypher brille
 
 Essayez ces requêtes dans Neo4j Browser et réfléchissez à l'équivalent SQL.
@@ -91,6 +120,23 @@ Reproduisez ce tableau avec vos mesures (`EXPLAIN ANALYZE` pour SQL, `PROFILE` p
 
 → [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t3--requetes-benchmark)
 
+<div class="reflexion" markdown="1">
+🧠 **Réflexion guidée — dialogue avec le LLM**
+
+**Questions à creuser**
+- Sur la requête 4 (`ST_DWithin`), pourquoi **SQL gagne** ? Que se passerait-il dans Neo4j ?
+- Sur la requête 1 (sous-types ontologiques), regardez les plans : combien d'`AllNodesScan` côté Cypher ? Combien de jointures côté SQL ? Lequel est plus économe en lignes lues ?
+- `Execution Time` SQL et `db hits` Cypher ne sont pas comparables directement — comment vraiment **comparer** la performance ? (réponse : timing wall-clock, mais aussi nombre d'I/O et complexité du code).
+
+**Prompts LLM suggérés**
+- *"Comment lire un plan EXPLAIN ANALYZE PostgreSQL ? Liste les opérateurs courants (Seq Scan, Index Scan, Nested Loop, Hash Join) et ce qu'ils signifient."*
+- *"Comment lire un plan Cypher PROFILE ? Quelles sont les pires opérations (AllNodesScan) et les meilleures (NodeIndexSeek) ?"*
+
+**Mini-défi**
+- Pour chaque requête du tableau, faites tourner `EXPLAIN (ANALYZE, BUFFERS)` côté SQL. Notez : `Execution Time`, présence de `Seq Scan` vs `Index Scan`.
+- Bonus : ajoutez un index manquant et **mesurez l'écart**.
+</div>
+
 ### T4 — Synthèse : quand utiliser quoi
 
 Complétez ce tableau dans votre rapport :
@@ -123,6 +169,22 @@ Choisissez une arête identifiée comme **choke point** (cf. T1) et bloquez-la.
 4. Comparer le temps de calcul SQL vs Cypher
 
 → [Corrigé]({% link _docs/corriges/corrige_phase_3.md %}#t5--couper-1-arte)
+
+<div class="reflexion" markdown="1">
+🧠 **Réflexion guidée — dialogue avec le LLM**
+
+**Questions à creuser**
+- Pourquoi sauvegarder `ways` dans `ways_backup` avant de modifier ? Que se passerait-il sans ça ?
+- L'arête a-t-elle un sens unique (`reverse_cost = -1` initial) ? Faut-il bloquer **les deux** sens pour simuler une destruction ?
+- Si `pgr_dijkstra` ne trouve plus de chemin (résultat vide), que doit montrer la carte ? Et le rapport ?
+
+**Prompts LLM suggérés**
+- *"Comment annuler proprement une modification destructive sur une table PostgreSQL ? `BEGIN/ROLLBACK` vs `CREATE TABLE backup` ?"*
+- *"Pourquoi un graphe non orienté nécessite de bloquer cost ET reverse_cost pour une coupe ?"*
+
+**Mini-défi**
+- Choisissez votre choke point #1 (T1). **Avant** la coupe, mesurez la distance moyenne entre 5 paires de POIs. **Après** la coupe, remesurez. Quel est l'allongement médian (%)? Combien de paires deviennent inatteignables ?
+</div>
 
 ### T6 — Couper 3 arêtes, dégradation cumulative
 
@@ -262,3 +324,19 @@ POI dans un réseau, puis identifie les hubs (degré > 2× la moyenne)."
 - [ ] T10 : hubs identifiés, corrélation avec choke points analysée
 - [ ] T11 : carte PNG générée
 - [ ] T12 : rapport synthèse complété
+
+## Auto-évaluation (non notée)
+
+Cocher ce que vous savez **expliquer** :
+
+- [ ] Différence betweenness / degré / closeness centrality
+- [ ] Lecture d'un plan `EXPLAIN ANALYZE` (Seq Scan vs Index Scan)
+- [ ] Lecture d'un plan Cypher `PROFILE` (AllNodesScan vs NodeIndexSeek)
+- [ ] Pourquoi `ST_DWithin` bat Cypher sur le spatial pur
+- [ ] Pourquoi Cypher bat SQL sur les hiérarchies/réseaux
+- [ ] Comment simuler proprement la destruction d'une arête (backup, restore)
+- [ ] Comment mesurer la **résilience** d'un réseau (composantes connexes, isolement)
+
+---
+
+{% include nav_phase.html prev_url="/missions/transition_2_3/" prev_label="Transition Phase 2→3" next_url="/missions/debriefing/" next_label="Debriefing" %}

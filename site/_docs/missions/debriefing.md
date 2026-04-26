@@ -1,9 +1,10 @@
 ---
 title: Debriefing
 parent: Missions
-nav_order: 5
+nav_order: 9
 layout: default
 ---
+
 # Debriefing — Livrable final
 
 > *"Rendez votre rapport tactique et présentez vos conclusions."*
@@ -32,16 +33,82 @@ Structure suggérée (2-3 pages) :
 
 ---
 
-## Grille d'évaluation
+## Grille de relecture des concepts
 
-| Critère | Points | Détail |
-|---------|--------|--------|
-| Requêtes SQL | 25% | Complexité, correction, utilisation de ST_*, WITH RECURSIVE |
-| Requêtes Cypher | 20% | APOC, path patterns, comparaison SQL |
-| Routage pgRouting | 20% | Dijkstra, routage contraint, choke points |
-| Benchmark | 15% | Mesures chiffrées, analyse des plans de requête |
-| Carte + rapport | 15% | Lisibilité, exhaustivité, conclusions |
-| Présentation | 5% | Clarté, timing, participation |
+> Avant la présentation, vérifiez en équipe que **chacun** peut expliquer ces points sans relire le corrigé. C'est ce que le jury cherchera à creuser.
+
+### Phase 1 — Spatial pur
+
+- [ ] Pourquoi BDTOPO est en SRID 2154 (et l'effet d'un mélange 2154/4326)
+- [ ] Différence `ST_Intersects` / `ST_DWithin` / `ST_Distance < N`
+- [ ] Rôle de l'index GIST
+- [ ] Effet de `eps` et `minpoints` sur DBSCAN
+- [ ] Pourquoi `WITH RECURSIVE` est verbeux et lent en profondeur
+
+### Phase 2 — Graphe et bi-paradigme
+
+- [ ] Pourquoi r2gg découpe les tronçons aux intersections
+- [ ] Sémantique de `cost` / `reverse_cost` et de la convention `-1`
+- [ ] Comment snapper un point quelconque au sommet le plus proche (`<->`)
+- [ ] Différence `MERGE` vs `CREATE` en Cypher
+- [ ] Pourquoi un index Neo4j accélère drastiquement un `MERGE`
+- [ ] Index-free adjacency (et pourquoi la traversée graphe est en `O(1)` par saut)
+
+### Phase 3 — Analyse et benchmark
+
+- [ ] Sens de la betweenness centrality (≠ degré, ≠ closeness)
+- [ ] Lecture d'un plan `EXPLAIN ANALYZE` (Seq Scan vs Index Scan)
+- [ ] Lecture d'un plan Cypher `PROFILE` (AllNodesScan vs NodeIndexSeek)
+- [ ] Pourquoi `ST_DWithin` bat Cypher sur le spatial pur
+- [ ] Pourquoi Cypher bat SQL sur les hiérarchies / réseaux
+- [ ] Comment simuler proprement une coupe (backup, restore)
+
+---
+
+## Tableau de synthèse final (à compléter en groupe)
+
+| Question | Outil choisi | Justification (1 phrase) | Mesure (ms / LOC) |
+|----------|-------------|--------------------------|-------------------|
+| Filtrer des POIs par attribut | | | |
+| Calculer un buffer spatial | | | |
+| Plus court chemin routier | | | |
+| Tous les sous-types d'une classe | | | |
+| Tous les chemins entre A et B | | | |
+| Centralité d'un nœud | | | |
+| Composantes connexes du réseau | | | |
+| Carte tactique consolidée | | | |
+
+> Si une case "Outil choisi" est *toujours* le même, vous avez raté le point pédagogique du cours.
+
+---
+
+## Pour aller plus loin
+
+### Livres / ressources
+
+- **PostGIS in Action** (Regina Obe & Leo Hsu) — la référence sur PostgreSQL spatial
+- **Graph Databases** (Robinson, Webber, Eifrem, O'Reilly, gratuit chez Neo4j) — modèle LPG, patterns
+- **Neo4j Cypher Manual** — référence officielle, très bien fait
+- **pgRouting Manual** — algorithmes et exemples concrets
+
+### Sujets non couverts mais utiles
+
+- **GraphX / Spark GraphFrames** — graphe distribué pour très gros volumes
+- **Memgraph** — alternative à Neo4j, plus rapide sur certains cas
+- **PostgreSQL Custom Functions** pour combiner Cypher-like et SQL (`pg_graphql`, `Apache AGE`)
+- **Routing OSM** (OSRM, Valhalla) — alternatives à pgRouting, alimentées par OpenStreetMap
+
+### Approfondir le **routage**
+
+- Algorithmes A*, bidirectional Dijkstra, contraction hierarchies
+- Routing temps-réel avec données traffic
+- Multi-modal (voiture + pied + métro)
+
+### Approfondir le **graphe**
+
+- Algorithmes : PageRank, Louvain (communautés), Strongly Connected Components
+- Graph embeddings (node2vec, GraphSAGE) pour ML sur graphes
+- Réseaux dynamiques (graphe qui change dans le temps)
 
 ---
 
@@ -61,3 +128,7 @@ python scripts/03_routing_pgrouting.py --role <role>
 # Phase 3 — Simulation (5h)
 python scripts/04_benchmark_comparison.py --role <role> --map data/carte_situation.png
 ```
+
+---
+
+{% include nav_phase.html prev_url="/missions/phase_3_simulation/" prev_label="Phase 3" %}

@@ -1,1 +1,45 @@
-<style>.site-footer { display: none !important; }</style>
+<style>
+  .site-footer { display: none !important; }
+
+  /* Encart "Réflexion guidée" : questions LLM + mini-défis */
+  .reflexion {
+    border-left: 4px solid #f0a050;
+    background: rgba(240, 160, 80, 0.08);
+    padding: 0.8em 1.1em;
+    margin: 1.2em 0;
+    border-radius: 4px;
+  }
+  .reflexion > p:first-child { margin-top: 0; }
+  .reflexion > *:last-child { margin-bottom: 0; }
+
+  /* Encart "Checkpoint" : validation de fin de phase */
+  .checkpoint {
+    border-left: 4px solid #58c08f;
+    background: rgba(88, 192, 143, 0.08);
+    padding: 0.8em 1.1em;
+    margin: 1.2em 0;
+    border-radius: 4px;
+  }
+  .checkpoint > p:first-child { margin-top: 0; }
+  .checkpoint > *:last-child { margin-bottom: 0; }
+
+  /* Encart "Théorie pré-requise" : pointeurs vers pages théorie */
+  .prereq-theorie {
+    border-left: 4px solid #6aa1f0;
+    background: rgba(106, 161, 240, 0.08);
+    padding: 0.7em 1.1em;
+    margin: 1em 0;
+    border-radius: 4px;
+    font-size: 0.95em;
+  }
+  .prereq-theorie > p:first-child { margin-top: 0; }
+  .prereq-theorie > *:last-child { margin-bottom: 0; }
+
+  /* Boutons précédent/suivant */
+  .nav-phase {
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .nav-phase table { width: 100%; }
+</style>

@@ -1,0 +1,163 @@
+---
+layout: default
+title: PostGIS — essentiels
+parent: Théorie
+nav_order: 8
+---
+
+# PostGIS — essentiels
+
+> Tout ce qu'il faut maîtriser **avant la Phase 1** sur le spatial sous PostgreSQL.
+
+---
+
+## Géométries : 3 types qu'on rencontre
+
+| Type | Exemple BDTOPO |
+|------|---------------|
+| `POINT` | Aérodrome (coordonnées d'un point unique) |
+| `LINESTRING` | Tronçon de route (suite de points orientée) |
+| `POLYGON` | Zone d'activité (contour fermé) |
+
+Chaque géométrie est **typée par son SRID** (système de coordonnées). Ne confondez pas type géométrique et SRID.
+
+---
+
+## SRID : Lambert-93 vs WGS84
+
+La BDTOPO est en **EPSG:2154 (Lambert-93)** — coordonnées en **mètres**.
+Vos coordonnées GPS sont en **EPSG:4326 (WGS84)** — degrés de latitude/longitude.
+
+> ⚠️ **Erreur classique** : faire `ST_DWithin(geom_lambert, geom_gps, 5000)` → résultats absurdes (mélange mètres + degrés).
+
+### Conversion
+
+```sql
+-- WGS84 → Lambert-93
+ST_Transform(ST_SetSRID(ST_MakePoint(-4.488, 48.390), 4326), 2154)
+
+-- Lambert-93 → WGS84 (pour exporter en GeoJSON / Leaflet)
+ST_Transform(geom, 4326)
+```
+
+### `ST_Force2D` — pourquoi parfois nécessaire
+
+Certaines géométries BDTOPO ont une **3e coordonnée Z (altitude)**. Beaucoup de fonctions PostGIS les acceptent mais certaines opérations spatiales (notamment `ST_Intersects` strict, comparaisons d'égalité) échouent silencieusement. Quand un résultat est vide alors qu'il ne devrait pas → essayez `ST_Force2D(geom)`.
+
+---
+
+## Les opérations spatiales clés
+
+### `ST_Intersects(a, b)` — touche-t-on ?
+
+`true` si `a` et `b` se touchent ou se superposent.
+
+```sql
+-- Tous les hôpitaux dans le polygone EPCI
+SELECT z.* FROM zone_d_activite_ou_d_interet z
+JOIN epci e ON ST_Intersects(z.geom, e.geom)
+WHERE z.nature = 'Hôpital';
+```
+
+### `ST_DWithin(a, b, distance)` — à moins de N mètres ?
+
+`true` si `a` est à **moins de `distance` mètres** de `b` (en SRID projeté).
+
+```sql
+-- Aérodromes à moins de 2 km d'un hôpital
+SELECT a.* FROM aerodrome a
+JOIN zone_d_activite_ou_d_interet h
+  ON ST_DWithin(a.geom, h.geom, 2000)
+WHERE h.nature = 'Hôpital';
+```
+
+> 💡 **`ST_DWithin` est plus rapide que `ST_Distance(a,b) < N`** : il utilise l'index GIST.
+
+### `ST_Buffer(geom, distance)` — créer une zone tampon
+
+```sql
+-- Zone de 1 km autour de chaque poste électrique
+SELECT id, ST_Buffer(geom, 1000) AS zone_protection FROM poste_de_transformation;
+```
+
+### `<-> ` (KNN) — voisin le plus proche
+
+L'opérateur `<->` retourne la **distance** et utilise l'index GIST :
+
+```sql
+-- Le sommet du graphe le plus proche d'un POI
+SELECT v.id FROM ways_vertices_pgr v
+ORDER BY v.the_geom <-> p.geom
+LIMIT 1;
+```
+
+→ Combinez avec `CROSS JOIN LATERAL` pour appliquer à chaque ligne d'une table (vu en Phase 2).
+
+---
+
+## Index GIST : pourquoi c'est vital
+
+**Sans index GIST**, une requête spatiale parcourt toute la table → seconde, voire minute.
+**Avec index GIST**, accès `O(log n)` → millisecondes.
+
+```sql
+CREATE INDEX idx_pois_geom ON mission_pois USING GIST (geom);
+```
+
+> Les tables BDTOPO du cours ont déjà leurs index. Si vous créez `mission_pois`, **n'oubliez pas l'index** sinon Phase 2 sera très lente.
+
+---
+
+## `ST_ClusterDBSCAN` — clustering spatial
+
+DBSCAN groupe les points denses **sans avoir à fixer le nombre de clusters**. Deux paramètres seulement :
+
+| Paramètre | Sens |
+|-----------|------|
+| `eps` | distance max entre 2 points pour être considérés voisins (en mètres si SRID projeté) |
+| `minpoints` | nombre minimum de points pour former un cluster (sinon = bruit) |
+
+```sql
+SELECT
+  cleabs,
+  nom,
+  geom,
+  ST_ClusterDBSCAN(geom, eps := 2000, minpoints := 2) OVER () AS cluster_id
+FROM mission_pois
+WHERE role = 'attaque';
+```
+
+### Comment choisir `eps` et `minpoints` ?
+
+| Question | Choix raisonnable |
+|----------|-------------------|
+| "Concentration tactique de POIs proches" (TD) | `eps = 2000` (2 km), `minpoints = 2` |
+| Détection de zones urbaines denses | `eps = 200–500`, `minpoints = 5–10` |
+| Rapide vue d'ensemble | `eps = 5000`, `minpoints = 3` |
+
+**Effet attendu quand vous variez `eps`** :
+- `eps` petit → beaucoup de **petits** clusters + beaucoup de bruit (`cluster_id = NULL`)
+- `eps` grand → un **gros** cluster fusionné qui couvre tout
+- Le bon choix dépend de **l'échelle géographique** de votre EPCI.
+
+> ⚠️ DBSCAN est **non-paramétrique mais sensible aux unités** : `eps = 2000` n'a aucun sens en SRID 4326 (degrés). Toujours en SRID projeté.
+
+---
+
+## Pièges fréquents
+
+| Symptôme | Cause probable |
+|----------|----------------|
+| `ST_DWithin` retourne 0 | Mélange de SRID — vérifiez `ST_SRID(geom)` |
+| `ST_Intersects` lent | Pas d'index GIST sur la colonne |
+| Erreur "geometry has Z dimension" | Forcer en 2D : `ST_Force2D(geom)` |
+| Résultats numériques bizarres | Distance en degrés au lieu de mètres |
+| `CAST(importance AS INTEGER)` échoue | `importance` est `VARCHAR` — gérer les `NULL` et les non-numériques |
+
+---
+
+## Pour aller plus loin
+
+- [Modèle BDTOPO]({% link _docs/theorie/bdtopo.md %}) — quelles tables, quels champs
+- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — passer du spatial au graphe routier
+- [SQL : limites de la récursion]({% link _docs/theorie/sql_recursion_limits.md %}) — pour comprendre le besoin de Cypher

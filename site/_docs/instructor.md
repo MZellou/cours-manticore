@@ -14,7 +14,7 @@ nav_order: 9
 
 - [ ] **Docker stack** : `docker compose up -d` → les 2 conteneurs sont `healthy`
 - [ ] **Gold Dumps** : générés pour les 10 EPCIs (`python scripts/admin_generate_gold_dumps.py --all`)
-- [ ] **Slides Marp** : buildées (`npx @marp-team/marp-cli slides/theorie_bdd_nosql.md -o slides/output.html`)
+- [ ] **Pages théorie** : passer en revue `_docs/theorie/*.md` (servent de support pour la 0.5J théorie)
 - [ ] **Neo4j heap** : adapté aux laptops étudiants (512M si < 8 Go RAM)
 - [ ] **Données Parquet** : accessibles sur le partage CIFS ou en local
 - [ ] **`.env`** : distribué aux étudiants (copie de `.env.example`)
@@ -40,7 +40,7 @@ Chaque groupe de 4 étudiants : 1 Attaque, 1 Défense, 1 Ravitaillement, 1 Éner
 
 | Moment | Durée | Activité |
 |--------|-------|----------|
-| **J1 matin** | 3h | Cours magistral (slides) + installation |
+| **J1 matin** | 3h | Cours magistral (pages [Théorie]({% link _docs/theorie.md %}) projetées) + installation |
 | **J1 après-midi** | 3h | Phase 1 : Reconnaissance (solo) |
 | **J2 matin** | 3h | Phase 2 : Cartographie (groupe) |
 | **J2 après-midi** | 3h | Phase 3 : Simulation + benchmark |

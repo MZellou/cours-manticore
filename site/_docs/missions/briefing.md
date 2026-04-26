@@ -58,3 +58,15 @@ Chaque membre du groupe adopte un rôle spécifique :
 
 Les solutions sont disponibles dans la section [Corrigés]({% link _docs/corriges.md %}).
 Si vous êtes bloqué, consultez — l'objectif est de comprendre, pas de bloquer.
+
+## Avant de démarrer : la théorie
+
+Avant la Phase 1, parcourez ces pages (15 min total) :
+
+- [Pourquoi ce cours]({% link _docs/theorie/bdd_nosql.md %}) — fondations
+- [PostGIS — essentiels]({% link _docs/theorie/postgis_essentiels.md %}) — pour la Phase 1
+- [Modèle BDTOPO]({% link _docs/theorie/bdtopo.md %}) — les données
+
+---
+
+{% include nav_phase.html prev_url="/" prev_label="Accueil" next_url="/missions/phase_1_reconnaissance/" next_label="Phase 1 — Reconnaissance" %}

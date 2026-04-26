@@ -48,7 +48,6 @@ mission/                   # Student briefings
   00_briefing.md           # Group assignments + roles
   phase_{1,2,3}_*.md       # Phase briefings
   roles/{attaque,defense,ravitaillement,energie}.md
-slides/                    # Marp theory slides
 site/                      # Jekyll + just-the-docs (GitHub Pages)
 ```
 

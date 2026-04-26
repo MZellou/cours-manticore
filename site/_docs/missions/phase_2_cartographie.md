@@ -1,7 +1,7 @@
 ---
 title: Phase 2 — Cartographie
 parent: Missions
-nav_order: 3
+nav_order: 5
 layout: default
 ---
 # Phase 2 — Cartographie
@@ -10,6 +10,18 @@ layout: default
 
 **Mode** : Groupe (les 4 rôles fusionnent leurs POIs et travaillent sur le même graphe).
 **Durée estimée** : 5h (tâches principales 2h + Cypher approfondi 1h + pgRouting avancé 1h + réflexion 1h)
+
+<div class="prereq-theorie" markdown="1">
+📚 **Théorie pré-requise** — à parcourir avant cette phase
+
+- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — *pourquoi* on pivote en graphe (essentiel)
+- [Cypher en 5 minutes]({% link _docs/theorie/cypher_5min.md %}) — `MATCH`, `WHERE`, `MERGE`, patterns
+- [GraphDB 101]({% link _docs/theorie/graphdb_101.md %}) — index-free adjacency, LPG
+
+**Pré-requis Phase 1** : la table `mission_pois` est non-vide pour les 4 rôles ([Checkpoint Phase 1]({% link _docs/missions/checkpoint_phase_1.md %})).
+</div>
+
+[← Transition Phase 1 → Phase 2]({% link _docs/missions/transition_1_2.md %}) — *à lire d'abord pour comprendre ce qui change.*
 
 ---
 
@@ -106,6 +118,23 @@ Pourquoi les POIs éloignés des routes ont-ils un `distance_snap` élevé ? Est
 
 → [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t2--associer-les-pois-aux-sommets)
 
+<div class="reflexion" markdown="1">
+🧠 **Réflexion guidée — dialogue avec le LLM**
+
+**Questions à creuser**
+- Pourquoi utiliser `<->` (KNN) plutôt que `ORDER BY ST_Distance(...)` ? Lequel utilise l'index GIST ?
+- Que faire d'un POI dont le `dist_snap` dépasse 500 m ? Le filtrer ? Le garder mais le marquer ?
+- Si deux POIs sont snappés au **même** sommet, est-ce un problème pour le routage ? Pour la sémantique ?
+
+**Prompts LLM suggérés**
+- *"Explique `CROSS JOIN LATERAL` en PostgreSQL avec un cas concret : pour chaque ligne de la table A, trouver le voisin le plus proche dans la table B."*
+- *"Quelle est la différence entre l'opérateur `<->` (KNN) et `ST_Distance` côté plan d'exécution ?"*
+
+**Mini-défi**
+- Calcule la **distribution** des `dist_snap` (min, médiane, p95, max). Y a-t-il des outliers ?
+- Bonus : tracer l'histogramme des distances de snap pour ton rôle.
+</div>
+
 ### T3 — Calculer des itinéraires (Dijkstra)
 
 Maintenant que le graphe existe, calculez le plus court chemin entre 2 POIs.
@@ -132,6 +161,23 @@ Le coût dans le graphe n'est pas fixe — il dépend du **profil** du véhicule
 
 → [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t4--routage-contraint-par-rle)
 
+<div class="reflexion" markdown="1">
+🧠 **Réflexion guidée — dialogue avec le LLM**
+
+**Questions à creuser**
+- Pourquoi la convention pgRouting est `cost = -1` pour "interdit" et pas `NULL` ou `+infinity` ?
+- Si on multiplie un coût par 0.7 (raccourcir un chemin), Dijkstra reste-t-il **correct** ? Et avec un coût négatif ?
+- Comparer : route "rapidité" (Défense, autoroutes prioritaires) vs route "discrétion" (Attaque, sentiers prioritaires). Combien de % de différence en distance ? En temps ?
+
+**Prompts LLM suggérés**
+- *"Pourquoi Dijkstra ne fonctionne pas avec des coûts négatifs ? Quel algo utiliser à la place (Bellman-Ford) ?"*
+- *"Écris une sous-requête pgRouting où le coût est dynamique : `cost = base_cost * 0.5` si la route est une autoroute (importance ≤ 2), sinon `cost = base_cost`."*
+
+**Mini-défi**
+- Compare la **longueur** et le **temps** du même trajet pour 2 profils différents (par ex. `largeur < 4` vs `cost normal`). Tableau dans le rapport.
+- Bonus : combiner 2 contraintes (poids + largeur) en un seul `CASE`.
+</div>
+
 ### T5 — Migrer dans Neo4j et combiner graphe routier + ontologie
 
 Le graphe r2gg est en SQL. L'ontologie BDTOPO est dans Neo4j.
@@ -147,6 +193,24 @@ python scripts/02_migrate_to_neo4j.py
 3. Calculer un plus court chemin entre POIs (`apoc.algo.dijkstra`)
 
 → [Corrigé]({% link _docs/corriges/corrige_phase_2.md %}#t5--migrer-dans-neo4j)
+
+<div class="reflexion" markdown="1">
+🧠 **Réflexion guidée — dialogue avec le LLM**
+
+**Questions à creuser**
+- Pourquoi crée-t-on des **index** Neo4j *avant* de lancer un gros `MERGE` ? Que se passe-t-il sans index sur 10 000 POIs ?
+- `MERGE` vs `CREATE` : pourquoi est-ce que `MERGE` est **idempotent** mais plus lent ? Quand préférer chacun ?
+- L'ontologie est-elle un **arbre** ou un **graphe** ? Y a-t-il des cas où un Detail a 2 parents ?
+
+**Prompts LLM suggérés**
+- *"Explique l'effet d'un index Neo4j `CREATE INDEX FOR (p:POI) ON (p.cleabs)` sur la vitesse d'un MERGE qui matche par `cleabs`."*
+- *"Compare `MERGE` Cypher et `INSERT ... ON CONFLICT DO NOTHING` PostgreSQL. Différences et points communs."*
+
+**Mini-défi**
+- Avant migration : compte les nœuds par label (`MATCH (n) RETURN labels(n)[0], count(*)`). Note les chiffres.
+- Après migration : recompte. Tout colle ? Si non, pourquoi ?
+- Bonus : ajoute un index secondaire sur `(p:POI) ON (p.role)` et `PROFILE` une requête filtrée par rôle avant/après.
+</div>
 
 ### T6 — Réflexion : SQL vs Graphe vs Les deux
 
@@ -283,3 +347,26 @@ Puis utilise UNWIND pour lister les noms par rôle."
 - [ ] T10 : matrice de distances calculée pour au moins 1 rôle
 - [ ] T11 : isochrone calculée (nombre de sommets atteignables)
 - [ ] T12 : tableau comparatif complété avec mesures réelles
+
+<div class="checkpoint" markdown="1">
+✅ **Checkpoint avant Phase 3**
+
+Avant la simulation, validez l'état du graphe et de Neo4j :
+
+→ [Checkpoint Phase 2]({% link _docs/missions/checkpoint_phase_2.md %}) — sanity check graphe + Neo4j.
+</div>
+
+## Auto-évaluation (non notée)
+
+Cocher ce que vous savez **expliquer à un coéquipier** :
+
+- [ ] Pourquoi r2gg découpe les tronçons aux intersections (lien avec le graphe)
+- [ ] Différence `cost` / `reverse_cost`, et convention `-1` = interdit
+- [ ] Comment "snapper" un point quelconque au sommet le plus proche (`<->`)
+- [ ] Différence `MERGE` vs `CREATE` en Cypher
+- [ ] Pourquoi un index Neo4j accélère drastiquement un `MERGE`
+- [ ] Quand préférer Cypher (hiérarchies, patterns) vs pgRouting (Dijkstra routier)
+
+---
+
+{% include nav_phase.html prev_url="/missions/transition_1_2/" prev_label="Transition Phase 1→2" next_url="/missions/checkpoint_phase_2/" next_label="Checkpoint Phase 2" %}
