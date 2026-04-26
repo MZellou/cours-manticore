@@ -67,4 +67,4 @@ site/                      # Jekyll + just-the-docs (GitHub Pages)
 - **Nuclear plants:** Not in BDTOPO — injected as custom POIs at setup.
 - **Role queries:** Each role has specific table+filter combos (see `contenu_donnees.md`).
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).
-- **site/**: Jekyll + just-the-docs deployed to GitHub Pages; run `make docs` or build manually.
+- **site/**: Jekyll + just-the-docs deployed to GitHub Pages; run `make docs` or build manually. Théorie pages at `_docs/theorie/*.md` (replaced old Marp slides).

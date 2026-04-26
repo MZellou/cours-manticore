@@ -26,18 +26,21 @@ EPCI_PARQUET = "data/epci.parquet"
 OUTPUT_DIR = "data/gold_dumps"
 R2GG_DIR = "route-graph-generator"
 
-SELECTED_EPCIS = [
-    "Brest Métropole",
-    "Le Havre Seine Métropole",
-    "CU de Dunkerque",
-    "CA du Cotentin",
-    "Grenoble-Alpes-Métropole",
-    "Eurométropole de Strasbourg",
-    "Métropole Européenne de Lille",
-    "CA du Pays Basque",
-    "Métropole Rouen Normandie",
-    "Bordeaux Métropole",
-]
+SELECTED_EPCIS = {
+    "242900314": "Brest Métropole",
+    "200084952": "Le Havre Seine Métropole",
+    "245900428": "CU de Dunkerque",
+    "200067205": "CA du Cotentin",
+    "200040715": "Grenoble-Alpes-Métropole",
+    "246700488": "Eurométropole de Strasbourg",
+    "200093201": "Métropole Européenne de Lille",
+    "200067106": "CA du Pays Basque",
+    "200023414": "Métropole Rouen Normandie",
+    "243300316": "Bordeaux Métropole",
+    "244400404": "Nantes Métropole",
+    "200046977": "Métropole de Lyon",
+    "243700754": "Tours Métropole Val de Loire",
+}
 
 def generate_r2gg_config(epci_name, siren, bbox, output_path):
     """Génère un fichier de configuration JSON pour r2gg."""
@@ -89,7 +92,9 @@ def main():
     parser.add_argument("--epci", help="Nom d'un EPCI spécifique")
     args = parser.parse_args()
 
-    targets = SELECTED_EPCIS if args.all else ([args.epci] if args.epci else [])
+    targets = SELECTED_EPCIS if args.all else (
+        {args.epci: ""} if args.epci else {}
+    )
     if not targets:
         parser.error("--all ou --epci requis")
         return
@@ -99,16 +104,16 @@ def main():
 
     df_epci = pd.read_parquet(EPCI_PARQUET)
 
-    for name in targets:
-        print(f"\n--- Traitement de : {name} ---")
-        res = df_epci[df_epci["nom_officiel"] == name]
+    for siren, label in targets.items():
+        print(f"\n--- Traitement de : {siren} {label} ---")
+        res = df_epci[df_epci["code_siren"] == siren]
         if res.empty:
             print(f"  [SKIP] EPCI non trouvé dans le parquet.")
             continue
 
-        row = res.iloc[0]
-        siren = row["code_siren"]
-        bb = row["geometrie_bbox"]
+        name = res.iloc[0]["nom_officiel"]
+        siren_str = str(siren)
+        bb = res.iloc[0]["geometrie_bbox"]
         bbox = (bb['xmin'], bb['ymin'], bb['xmax'], bb['ymax'])
 
         epci_dir = Path(OUTPUT_DIR) / f"epci_{siren}"
@@ -116,7 +121,7 @@ def main():
 
         # 1. Générer config
         config_path = epci_dir / "r2gg_config.json"
-        generate_r2gg_config(name, siren, bbox, config_path)
+        generate_r2gg_config(name, siren_str, bbox, config_path)
         print(f"  → Config générée : {config_path}")
 
         # 2. Lancer r2gg

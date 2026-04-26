@@ -6,14 +6,19 @@ layout: default
 ---
 # Corrigé Phase 3 — Simulation
 
-> Solutions des exercices. Cliquez pour révéler.
+> Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
 ---
 
 ## T1 — Choke Points
 
-<details>
-<summary>Solution — Approche SQL (pgRouting)</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
+
+**Approche SQL (pgRouting)** :
 
 ```sql
 -- 1. Trouver un chemin de référence entre 2 POIs
@@ -30,10 +35,13 @@ SELECT edge FROM pgr_dijkstra(
 -- L'arête qui cause le plus grand détour = choke point
 ```
 
-</details>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
-<details>
-<summary>Solution — Approche Neo4j (betweenness centrality)</summary>
+**Approche Neo4j (betweenness centrality)** :
 
 ```cypher
 CALL apoc.algo.betweenness('POI', 'DISTANCE', 'meters') YIELD nodeId, score
@@ -44,14 +52,15 @@ ORDER BY centralite DESC LIMIT 10;
 
 Une seule requête — pas besoin de boucle Python.
 
-</details>
-
 ---
 
 ## T2a — Tous les chemins entre deux rôles
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```cypher
 MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*]-(d:POI {role: 'defense', nature: 'Hôpital'})
@@ -82,14 +91,15 @@ ORDER BY cost LIMIT 5;
 
 → **Cypher gagne clairement** : 8 lignes vs 30+, et le SQL reste incomplet (pas de gestion propre des cycles).
 
-</details>
-
 ---
 
 ## T2b — Plus court chemin avec nœud intermédiaire
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```cypher
 MATCH (a:POI {role: 'attaque'})
@@ -105,14 +115,15 @@ RETURN
 ORDER BY total_m LIMIT 1;
 ```
 
-</details>
-
 ---
 
 ## T2c — Sous-graphe accessible depuis un POI
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```cypher
 MATCH (aero:POI {source: 'aerodrome'})
@@ -126,16 +137,19 @@ RETURN DISTINCT n.role, n.nom, n.source
 ORDER BY n.role;
 ```
 
-</details>
-
 ---
 
 ## T3 — Requêtes benchmark
 
 ### Requête 1 — Traversée ontologique
 
-<details>
-<summary>Solution SQL</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
+
+**SQL** :
 
 ```sql
 EXPLAIN (ANALYZE)
@@ -149,22 +163,28 @@ WITH RECURSIVE h AS (
 SELECT count(*) FROM h;
 ```
 
-</details>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
-<details>
-<summary>Solution Cypher</summary>
+**Cypher** :
 
 ```cypher
 PROFILE MATCH path = (d:Detail)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
 RETURN count(path);
 ```
 
-</details>
-
 ### Requête 4 — Spatial (SQL gagne)
 
-<details>
-<summary>Solution SQL</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
+
+**SQL** :
 
 ```sql
 EXPLAIN (ANALYZE)
@@ -175,10 +195,11 @@ WHERE EXISTS (
 );
 ```
 
-</details>
-
-<details>
-<summary>Pourquoi Cypher perd</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Pourquoi Cypher perd</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 Neo4j n'a pas d'index spatial natif sur les relations `DISTANCE`.
 La requête "POIs à moins de 500m d'une route" nécessite un calcul de distance par paire :
@@ -192,14 +213,15 @@ RETURN count(p);
 
 → **SQL gagne clairement** sur les opérations spatiales.
 
-</details>
-
 ---
 
 ## T5 — Couper 1 arête
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 -- Sauvegarder
@@ -227,14 +249,15 @@ MATCH (a:POI {role: 'attaque'})-[:DISTANCE*]-(b:POI {role: 'defense'})
 RETURN EXISTS { (a)-[:DISTANCE*]-(b) } AS encore_connectes;
 ```
 
-</details>
-
 ---
 
 ## T6 — Couper 3 arêtes
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 UPDATE ways SET cost = -1, reverse_cost = -1
@@ -257,14 +280,15 @@ FROM pgr_connectedComponents(
 );
 ```
 
-</details>
-
 ---
 
 ## T7 — Stratégie défensive
 
-<details>
-<summary>Solution — Méthode</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 -- Restaurer tout
@@ -281,14 +305,15 @@ UPDATE ways SET cost = -1, reverse_cost = -1
 WHERE id IN (<attaquées>) AND id NOT IN (<protégées>);
 ```
 
-</details>
-
 ---
 
 ## T8 — Stratégie offensive
 
-<details>
-<summary>Solution — Approche systématique</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 -- Pour chaque arête "importante" du chemin principal :
@@ -321,14 +346,15 @@ for edge_id in chemin_principal:
     cur.execute("UPDATE ways SET cost=ways_backup.cost FROM ways_backup WHERE ways.id=%s", (edge_id,))
 ```
 
-</details>
-
 ---
 
 ## T9 — Composantes connexes
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT component, count(*) AS nb_sommets
@@ -346,14 +372,15 @@ RETURN EXISTS { (a)-[:DISTANCE*]-(b) } AS connectes,
        count(*) AS paires_testees;
 ```
 
-</details>
-
 ---
 
 ## T10 — Centralité de degré
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```cypher
 -- Degré de chaque POI
@@ -373,5 +400,3 @@ WHERE degre > 2 * degre_moyen
 RETURN p.nom, p.role, degre, degre_moyen
 ORDER BY degre DESC;
 ```
-
-</details>

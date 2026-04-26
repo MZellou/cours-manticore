@@ -6,14 +6,17 @@ layout: default
 ---
 # Corrigé Phase 1 — Reconnaissance
 
-> Solutions des exercices. Cliquez pour révéler.
+> Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
 ---
 
 ## T0a — SQL : GROUP BY, HAVING, ORDER BY
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 -- Combien d'entrées par catégorie ?
@@ -37,12 +40,13 @@ GROUP BY nature
 ORDER BY nb DESC;
 ```
 
-</details>
+### Exercice : ciberies et casernes
 
-### Exercice : gendarmeries et casernes
-
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT nature, count(*) AS nb
@@ -52,14 +56,15 @@ WHERE categorie = 'Administratif ou militaire'
 GROUP BY nature;
 ```
 
-</details>
-
 ---
 
 ## T0b — SQL : Jointures spatiales
 
-<details>
-<summary>Solution — Équipements dans zones industrielles</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT DISTINCT e.nature, e.nature_detaillee, z.nature AS zone_nature
@@ -70,12 +75,13 @@ WHERE z.nature = 'Zone industrielle'
 LIMIT 20;
 ```
 
-</details>
-
 ### Exercice : aérodromes et hôpitaux
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT a.toponyme AS aero, z.toponyme AS hopital,
@@ -86,14 +92,15 @@ JOIN zone_d_activite_ou_d_interet z
 WHERE z.nature IN ('Hôpital', 'Établissement hospitalier');
 ```
 
-</details>
-
 ---
 
 ## T0c — Cypher : premiers pas
 
-<details>
-<summary>Solution — Lister l'ontologie</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```cypher
 -- Lister les niveaux de l'ontologie
@@ -107,12 +114,13 @@ RETURN d.obj_type, d.name;
 MATCH (n) RETURN labels(n)[0] AS label, count(*) ORDER BY count DESC;
 ```
 
-</details>
-
 ### Exercice : sous-types de "Construction ponctuelle"
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```cypher
 MATCH (d:Detail)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Construction ponctuelle'})
@@ -122,14 +130,15 @@ MATCH (d:Detail)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Construction ponctuelle'
 RETURN count(d) AS nb_sous_types;
 ```
 
-</details>
-
 ---
 
 ## T1 — Explorer l'ontologie BDTOPO
 
-<details>
-<summary>Solution — Hiérarchie récursive</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 WITH RECURSIVE hierarchy AS (
@@ -142,14 +151,15 @@ WITH RECURSIVE hierarchy AS (
 SELECT depth, obj_type, name FROM hierarchy ORDER BY depth;
 ```
 
-</details>
-
 ---
 
 ## T2 — Sélectionner les POIs de votre rôle
 
-<details>
-<summary>Solution — Template d'insertion</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
@@ -164,14 +174,15 @@ Consultez votre page rôle pour les tables et filtres spécifiques :
 [Ravitaillement]({% link _docs/roles/ravitaillement.md %}),
 [Énergie]({% link _docs/roles/energie.md %}).
 
-</details>
-
 ---
 
 ## T3 — Ajouter des critères de criticité
 
-<details>
-<summary>Solution — Critères par type</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 -- Postes électriques critiques
@@ -189,14 +200,15 @@ GROUP BY role, source, categorie
 ORDER BY role, source;
 ```
 
-</details>
-
 ---
 
 ## T4 — Clusteriser les POIs (ST_ClusterDBSCAN)
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 WITH clustered AS (
@@ -223,22 +235,21 @@ FROM (SELECT *, ST_ClusterDBSCAN(geom, eps := 5000, minpoints := 2) OVER () AS c
 WHERE cid IS NOT NULL;
 ```
 
-</details>
-
 ---
 
 ## T5 — Partager vos POIs
 
-<details>
-<summary>Solution — Vérification</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT role, source, count(*) FROM mission_pois GROUP BY role, source ORDER BY role, count DESC;
 ```
 
 Chaque rôle doit apparaître avec au moins 1 source. Si un rôle est manquant → l'agent concerné n'a pas encore inséré ses POIs.
-
-</details>
 
 ---
 
@@ -250,8 +261,11 @@ Chaque rôle doit apparaître avec au moins 1 source. Si un rôle est manquant �
 
 ## T7 — Cross-rôle
 
-<details>
-<summary>Solution — Exemples de requêtes cross-rôle</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 **Défense → Énergie** : postes HT à < 1 km d'un hôpital
 
@@ -302,5 +316,3 @@ WHERE z.nature IN ('Zone industrielle', 'Zone d''activités')
   AND a.categorie IN ('Internationale', 'Nationale')
 ORDER BY dist_m;
 ```
-
-</details>

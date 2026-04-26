@@ -1,4 +1,4 @@
-[manticore]
+[data-manticore]
 type = s3
 provider = Cloudflare
 access_key_id = YOUR_ACCESS_KEY

@@ -184,11 +184,11 @@ def list_epcis():
 
 def get_epci_info(query):
     df = pd.read_parquet(f"{LOCAL_DATA}/epci.parquet")
-    # Recherche par SIREN ou Nom
-    mask = (df["code_siren"] == query) | (
-        df["nom_officiel"].str.contains(query, case=False, na=False)
-    )
-    res = df[mask]
+    # Recherche par SIREN exact (clé canonique), puis fallback nom
+    if query.isdigit() and len(query) == 9:
+        res = df[df["code_siren"] == query]
+    else:
+        res = df[df["nom_officiel"].str.contains(query, case=False, na=False)]
     if res.empty:
         raise ValueError(f"EPCI '{query}' non trouvé.")
     if len(res) > 1:
@@ -259,12 +259,13 @@ def create_table(conn, table_name, arrow_schema, cols_to_keep):
     conn.commit()
 
 
-def insert_batch(conn, table_name, table_arrow, epci_geom_prepared, cols_to_keep):
+def insert_batch(conn, table_name, table_arrow, epci_geom_prepared, cols_to_keep,
+                  skip_spatial_filter=False):
     df = table_arrow.to_pandas()
 
     has_geom = "geometrie" in df.columns
 
-    if has_geom:
+    if has_geom and not skip_spatial_filter:
         # Filtrage exact par géométrie (shapely)
         # On convertit les bytes WKB en objets shapely
         df["_shapely"] = df["geometrie"].apply(lambda x: wkb.loads(x) if x else None)
@@ -418,6 +419,10 @@ def main():
     parser.add_argument(
         "--source", default=DEFAULT_SOURCE, help="Dossier source des Parquets BDTOPO"
     )
+    parser.add_argument(
+        "--skip-spatial-filter", action="store_true",
+        help="Skip shapely filtering (use when source is already BBOX-filtered)"
+    )
     args = parser.parse_args()
 
     if args.list_epci:
@@ -434,6 +439,7 @@ def main():
     print(f"BBOX: {bbox}")
 
     prep_geom = prepared.prep(geom)
+    skip_sf = args.skip_spatial_filter
     conn = get_conn()
 
     # 1.5 Ontologie
@@ -453,14 +459,11 @@ def main():
         t0 = time.time()
         pf = pq.ParquetFile(p_path)
 
-        # Filtrage RowGroups
-        rg_ids = filter_row_groups(pf, *bbox)
-        if not rg_ids:
-            print(f"  [EMPTY] {table_name}")
-            continue
+        if skip_sf:
+            # Données déjà filtrées : on lit tout, pas de filtrage row group
+            cols_to_keep = KEEP_COLS.get(table_name)
 
         # Création table
-        cols_to_keep = KEEP_COLS.get(table_name)
         create_table(conn, table_name, pf.schema_arrow, cols_to_keep)
 
         # Lecture et insertion
@@ -473,7 +476,8 @@ def main():
                 else (cols_to_keep if cols_to_keep else None),
             )
             inserted += insert_batch(
-                conn, table_name, table_arrow, prep_geom, cols_to_keep
+                conn, table_name, table_arrow, prep_geom, cols_to_keep,
+                skip_spatial_filter=skip_sf
             )
 
         dt = time.time() - t0

@@ -63,8 +63,14 @@ site/                      # Jekyll + just-the-docs (GitHub Pages)
 
 ## Best Practices & Lessons Learned
 
-- **Spatial Filtering:** BBOX pushdown (pyarrow) before shapely intersection.
-- **Performance:** Gold Dumps for road topology, avoid live r2gg in TD.
+### Data Extraction
+- **Parquet BBOX pushdown:** Reading `geometrie_bbox[0]` from a row gets the FIRST row's bbox, not the row group extent. Use `pf.metadata.row_group(i).column(j).statistics` on `geometrie_bbox.{xmin,xmax,ymin,ymax}` sub-columns.
+- **DuckDB > shapely for bulk EPCI filtering:** ~25s for 13 EPCIs vs shapely row-by-row. BBOX pre-extraction is sufficient; exact filtering happens in PostGIS at query time.
+- **EPCI key:** Always use `code_siren` (string, 9 chars) as canonical key. Never `nom_officiel` (accents, spaces, fragile).
+
+### Project Structure
+- **Admin scripts:** Keep `admin_*.py` separate from student scripts. Produce small per-EPCI artifacts students can download independently.
+- **Gold Dumps for road topology:** Pre-computed, avoid live r2gg in TD.
 - **Nuclear plants:** Not in BDTOPO — injected as custom POIs at setup.
 - **Role queries:** Each role has specific table+filter combos (see `contenu_donnees.md`).
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).

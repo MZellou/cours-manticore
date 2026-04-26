@@ -6,7 +6,7 @@ layout: default
 ---
 # Corrigé — Questions bonus des 4 rôles
 
-> Solutions des 16 questions bonus. Cliquez pour révéler.
+> Solutions des 16 questions bonus. Cliquer sur "Copier" pour récupérer le code.
 
 ---
 
@@ -14,8 +14,11 @@ layout: default
 
 ### B1 — Couverture aérienne
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT a.toponyme AS aero, e.toponyme AS port,
@@ -43,12 +46,13 @@ JOIN equipement_de_transport e ON ST_DWithin(a.geometrie, e.geometrie, 20000)
 WHERE a.categorie IN ('Internationale', 'Nationale') AND e.nature = 'Port';
 ```
 
-</details>
-
 ### B2 — Forces militaires par cluster
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 WITH forces AS (
@@ -66,12 +70,13 @@ FROM clustered WHERE cid IS NOT NULL
 GROUP BY cid ORDER BY nb_forces DESC;
 ```
 
-</details>
-
 ### B3 — Tour de contrôle vs aérodromes
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT a.toponyme, a.categorie,
@@ -82,12 +87,13 @@ FROM aerodrome a
 WHERE a.categorie IN ('Internationale', 'Nationale');
 ```
 
-</details>
-
 ### B4 — Vitesse d'accès aux cibles
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT p.nom AS cible, p.nature,
@@ -99,16 +105,17 @@ GROUP BY p.nom, p.nature
 ORDER BY vitesse_moy_kmh;
 ```
 
-</details>
-
 ---
 
 ## 🛡️ Défense
 
 ### B1 — Hôpitaux et gares : réseau d'évacuation
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT h.toponyme AS hopital, g.toponyme AS gare,
@@ -134,12 +141,13 @@ WHERE h.nature IN ('Hôpital', 'Établissement hospitalier')
   );
 ```
 
-</details>
-
 ### B2 — Ponts critiques sur les axes principaux
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT c.toponyme AS pont, r.nature AS route_nature, r.importance
@@ -150,12 +158,13 @@ WHERE c.nature = 'Pont'
   AND CAST(r.importance AS INTEGER) <= 2;
 ```
 
-</details>
-
 ### B3 — Buffer de sécurité autour des hôpitaux
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 WITH hopital_buffers AS (
@@ -171,12 +180,13 @@ GROUP BY h.toponyme
 ORDER BY pois_dans_buffer DESC;
 ```
 
-</details>
-
 ### B4 — Densité de forces de l'ordre par zone
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT count(*) AS nb_forces,
@@ -189,16 +199,17 @@ WHERE z.categorie = 'Administratif ou militaire'
 GROUP BY e.geometrie;
 ```
 
-</details>
-
 ---
 
 ## 📦 Ravitaillement
 
 ### B1 — Ports et zones industrielles
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT p.toponyme AS port, p.nature_detaillee AS type_port,
@@ -213,12 +224,13 @@ WHERE p.nature = 'Port'
 ORDER BY dist_m;
 ```
 
-</details>
-
 ### B2 — Voies ferrées fret
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT count(*) AS nb_troncons,
@@ -237,12 +249,13 @@ WHERE nature IN ('Gare fret uniquement', 'Gare voyageurs et fret')
   AND ST_Intersects(geometrie, (SELECT geometrie FROM epci_zone));
 ```
 
-</details>
-
 ### B3 — Capacité de stockage
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT nature, count(*) AS nb, sum(volume) AS volume_total
@@ -252,12 +265,13 @@ WHERE nature = 'Réservoir industriel'
 GROUP BY nature;
 ```
 
-</details>
-
 ### B4 — Matrice port ↔ gare fret
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT p.toponyme AS port, g.toponyme AS gare_proche,
@@ -273,16 +287,17 @@ WHERE p.nature = 'Port' AND p.nature_detaillee = 'Port de commerce'
 ORDER BY dist_m;
 ```
 
-</details>
-
 ---
 
 ## ⚡ Énergie
 
 ### B1 — Postes HT et hôpitaux
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT pt.nature, pt.importance, h.toponyme AS hopital,
@@ -297,12 +312,13 @@ ORDER BY pt.importance, dist_m;
 
 **Lien Phase 3** : si ce poste tombe, l'hôpital identifié perd son alimentation électrique prioritaire.
 
-</details>
-
 ### B2 — Lignes THT et routes
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT l.voltage, count(*) AS routes_croisees
@@ -325,12 +341,13 @@ WHERE l.voltage IN ('400 kV', '225 kV')
 GROUP BY l.voltage;
 ```
 
-</details>
+### B3 — Centrales、核aires : rayon d'influence
 
-### B3 — Centrales nucléaires : rayon d'influence
-
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT 'Centrale ' || c.nom AS centrale, p.role, count(*) AS pois
@@ -341,12 +358,13 @@ GROUP BY c.nom, p.role
 ORDER BY c.nom, count DESC;
 ```
 
-</details>
-
 ### B4 — Mix énergétique
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT 'Éolienne' AS source, count(*) FROM construction_ponctuelle WHERE nature = 'Éolienne'
@@ -357,5 +375,3 @@ SELECT 'Poste HT critique', count(*) FROM poste_de_transformation WHERE CAST(imp
 UNION ALL
 SELECT 'Centrale nucléaire', count(*) FROM mission_custom_pois;
 ```
-
-</details>

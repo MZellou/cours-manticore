@@ -42,4 +42,137 @@
     border-top: 1px solid rgba(255,255,255,0.1);
   }
   .nav-phase table { width: 100%; }
+
+  /* ══════════════════════════════════
+     SOLUTION BLOCKS — static copiable
+     ══════════════════════════════════ */
+
+  /* Wider content area on desktop */
+  @media (min-width: 50rem) {
+    .main-wrapper {
+      max-width: 1100px !important;
+    }
+  }
+
+  /* Solution block container */
+  .solution-block {
+    margin: 1.2em 0;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.12);
+    overflow: hidden;
+    background: rgba(255,255,255,0.02);
+  }
+
+  /* Header bar: label + copy button */
+  .solution-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45em 1em;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-size: 0.82rem;
+  }
+
+  .solution-label {
+    font-weight: 600;
+    color: #e8eaed;
+    font-family: monospace;
+    letter-spacing: 0.02em;
+  }
+
+  /* Copy button */
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    background: transparent;
+    color: #9aa0a6;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+  .copy-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: #e8eaed;
+    border-color: rgba(255,255,255,0.3);
+  }
+  .copy-btn.copied {
+    color: #58c08f;
+    border-color: rgba(88,192,143,0.5);
+  }
+
+  /* Code blocks inside solution */
+  .solution-block .highlighter-rouge {
+    margin: 0;
+    border-radius: 0;
+    border: none;
+  }
+  .solution-block .highlighter-rouge pre {
+    margin: 0;
+    padding: 1em 1.2em;
+  }
+  .solution-block .highlight {
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  /* Multiple code blocks in one solution */
+  .solution-block .highlighter-rouge + .highlighter-rouge {
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+
+  /* prose between code blocks in solution */
+  .solution-block > p {
+    padding: 0.5em 1.2em;
+    margin: 0;
+    font-size: 0.9em;
+    color: #b0b8c1;
+  }
+  .solution-block > p:first-child {
+    padding-top: 0.8em;
+  }
 </style>
+
+<script>
+  (function() {
+    document.addEventListener('DOMContentLoaded', attachAll);
+
+    function attachAll() {
+      document.querySelectorAll('.solution-block').forEach(attachCopy);
+    }
+
+    function attachCopy(block) {
+      var btn = block.querySelector('.copy-btn');
+      if (!btn || btn.dataset.attached) return;
+      btn.dataset.attached = 'true';
+      btn.addEventListener('click', function() {
+        var code = block.querySelector('code');
+        if (!code) return;
+        navigator.clipboard.writeText(code.innerText).then(function() {
+          btn.classList.add('copied');
+          var lbl = btn.querySelector('.copy-label');
+          if (lbl) lbl.textContent = 'Copié !';
+          setTimeout(function() {
+            btn.classList.remove('copied');
+            if (lbl) lbl.textContent = 'Copier';
+          }, 2000);
+        });
+      });
+    }
+
+    // MutationObserver for any late-rendered blocks
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(n) {
+          if (n.classList && n.classList.contains('solution-block')) attachCopy(n);
+        });
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  })();
+</script>

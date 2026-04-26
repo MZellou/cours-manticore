@@ -6,14 +6,17 @@ layout: default
 ---
 # Corrigé Phase 2 — Cartographie
 
-> Solutions des exercices. Cliquez pour révéler.
+> Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
 ---
 
 ## T1 — Explorer le graphe r2gg
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 -- Les arêtes
@@ -32,14 +35,15 @@ SELECT
 
 **Pourquoi les counts diffèrent** : r2gg découpe les tronçons aux intersections → un tronçon long entre 2 intersections peut devenir N arêtes si d'autres routes le croisent.
 
-</details>
-
 ---
 
 ## T2 — Associer les POIs aux sommets
 
-<details>
-<summary>Solution — Snap au sommet le plus proche</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT p.nom, p.role,
@@ -55,14 +59,15 @@ ORDER BY distance_snap DESC LIMIT 10;
 
 **POIs éloignés** : si `distance_snap` > 500m, le POI est hors du réseau routier (en mer, en montagne sans route). Le routage depuis ce POI sera imprécis.
 
-</details>
-
 ---
 
 ## T3 — Calculer des itinéraires (Dijkstra)
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 SELECT seq, node, edge, cost, agg_cost
@@ -78,14 +83,17 @@ FROM pgr_dijkstra(
 );
 ```
 
-</details>
-
 ---
 
 ## T4 — Routage contraint par rôle
 
-<details>
-<summary>Solution — Ravitaillement (poids lourds)</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
+
+**Ravitaillement** (poids lourds) :
 
 ```sql
 SELECT max(agg_cost) FROM pgr_dijkstra(
@@ -118,14 +126,15 @@ CASE WHEN nature IN ('Chemin','Sentier') THEN cost*0.7 ELSE cost*1.3 END
 CASE WHEN importance >= 3 THEN cost*0.5 ELSE cost END
 ```
 
-</details>
-
 ---
 
 ## T5 — Migrer dans Neo4j
 
-<details>
-<summary>Solution — Vérifications Cypher</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```bash
 python scripts/02_migrate_to_neo4j.py
@@ -147,14 +156,15 @@ RETURN a.nom, b.nom, weight AS distance_m
 ORDER BY weight DESC LIMIT 10
 ```
 
-</details>
-
 ---
 
 ## T7 — Créer des nœuds personnalisés (CREATE / MERGE)
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```cypher
 -- Créer une base avancée
@@ -186,14 +196,15 @@ MERGE (b)-[r:DISTANCE {meters: toInteger(dist)}]->(p)
 RETURN count(r) AS relations_creees;
 ```
 
-</details>
-
 ---
 
 ## T8 — OPTIONAL MATCH et UNWIND
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```cypher
 -- POIs sans connexion (isolés)
@@ -216,14 +227,17 @@ RETURN role, nom ORDER BY role, nom;
 
 **POIs isolés** : les POIs trop éloignés des routes n'ont pas été connectés par le script de migration. Ce sont des outliers spatiaux.
 
-</details>
-
 ---
 
 ## T9 — Pattern matching avancé
 
-<details>
-<summary>Solution — Chemins via énergie uniquement</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
+
+**Chemins via énergie uniquement** :
 
 ```cypher
 MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*]-(e:POI {role: 'energie'})-[:DISTANCE*]-(d:POI {role: 'defense'})
@@ -252,14 +266,15 @@ RETURN [n IN nodes(path) | n.nom] AS etapes,
 ORDER BY distance_m LIMIT 5;
 ```
 
-</details>
-
 ---
 
 ## T10 — Matrice de distances
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 WITH poi_vertices AS (
@@ -277,14 +292,15 @@ FROM pgr_dijkstraCostMatrix(
 ORDER BY agg_cost DESC LIMIT 20;
 ```
 
-</details>
-
 ---
 
 ## T11 — Isochrones
 
-<details>
-<summary>Solution</summary>
+{: .solution-block}
+<div class="solution-header">
+  <span class="solution-label">Solution</span>
+  <button class="copy-btn"><span class="copy-label">Copier</span></button>
+</div>
 
 ```sql
 WITH start_vertex AS (
@@ -315,5 +331,3 @@ SELECT ST_ConvexHull(ST_Collect(v.geom)) AS isochrone_10min
 FROM reachable r
 JOIN ways_vertices_pgr v ON v.id = r.node;
 ```
-
-</details>
