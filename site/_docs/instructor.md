@@ -13,10 +13,10 @@ nav_order: 9
 ## 1. Checklist pré-cours
 
 - [ ] **Docker stack** : `docker compose up -d` → les 2 conteneurs sont `healthy`
+- [ ] **Données publiées sur R2** : `make data-push` (voir [section dédiée](#8-data-hosting--cloudflare-r2))
 - [ ] **Gold Dumps** : générés pour les 10 EPCIs (`python scripts/admin_generate_gold_dumps.py --all`)
 - [ ] **Pages théorie** : passer en revue `_docs/theorie/*.md` (servent de support pour la 0.5J théorie)
 - [ ] **Neo4j heap** : adapté aux laptops étudiants (512M si < 8 Go RAM)
-- [ ] **Données Parquet** : accessibles sur le partage CIFS ou en local
 - [ ] **`.env`** : distribué aux étudiants (copie de `.env.example`)
 
 ## 2. Assignation groupes × EPCI
@@ -121,3 +121,68 @@ MATCH (n) RETURN labels(n)[0] AS label, count(*) ORDER BY count DESC;
 // Vérifier les relations
 MATCH ()-[r]->() RETURN type(r) AS rel, count(*) ORDER BY count DESC;
 ```
+
+## 8. Data hosting — Cloudflare R2
+
+Les données du TD sont hébergées sur un bucket R2 public. Les étudiants les téléchargent avec un simple `make data-pull` (aucune authentification requise).
+
+### 8.1 Initialisation (une seule fois)
+
+1. **Installer Wrangler** (CLI Cloudflare) :
+   ```bash
+   npm i -D wrangler
+   ```
+
+2. **Se connecter** :
+   ```bash
+   npx wrangler login
+   ```
+
+3. **Créer le bucket** :
+   ```bash
+   npx wrangler r2 bucket create data-manticore
+   ```
+
+4. **Rendre le bucket public** :
+   - Dashboard → R2 → `data-manticore` → Settings → Public Development URL → Enable
+   - Notez l'URL publique : `https://pub-XXXX.r2.dev/`
+
+5. **Configurer rclone** (pour les uploads bulk via `make data-push`) :
+   ```bash
+   rclone config
+   # → n (new remote) → nom : data-manticore
+   # → Amazon S3 → Cloudflare R2
+   # → Entrer Access Key ID + Secret Access Key
+   ```
+
+### 8.2 Publier les données (`make data-push`)
+
+Les étudiants ont besoin de 4 dossiers :
+
+| Dossier | Contenu |
+|---------|---------|
+| `epci_extracts/` | Extractions BDTOPO par EPCI (13 EPCIs) |
+| `ontologie/` | Ontologie BDTOPO (3 niveaux) |
+| `gold_dumps/` | Graphes routiers pré-calculés (r2gg) |
+| `epci.parquet` | Géométries EPCI (pour `00_setup.py`) |
+
+```bash
+make data-push
+# → rclone sync vers data-manticore:epci_extracts, ontologie, gold_dumps + epci.parquet
+```
+
+> **⚠️** Gold Dumps doivent être générés avant : `python scripts/admin_generate_gold_dumps.py --all`
+
+### 8.3 URL publique
+
+Le base URL public est : `https://pub-XXXX.r2.dev/`
+
+Exemples :
+```
+https://pub-XXXX.r2.dev/epci.parquet
+https://pub-XXXX.r2.dev/epci_extracts/200023414/troncon_de_route.parquet
+https://pub-XXXX.r2.dev/ontologie/bdtopo_database.parquet
+https://pub-XXXX.r2.dev/gold_dumps/200023414/ways.sql
+```
+
+> **Note** : R2 public buckets ne supportent pas le directory listing. Les étudiants doivent connaître les chemins exacts (gérés par `data_pull.sh`).

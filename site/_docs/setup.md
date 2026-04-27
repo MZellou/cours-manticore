@@ -26,6 +26,9 @@ nav_order: 5
 # Cloner le repo
 git clone <repo-url> && cd cours-manticore
 
+# Télécharger les données (depuis le bucket R2 public)
+make data-pull
+
 # Configurer les variables d'environnement
 cp .env.example .env
 
@@ -36,7 +39,48 @@ docker compose up -d
 uv sync
 ```
 
-## 3. Vérifications
+## 3. Télécharger les données
+
+Les données sont hébergées sur **Cloudflare R2** (bucket public). Aucune authentification nécessaire.
+
+```bash
+make data-pull
+```
+
+Cela télécharge dans `data/` :
+
+| Dossier / Fichier | Contenu | Taille approx. |
+|-------------------|---------|---------------|
+| `epci.parquet` | Géométries des EPCIs | ~140 MB |
+| `epci_extracts/` | Données BDTOPO par EPCI (13 EPCIs) | Variable |
+| `ontologie/` | Ontologie BDTOPO (3 niveaux) | ~50 MB |
+| `gold_dumps/` | Graphes routiers pré-calculés | Variable |
+
+### Téléchargement manuel
+
+Si `make data-pull` ne fonctionne pas, vous pouvez télécharger les fichiers directement :
+
+```bash
+# Base URL public
+R2_BASE="https://pub-XXXX.r2.dev"
+
+# Géométries EPCI
+curl -fSL "$R2_BASE/epci.parquet" -o data/epci.parquet
+
+# Ontologie
+curl -fSL "$R2_BASE/ontologie/bdtopo_database.parquet" -o data/ontologie/bdtopo_database.parquet
+curl -fSL "$R2_BASE/ontologie/bdtopo_objects.parquet" -o data/ontologie/bdtopo_objects.parquet
+curl -fSL "$R2_BASE/ontologie/bdtopo_details.parquet" -o data/ontologie/bdtopo_details.parquet
+
+# Exemple : extraction BDTOPO pour un EPCI (code SIREN)
+EPCI=200023414
+mkdir -p "data/epci_extracts/$EPCI"
+curl -fSL "$R2_BASE/epci_extracts/$EPCI/troncon_de_route.parquet" -o "data/epci_extracts/$EPCI/troncon_de_route.parquet"
+```
+
+> **Codes SIREN des EPCIs** : `200023414` `200040715` `200046977` `200067106` `200067205` `200084952` `200093201` `242900314` `243300316` `243700754` `244400404` `245900428` `246700488`
+
+## 4. Vérifications
 
 ### PostGIS + pgRouting
 
@@ -72,7 +116,7 @@ python scripts/00_setup.py --list-epci
 python scripts/00_setup.py --epci "Brest Métropole"
 ```
 
-## 4. Architecture des services
+## 5. Architecture des services
 
 ```
 ┌─────────────────────────────────────────┐
@@ -92,7 +136,7 @@ python scripts/00_setup.py --epci "Brest Métropole"
 └─────────────────────────────────────────┘
 ```
 
-## 5. Problèmes fréquents
+## 6. Problèmes fréquents
 
 | Problème | Solution |
 |----------|----------|

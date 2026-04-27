@@ -3,6 +3,7 @@
 ## 1. Pré-cours checklist
 
 - [ ] Docker stack fonctionnel (`docker compose up -d`)
+- [ ] Données publiées sur R2 (`make data-push`)
 - [ ] Gold Dumps générés pour les 10 EPCIs (`python scripts/admin_generate_gold_dumps.py --all`)
 - [ ] Pages théorie revues (`site/_docs/theorie/*.md`) — support de la 0.5J théorie
 - [ ] Neo4j heap adapté aux laptops (512M si < 8GB RAM)
@@ -46,3 +47,14 @@ Table : `mission_custom_pois` (id, nom, type, puissance_mw, geometrie)
 ## 5. Solutions des exercices
 
 Les scripts `01` à `04` sont les corrigés complets. Pour distribuer aux étudiants, vider les parties marquées TODO ou fournir les énoncés dans `mission/`.
+
+## 6. Data hosting — Cloudflare R2
+
+Voir la doc complète : [site/_docs/instructor.md §8](../site/_docs/instructor.md).
+
+**Résumé :**
+1. `npx wrangler login && npx wrangler r2 bucket create data-manticore`
+2. Activer Public Development URL dans le dashboard R2
+3. Configurer rclone pour `make data-push` (bulk upload)
+4. `make data-push` sync : `epci_extracts/`, `ontologie/`, `gold_dumps/`, `epci.parquet`
+5. URL publique : `https://pub-XXXX.r2.dev/` → étudiants font `make data-pull` (curl, no auth)

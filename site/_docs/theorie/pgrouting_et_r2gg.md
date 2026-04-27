@@ -78,7 +78,17 @@ Une arête routière peut avoir des coûts **asymétriques** :
 Le coût peut être :
 - la **longueur** (plus court chemin géométrique)
 - le **temps** (longueur / vitesse)
-- une **fonction métier** (poids véhicule, restrictions, discrétion…) — c'est le **routage contraint** vu en Phase 2 T4.
+- une **fonction métier** (poids véhicule, restrictions, discrétion…)
+
+**Formule de coût temporel** :
+```sql
+cost = ST_Length(geom) / NULLIF(vitesse_moyenne_vl, 0) / 1000.0
+-- resultat = temps en heures
+-- NULLIF(vitesse, 0) retourne NULL si vitesse = 0 (piéton)
+-- pgRouting ignore les tronçons avec cost = NULL
+```
+
+> Si `vitesse_moyenne_vl = 0` (chemin piéton), `NULLIF` retourne `NULL` → pgRouting ignore ce tronçon pour le routage motorisé.
 
 ---
 
@@ -99,6 +109,33 @@ Trois éléments :
 1. **La requête sur `ways`** est passée en **string** — pgRouting la lit pour construire le graphe en mémoire.
 2. **`directed`** : si `true`, `cost` et `reverse_cost` sont distincts ; si `false`, on prend le plus petit des deux.
 3. Le résultat est une suite ordonnée d'arêtes (pas la géométrie). Pour la carte, il faut joindre avec `ways` sur `edge = ways.id`.
+
+> **Performance** : `pgr_dijkstra` relit et reconstruit le graphe en mémoire **à chaque appel**. Pour des requêtes répétées (boucle sur 50 POIs), utilisez `pgr_dijkstraCostMatrix` qui ne construit le graphe qu'une seule fois.
+
+### Matrice de distances : `pgr_dijkstraCostMatrix`
+
+Quand vous avez N points de départ et M destinations, une matrice est plus efficace qu'N × M appels à `pgr_dijkstra` :
+
+```sql
+-- Construire la matrice de coûts entre 3 nœuds (ici : 3 sommets d'aérodromes)
+SELECT * FROM pgr_dijkstraCostMatrix(
+  'SELECT gid AS id, source, target, cost FROM ways',
+  ARRAY[101, 204, 387]  -- IDs des nœuds départ/arrivée
+);
+-- Retourne : une ligne par couple (source, target) + coût agrégé
+```
+
+Résultat :
+```
+ source | target | agg_cost
+--------+--------+----------
+    101 |    204 |   15420.3
+    101 |    387 |   28930.7
+    204 |    101 |   15420.3
+    ...
+```
+
+> Utile pour Phase 2 T10 : calculer la matrice de distances entre 10 EPCIs sans relancer Dijkstra 100 fois.
 
 ---
 

@@ -5,7 +5,8 @@ parent: Théorie
 nav_order: 2
 ---
 
-> Généré automatiquement. Fichiers source : `data/poi_source/*.parquet` + `data/epci.parquet`.
+> Statistiques par EPCI et graphiques générés par `scripts/generate_theory_stats.py` depuis `data/epci_extracts/`.
+> Pour ajouter ou retirer un EPCI : modifier le dict `EPCIS` en haut du script et relancer `uv run python scripts/generate_theory_stats.py`.
 
 ---
 
@@ -194,18 +195,17 @@ nav_order: 2
 
 ---
 
-## 3. EPCIs sélectionnés (30)
+## 3. EPCIs sélectionnés (13)
 
 ### 3.1 Critères de sélection
 
-Les EPCIs sont choisis pour maximiser la **diversité géographique et thématique** :
-- Grandes métropoles (Paris, Lyon, Marseille…)
-- Zones frontalières (Strasbourg, Lille, Dunkerque, Cattenom)
-- Littoral (Brest, Le Havre, Cotentin, Île de Ré, Ajaccio, Saint-Malo)
-- Montagne (Grenoble, Pays Basque)
-- Zones à centrales nucléaires proches (Cattenom, Cotentin/Flamanville, Ardenne/Chooz, Dunkerque/Gravelines, Grand Poitiers/Civaux)
-- Zones militaires historiques (Verdun, Châlons-en-Champagne, Reims)
-- Taille variée : de CC de l'Île de Ré (~13k routes) à Métropole du Grand Paris (~356k routes)
+Les 13 EPCIs sont choisis pour maximiser la **diversité géographique et thématique** :
+- **Métropoles littorales** : Brest, Le Havre, Bordeaux, Nantes, Rouen
+- **Frontières** : Strasbourg (Allemagne), Lille (Belgique), Dunkerque (Belgique + nucléaire), Pays Basque (Espagne)
+- **Montagne / cuvette** : Grenoble, Pays Basque
+- **Péninsules** : Brest, Cotentin (avec nucléaire Flamanville)
+- **Métropoles intérieures** : Lyon, Tours
+- Taille variée : de Dunkerque (~34k routes) à Nantes (~142k routes)
 
 ### 3.2 Centrales nucléaires proches
 
@@ -215,82 +215,76 @@ Les centrales ne sont PAS dans BDTOPO. Coordonnées approximatives utilisées :
 |---|---|---|
 | Gravelines | (2.14, 51.0) | CU de Dunkerque |
 | Flamanville | (-1.85, 49.55) | CA du Cotentin |
-| Chooz | (4.82, 50.08) | Ardenne Métropole |
-| Cattenom | (6.25, 49.42) | CC de Cattenom et Environs |
-| Civaux | (0.65, 46.45) | CU du Grand Poitiers |
-| Penly | (1.22, 49.97) | (CC Falaises du Talou — pas sélectionné) |
-| Tricastin | (4.75, 44.35) | (CC Drôme Sud Provence — pas sélectionné) |
-| Cruas | (4.65, 44.60) | CA Montélimar Agglomération |
 
 ### 3.3 Matrice POI par EPCI
 
-| EPCI | aérod. | zone_act. | equip_transp | constr_ponct. | constr_surf. | réservoir | ligne_élec. | poste_transf. | voie_ferrée |
+| EPCI | aérod. | zone_act. | eq_transp | constr_ponct. | constr_surf. | réservoir | ligne_élec. | poste_transf. | voie_ferrée |
 |---|---|---|---|---|---|---|---|---|---|
-| **Métropole du Grand Paris** | 18 | 24 040 | 14 366 | 2 481 | 1 387 | 1 255 | 222 | 123 | 7 521 |
-| **Métropole d'Aix-Marseille-Provence** | 22 | 9 383 | 4 488 | 3 478 | 450 | 2 706 | 390 | 95 | 3 174 |
-| **Métropole de Lyon** | 11 | 7 304 | 2 572 | 1 535 | 271 | 960 | 232 | 46 | 2 987 |
-| **Métropole Européenne de Lille** | 6 | 5 208 | 2 405 | 1 350 | 185 | 498 | 112 | 30 | 789 |
-| **Toulouse Métropole** | 8 | 3 280 | 2 983 | 947 | 229 | 275 | 92 | 27 | 512 |
-| **Eurométropole de Strasbourg** | 7 | 3 284 | 1 408 | 738 | 282 | 438 | 99 | 19 | 1 568 |
-| **Métropole Rouen Normandie** | 7 | 3 554 | 1 662 | 882 | 132 | 816 | 130 | 30 | 1 330 |
-| **Grenoble-Alpes-Métropole** | 11 | 2 706 | 1 204 | 781 | 110 | 526 | 147 | 25 | 515 |
-| **CU du Grand Reims** | 9 | 3 578 | 769 | 1 208 | 117 | 679 | 91 | 24 | 674 |
-| **Nantes Métropole** | 3 | 3 162 | 1 787 | 1 061 | 161 | 264 | 107 | 32 | 774 |
-| **Bordeaux Métropole** | 9 | 3 159 | 2 157 | 530 | 129 | 505 | 134 | 27 | 793 |
-| **Montpellier Méditerranée Métropole** | 5 | 2 805 | 1 447 | 775 | 169 | 207 | 59 | 15 | 496 |
-| **CU du Grand Poitiers** | 5 | 2 666 | 887 | 1 126 | 83 | 269 | 116 | 34 | 430 |
-| **Brest Métropole** | 4 | 1 194 | 746 | 313 | 45 | 153 | 29 | 8 | 117 |
-| **CA du Pays Basque** | 7 | 3 902 | 1 047 | 1 649 | 142 | 518 | 72 | 22 | 625 |
-| **Le Havre Seine Métropole** | 4 | 1 711 | 844 | 676 | 83 | 1 737 | 67 | 15 | 672 |
-| **CA Lorient Agglomération** | 9 | 2 141 | 965 | 875 | 64 | 184 | 52 | 12 | 143 |
-| **CA de Châlons-en-Champagne** | 7 | 1 554 | 464 | 812 | 93 | 396 | 34 | 13 | 365 |
-| **Ardenne Métropole** | 4 | 1 776 | 286 | 413 | 95 | 220 | 79 | 16 | 423 |
-| **CA du Cotentin** | 6 | 2 559 | 889 | 1 035 | 51 | 286 | 58 | 14 | 217 |
-| **CA Montélimar Agglomération** | 5 | 967 | 355 | 532 | 51 | 142 | 91 | 16 | 456 |
-| **CU de Dunkerque** | 4 | 1 357 | 380 | 454 | 101 | 901 | 105 | 24 | 1 151 |
-| **CA du Grand Verdun** | 2 | 730 | 153 | 287 | 34 | 130 | 9 | 3 | 80 |
-| **CA du Pays de Saint Malo Agglom.** | 3 | 915 | 342 | 414 | 33 | 81 | 32 | 7 | 75 |
-| **CA du Boulonnais** | 4 | 760 | 320 | 276 | 46 | 90 | 19 | 6 | 153 |
-| **CA du Pays Ajaccien** | 5 | 742 | 165 | 161 | 6 | 190 | 15 | 5 | 84 |
-| **CC de Cattenom et Environs** | 2 | 599 | 84 | 296 | 17 | 37 | 10 | 3 | 95 |
-| **CA Grand Calais Terres et Mers** | 5 | 701 | 393 | 245 | 60 | 80 | 36 | 10 | 393 |
-| **CA du Pays de Meaux** | 4 | 1 029 | 327 | 247 | 39 | 170 | 26 | 9 | 183 |
-| **CC de l'Île de Ré** | 0 | 931 | 143 | 56 | 1 | 13 | 1 | 1 | 0 |
+| **Brest** | 4 | 1 194 | 746 | 313 | 45 | 153 | 29 | 8 | 117 |
+| **Le Havre** | 4 | 1 711 | 844 | 676 | 83 | 1 737 | 67 | 15 | 672 |
+| **Dunkerque** | 4 | 1 357 | 380 | 454 | 101 | 901 | 105 | 24 | 1 151 |
+| **Cotentin** | 6 | 2 559 | 889 | 1 035 | 51 | 286 | 58 | 14 | 217 |
+| **Grenoble** | 11 | 2 706 | 1 204 | 781 | 110 | 526 | 147 | 25 | 515 |
+| **Strasbourg** | 7 | 3 284 | 1 408 | 738 | 282 | 438 | 99 | 19 | 1 568 |
+| **Lille** | 6 | 5 208 | 2 405 | 1 350 | 185 | 498 | 112 | 30 | 789 |
+| **Pays Basque** | 7 | 3 902 | 1 047 | 1 649 | 142 | 518 | 72 | 22 | 625 |
+| **Rouen** | 7 | 3 553 | 1 662 | 882 | 132 | 816 | 130 | 30 | 1 330 |
+| **Bordeaux** | 9 | 3 159 | 2 157 | 530 | 129 | 505 | 134 | 27 | 793 |
+| **Nantes** | 3 | 3 162 | 1 787 | 1 061 | 161 | 264 | 107 | 32 | 774 |
+| **Lyon** | 11 | 7 304 | 2 572 | 1 535 | 271 | 960 | 232 | 46 | 2 987 |
+| **Tours** | 4 | 2 094 | 996 | 445 | 120 | 201 | 75 | 11 | 647 |
 
 ### 3.4 Réseau routier (troncon_de_route) par EPCI
 
 | EPCI | Total | Autoroute | Route 2ch | Route 1ch | Bretelle | Chemin | Sentier | Imp≤3 | Restr. poids | Restr. hauteur | Urbain |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| **Métropole du Grand Paris** | 355 897 | 2 505 | 17 056 | 246 259 | 2 756 | 5 030 | 57 072 | 46 907 | 4 482 | 4 032 | 341 201 |
-| **Métropole d'Aix-Marseille-Provence** | 369 265 | 2 140 | 5 893 | 179 730 | 1 254 | 66 569 | 45 608 | 25 544 | 1 182 | 2 640 | 232 040 |
-| **Métropole de Lyon** | 139 249 | 1 277 | 3 750 | 97 388 | 1 062 | 7 477 | 14 204 | 15 911 | 1 082 | 1 553 | 120 278 |
-| **CU du Grand Reims** | 137 681 | 510 | 1 001 | 58 777 | 319 | 37 663 | 26 796 | 7 749 | 201 | 204 | 69 549 |
-| **Nantes Métropole** | 141 930 | 841 | 2 050 | 89 442 | 557 | 12 357 | 17 932 | 13 065 | 1 235 | 523 | 112 607 |
-| **Toulouse Métropole** | 136 053 | 790 | 3 312 | 101 858 | 633 | 5 064 | 10 555 | 10 110 | 172 | 913 | 123 288 |
-| **Métropole Européenne de Lille** | 107 657 | 750 | 3 900 | 77 953 | 852 | 4 033 | 10 855 | 12 695 | 1 510 | 830 | 96 353 |
-| **Bordeaux Métropole** | 104 377 | 382 | 3 556 | 70 830 | 439 | 9 869 | 6 795 | 10 331 | 13 | 35 | 90 018 |
-| **Montpellier Méditerranée Métropole** | 100 101 | 554 | 2 792 | 58 437 | 464 | 12 754 | 13 687 | 6 751 | 25 | 265 | 69 051 |
-| **CA du Pays Basque** | 126 979 | 475 | 867 | 73 905 | 220 | 23 293 | 13 720 | 11 922 | 180 | 260 | 55 828 |
-| **CU du Grand Poitiers** | 119 075 | 360 | 1 207 | 66 323 | 289 | 21 748 | 6 186 | 8 355 | 24 | 180 | 53 496 |
-| **Eurométropole de Strasbourg** | 73 068 | 494 | 2 944 | 47 180 | 526 | 7 692 | 7 830 | 9 076 | 233 | 275 | 57 154 |
-| **Grenoble-Alpes-Métropole** | 69 699 | 402 | 2 039 | 42 452 | 338 | 7 066 | 11 193 | 6 796 | 1 713 | 458 | 48 224 |
-| **Métropole Rouen Normandie** | 88 722 | 574 | 2 239 | 55 042 | 301 | 9 106 | 12 689 | 8 014 | 92 | 490 | 65 374 |
-| **CA du Cotentin** | 65 800 | 134 | 772 | 38 664 | 157 | 8 701 | 6 845 | 6 274 | 29 | 33 | 29 763 |
-| **CA de Châlons-en-Champagne** | 59 466 | 442 | 254 | 24 108 | 227 | 17 184 | 7 034 | 4 539 | 7 | 50 | 27 101 |
-| **CA Lorient Agglomération** | 81 712 | 217 | 785 | 48 938 | 164 | 10 802 | 11 262 | 7 366 | 0 | 6 | 42 740 |
-| **Ardenne Métropole** | 50 024 | 465 | 185 | 21 224 | 196 | 10 254 | 12 008 | 3 330 | 27 | 34 | 24 923 |
-| **Le Havre Seine Métropole** | 41 273 | 296 | 1 136 | 27 922 | 281 | 2 444 | 3 779 | 4 314 | 43 | 184 | 30 380 |
-| **CA Montélimar Agglomération** | 40 019 | 130 | 529 | 19 709 | 58 | 7 961 | 5 279 | 2 958 | 24 | 72 | 15 311 |
-| **CU de Dunkerque** | 34 195 | 261 | 888 | 23 969 | 251 | 1 236 | 3 928 | 3 106 | 68 | 170 | 26 841 |
-| **CA du Pays de Saint Malo Agglom.** | 27 396 | 204 | 388 | 18 961 | 131 | 1 648 | 2 678 | 2 876 | 41 | 65 | 19 375 |
-| **CA du Pays Ajaccien** | 23 691 | 0 | 305 | 10 653 | 4 | 4 292 | 4 746 | 1 904 | 0 | 11 | 11 787 |
-| **CA du Grand Verdun** | 21 268 | 63 | 163 | 7 613 | 17 | 3 759 | 4 926 | 1 865 | 4 | 19 | 8 498 |
-| **CA du Pays de Meaux** | 19 933 | 87 | 617 | 11 432 | 58 | 2 309 | 2 885 | 2 102 | 655 | 112 | 14 177 |
-| **CA du Boulonnais** | 17 567 | 171 | 272 | 10 705 | 96 | 1 136 | 2 894 | 1 953 | 37 | 108 | 12 001 |
-| **CC de l'Île de Ré** | 13 190 | 0 | 114 | 7 494 | 0 | 2 809 | 1 583 | 706 | 0 | 0 | 7 739 |
-| **CA Grand Calais Terres et Mers** | 15 553 | 263 | 392 | 10 197 | 163 | 1 007 | 1 458 | 2 278 | 279 | 128 | 11 308 |
-| **CC de Cattenom et Environs** | 10 578 | 38 | 79 | 5 641 | 12 | 2 279 | 1 306 | 975 | 48 | 9 | 5 382 |
-| **Brest Métropole** | 38 077 | 113 | 1 085 | 25 008 | 91 | 1 952 | 5 331 | 4 155 | 14 | 69 | 31 726 |
+| **Brest** | 38 074 | 113 | 1 085 | 25 006 | 91 | 1 952 | 5 330 | 4 155 | 14 | 69 | 31 723 |
+| **Le Havre** | 41 272 | 296 | 1 136 | 27 921 | 281 | 2 444 | 3 779 | 4 314 | 43 | 184 | 30 380 |
+| **Dunkerque** | 34 195 | 261 | 888 | 23 969 | 251 | 1 236 | 3 928 | 3 106 | 68 | 170 | 26 841 |
+| **Cotentin** | 65 800 | 134 | 772 | 38 664 | 157 | 8 701 | 6 845 | 6 274 | 29 | 33 | 29 763 |
+| **Grenoble** | 69 698 | 402 | 2 039 | 42 452 | 338 | 7 066 | 11 192 | 6 796 | 1 713 | 458 | 48 224 |
+| **Strasbourg** | 73 067 | 494 | 2 944 | 47 180 | 526 | 7 691 | 7 830 | 9 076 | 233 | 275 | 57 154 |
+| **Lille** | 107 657 | 750 | 3 900 | 77 953 | 852 | 4 033 | 10 855 | 12 695 | 1 510 | 830 | 96 353 |
+| **Pays Basque** | 126 976 | 475 | 867 | 73 903 | 220 | 23 293 | 13 720 | 11 922 | 180 | 260 | 55 827 |
+| **Rouen** | 88 720 | 574 | 2 239 | 55 042 | 301 | 9 104 | 12 689 | 8 014 | 92 | 490 | 65 373 |
+| **Bordeaux** | 104 377 | 382 | 3 556 | 70 830 | 439 | 9 869 | 6 795 | 10 331 | 13 | 35 | 90 018 |
+| **Nantes** | 141 928 | 841 | 2 050 | 89 442 | 557 | 12 357 | 17 931 | 13 065 | 1 235 | 523 | 112 605 |
+| **Lyon** | 139 248 | 1 277 | 3 749 | 97 388 | 1 062 | 7 477 | 14 204 | 15 910 | 1 082 | 1 553 | 120 277 |
+| **Tours** | 58 077 | 508 | 1 657 | 35 572 | 310 | 6 237 | 7 189 | 5 134 | 302 | 339 | 43 063 |
+
+### 3.5 Visualisations
+
+Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer visuellement les EPCIs et de comprendre d'un coup d'œil les ressources disponibles par rôle.
+
+#### Répartition des POIs par type (vue consolidée)
+
+![POI counts]({{ "/assets/img/theory/chart_poi_counts.png" | relative_url }})
+
+**Ce graphe montre** le nombre de POIs par catégorie pour chaque EPCI. Lyon domine sur presque tous les types (11 millions d'habitants). Brest, Dunkerque et Le Havre se distinguent sur les équipements de transport (ports, marinas). Grenoble et Lyon trustent les constructions linéaires (tunnels, viaducs alpins).
+
+#### Réseau routier : urbanisation vs rural
+
+![Road network]({{ "/assets/img/theory/chart_road_network.png" | relative_url }})
+
+**Deux couleurs** : bleu = tronçons en zone urbaine, orange = rural. Les EPCIs métropoles (Lyon, Lille, Bordeaux) ont un réseau quasi-intégralement urbain. Le Cotentin et le Pays Basque sont profondément ruraux. Useful pour le TD ravitaillement : les livraisons en zone rurale dépendent des chemins (plus lents, plus vulnérables).
+
+#### Chaleur : alignment des rôles
+
+![Role heatmap]({{ "/assets/img/theory/chart_role_heatmap.png" | relative_url }})
+
+**Lignes** = rôles (Attaque, Défense, Ravitaillement, Énergie). **Couleurs** = pertinence des tables pour ce rôle (échelle log). Un coefficient élevé (rouge) signifie que cette table contient beaucoup de POIs utiles à ce rôle dans la majorité des EPCIs. Par exemple : Ravitaillement → `reservoir` (eau potable, industiel) est pertinent partout.
+
+#### Composition du réseau routier par type de voie
+
+![Road composition]({{ "/assets/img/theory/chart_road_composition.png" | relative_url }})
+
+**Barres empilées** : autoroute (foncé) / 2 canaux (medium) / 1 canal (clair) / chemins & autres (très clair). Permet d'évaluer la capacité de déplacement rapide : un EPCI avec beaucoup d'orange clair = réseau sparse, temps de trajet plus longs. Bordeaux et Lille ont la meilleure densité autoroutière.
+
+#### Inventaire global des données (par table)
+
+![Data inventory]({{ "/assets/img/theory/chart_data_inventory.png" | relative_url }})
+
+**Totaux agrégés sur les 13 EPCIs** pour chaque table source. `troncon_de_route` domine (~1,5 million de segments routiers). `construction_lineaire` et `construction_ponctuelle` sont les deuxièmes postes. Utile pour comprendre le poids de chaque table dans les requêtes JOIN.
 
 ---
 

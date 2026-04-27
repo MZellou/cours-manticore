@@ -7,7 +7,7 @@ nav_order: 11
 
 # APOC — algorithmes de graphe
 
-> **À lire avant la Phase 3.** APOC ajoute à Cypher des algorithmes qui n'existent pas en SQL pur (betweenness, all shortest paths, sous-graphes).
+> **À lire avant la Phase 3.** APOC ajoute à Cypher des algorithmes absents du SQL pur (Dijkstra pondéré, subgraphes, centralité). Note : le cours utilise **Neo4j 5.x / APOC 5.x** — certaines API 4.x sont dépréciées.
 
 ---
 
@@ -32,41 +32,44 @@ CALL apoc.help('apoc') YIELD name RETURN count(*);
 
 ## `apoc.algo.dijkstra` — plus court chemin pondéré
 
-Contrairement à `shortestPath()` natif (qui ne pondère pas), APOC permet de respecter une propriété de poids sur les relations.
+> APOC 5.x : signature inchangée. Contrairement à `shortestPath()` natif (non pondéré), APOC permet de spécifier une propriété de poids sur les arêtes.
 
 ```cypher
-MATCH (start:POI {nom: 'Hôpital de Brest'}),
-      (end:POI {nom: 'Aérodrome Brest-Guipavas'})
+// Trouver le chemin le plus court entre deux POIs
+MATCH (start:POI {nom: 'Centrale_Flamanville'}),
+      (end:POI   {nom: 'Aeroport_Brest'})
 CALL apoc.algo.dijkstra(start, end, 'DISTANCE', 'meters')
 YIELD path, weight
-RETURN [n IN nodes(path) | n.nom] AS chemin, weight AS distance_totale;
+RETURN [n IN nodes(path) | n.nom] AS etapes, weight AS distance_m;
 ```
 
 | Argument | Sens |
 |----------|------|
-| `'DISTANCE'` | type de relation à utiliser |
+| `start`, `end` | Nœuds de départ et d'arrivée |
+| `'DISTANCE'` | type de relation à traverser |
 | `'meters'` | propriété de poids sur la relation |
 
 ---
 
-## `apoc.algo.betweenness` — centralité (choke points)
+## `gds.betweenness.stream()` — centralité (APOC 5.x)
 
-**Betweenness centrality** d'un nœud = nombre de plus courts chemins entre toutes les paires qui **passent par ce nœud**. Plus le score est haut, plus le nœud est un **point de passage critique** (choke point).
+> **API critique** : `apoc.algo.betweenness` (4.x) est dépréciée. En APOC 5.x, la betweenness centrality passe par le catalogue GDS (*Graph Data Science*).
+
+**Betweenness centrality** d'un nœud = nombre de plus courts chemins entre toutes les paires qui **passent par ce nœud**. Plus le score est haut, plus le nœud est un **choke point** potentiel.
 
 ```cypher
-CALL apoc.algo.betweenness(['POI'], ['DISTANCE'], 'BOTH')
-YIELD node, score
-RETURN node.nom, node.role, score
+// 1. Projetter le graphe dans le catalogue GDS
+CALL gds.graph.project('myGraph', 'POI', 'DISTANCE');
+
+// 2. Calculer la betweenness sur ce graphe projeté
+CALL gds.betweenness.stream('myGraph')
+YIELD nodeId, score
+WITH gds.util.asNode(nodeId) AS poi, score
+RETURN poi.nom, poi.nature, poi.role, score
 ORDER BY score DESC LIMIT 10;
 ```
 
-| Argument | Sens |
-|----------|------|
-| `['POI']` | labels des nœuds à inclure |
-| `['DISTANCE']` | types de relations à inclure |
-| `'BOTH'` | direction (`'INCOMING'`, `'OUTGOING'`, `'BOTH'`) |
-
-> 💡 **Pourquoi c'est dur en SQL** : il faut calculer **tous** les plus courts chemins entre **toutes** les paires de POIs (N² appels Dijkstra), puis compter les passages par chaque nœud. APOC fait ça en une procédure.
+> **Pourquoi c'est dur en SQL** : il faudrait N² appels Dijkstra, puis compter les passages par chaque nœud. GDS le fait en une requête sur le graphe projeté.
 
 ### Lecture du résultat
 
@@ -82,13 +85,13 @@ ORDER BY score DESC LIMIT 10;
 Retourne tous les nœuds **et toutes les arêtes** atteignables depuis un point, dans une limite de profondeur.
 
 ```cypher
-MATCH (start:POI {nom: 'Aérodrome Brest-Guipavas'})
-CALL apoc.path.subgraphAll(start, {
-  maxLevel: 2,
+MATCH (centre:POI {nature: 'Aérodrome'}) LIMIT 1
+CALL apoc.path.subgraphAll(centre, {
+  maxLevel: 3,
   relationshipFilter: 'DISTANCE'
 })
 YIELD nodes, relationships
-RETURN size(nodes) AS nb_nodes, size(relationships) AS nb_edges;
+RETURN size(nodes) AS nb_pois, size(relationships) AS nb_liens;
 ```
 
 | Option | Sens |
@@ -97,13 +100,16 @@ RETURN size(nodes) AS nb_nodes, size(relationships) AS nb_edges;
 | `relationshipFilter` | restreindre aux relations de ce type |
 | `labelFilter` | restreindre aux labels (`'+POI'` = inclure, `'-Base'` = exclure) |
 
-→ Phase 3 T2c : sous-graphe "à 2 sauts d'un aérodrome".
+→ Phase 3 T2c : sous-graphe "à 3 sauts d'un aérodrome".
 
 ---
 
-## `allShortestPaths()` — tous les chemins minimaux
+## `allShortestPaths()` — Cypher natif
+
+> **`allShortestPaths()` n'est pas APOC** — c'est une fonction native Cypher (== Cypher 5.x). Elle trouve tous les plus courts chemins entre deux nœuds (pas juste un).
 
 ```cypher
+// Tous les chemins minimaux entre un POI attaque et un POI défense
 MATCH (a:POI {role: 'attaque'}), (d:POI {role: 'défense'}),
       path = allShortestPaths((a)-[:DISTANCE*]-(d))
 RETURN [n IN nodes(path) | n.nom] AS chemin,
@@ -111,7 +117,7 @@ RETURN [n IN nodes(path) | n.nom] AS chemin,
 ORDER BY distance ASC LIMIT 5;
 ```
 
-> En SQL pur, énumérer "tous les plus courts chemins" est **impossible** sans un script Python qui boucle sur Dijkstra.
+> En SQL pur, énumérer "tous les plus courts chemins" est **impossible** sans un script Python qui boucle sur Dijkstra. Cypher le fait en une ligne.
 
 ---
 
@@ -120,12 +126,12 @@ ORDER BY distance ASC LIMIT 5;
 Variante riche : accepte des filtres de chemin complexes (interdire un type de nœud, obliger à passer par un autre…).
 
 ```cypher
-// Chemin attaque → défense en évitant tout POI énergie
-MATCH (a:POI {role: 'attaque', nom: '...'})
+// Chemin attaque → défense en évitant les POIs énergie
+MATCH (a:POI {role: 'attaque', nom: 'Centrale_Flamanville'})
 CALL apoc.path.expandConfig(a, {
   relationshipFilter: 'DISTANCE',
   labelFilter: '/POI',
-  blacklistNodes: [(p:POI {role: 'énergie'}) | p],
+  blacklistedNodes: [(p:POI {role: 'énergie'}) | p],
   terminatorNodes: [(p:POI {role: 'défense'}) | p],
   maxLevel: 5
 })
@@ -133,9 +139,11 @@ YIELD path
 RETURN path LIMIT 3;
 ```
 
+> Note APOC 5.x : `blacklistNodes` → `blacklistedNodes`.
+
 ---
 
-## Lire un plan Cypher : `PROFILE`
+## `PROFILE` — comment corriger une requête lente
 
 Comme `EXPLAIN ANALYZE` en SQL :
 
@@ -146,35 +154,48 @@ WHERE p.role = 'attaque' AND q.role = 'défense'
 RETURN p, q LIMIT 10;
 ```
 
-Ce qu'on regarde :
+### Signaux d'alerte
 
 | Métrique | Interprétation |
 |----------|---------------|
-| **db hits** | nombre d'accès au store Neo4j (équivalent "tuples lus") |
-| **rows** | lignes en sortie d'une étape |
-| **AllNodesScan** ⚠️ | scan complet — *catastrophique*, ajoutez un index ou un label |
-| **NodeIndexSeek** ✅ | utilisation d'un index — c'est ce qu'on veut |
+| **AllNodesScan** ⚠️ | scan complet de tous les nœuds — *catastrophique* |
+| **NodeIndexSeek** ✅ | utilisation d'un index — optimal |
 | **Expand(All)** | traversée d'une relation |
+| **db hits** élevé | beaucoup d'accès au store — risque de lenteur |
 
-> ⚠️ Si vous voyez **AllNodesScan** sur `:POI`, créez un index :
-> `CREATE INDEX poi_role IF NOT EXISTS FOR (p:POI) ON (p.role);`
+### Comment corriger
+
+```cypher
+// Si AllNodesScan sur :POI → créer un index sur le rôle
+CREATE INDEX poi_role IF NOT EXISTS FOR (p:POI) ON (p.role);
+
+// Si NodeByLabelScan sur :POI avec filtre sur nature → index composite
+CREATE INDEX poi_role_nature IF NOT EXISTS FOR (p:POI) ON (p.role, p.nature);
+
+// Si RelationshipByTypeScan (beaucoup de DbHits sur une relation) → index de relation (Neo4j 4.4+)
+CREATE INDEX ON ()-[:DISTANCE]-();
+```
+
+> Après `CREATE INDEX`, relancez `PROFILE` pour vérifier que `AllNodesScan` disparaît au profit de `NodeIndexSeek` ou `NodeIndexRangeScan`.
 
 ---
 
 ## Pièges fréquents
 
-| Symptôme | Cause |
-|----------|-------|
-| `Procedure not found` | APOC pas chargé — vérifier `docker compose ps neo4j` et les logs |
-| `betweenness` retourne tout à 0 | Type de relation mal orthographié (sensible à la casse) |
-| Requête lente à mort | Manque d'index — utilisez `PROFILE` |
-| `apoc.algo.dijkstra` ignore le poids | Vérifier que la propriété est numérique, pas string |
+| Symptôme | Cause probable |
+|----------|---------------|
+| `Procedure not found` | APOC pas chargé — vérifier `docker compose ps neo4j` |
+| `gds.betweenness.stream()` échoue | Graphe pas projeté dans GDS → faire `gds.graph.project()` d'abord |
+| Requête lente (beaucoup de db hits) | Manque d'index — utilisez `PROFILE` |
+| `apoc.algo.dijkstra` ignore le poids | Vérifier que la propriété est **numérique**, pas string |
+| `allShortestPaths` timeout | Graphe trop grand → limiter avec `maxLevel` |
 
 ---
 
 ## Pour aller plus loin
 
-- [GraphDB 101]({% link _docs/theorie/graphdb_101.md %}) — le modèle LPG
+- [GraphDB 101]({% link _docs/theorie/graphdb_101.md %}) — le modèle LPG et traversée de graphe
 - [Cypher en 5 minutes]({% link _docs/theorie/cypher_5min.md %}) — les bases
+- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — routage côté PostGIS
 - [Phase 3]({% link _docs/missions/phase_3_simulation.md %}) — la pratique
-- [Documentation officielle APOC](https://neo4j.com/docs/apoc/current/) (externe)
+- [Documentation APOC 5.x](https://neo4j.com/docs/apoc/current/) (externe)

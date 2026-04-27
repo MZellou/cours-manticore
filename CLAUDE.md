@@ -25,7 +25,7 @@ make clean / make restart  # Clean volumes or full restart
 
 - PostGIS: `localhost:5432` (includes pgRouting)
 - Neo4j: `7474` (browser) + `7687` (bolt) + APOC
-- **Data:** Parquet source on CIFS + local `data/epci.parquet` for EPCI geometries.
+- **Data:** Public Cloudflare R2 bucket (`pub-XXXX.r2.dev`) + local `data/epci.parquet` for EPCI geometries.
 - **Gold Dumps:** Pre-computed road topology (`data/gold_dumps/`).
 - **Custom POIs:** Nuclear plants injected at setup (`mission_custom_pois` table).
 
