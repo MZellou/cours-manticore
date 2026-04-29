@@ -1,8 +1,9 @@
 ---
 layout: default
 title: APOC — algorithmes de graphe
-parent: Théorie
-nav_order: 11
+parent: Avancé
+grand_parent: Théorie
+nav_order: 1
 ---
 
 # APOC — algorithmes de graphe
@@ -194,8 +195,8 @@ CREATE INDEX ON ()-[:DISTANCE]-();
 
 ## Pour aller plus loin
 
-- [GraphDB 101]({% link _docs/theorie/graphdb_101.md %}) — le modèle LPG et traversée de graphe
-- [Cypher en 5 minutes]({% link _docs/theorie/cypher_5min.md %}) — les bases
-- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — routage côté PostGIS
+- [GraphDB 101]({% link _docs/theorie/outils/graphdb_101.md %}) — le modèle LPG et traversée de graphe
+- [Cypher en 5 minutes]({% link _docs/theorie/outils/cypher_5min.md %}) — les bases
+- [pgRouting et r2gg]({% link _docs/theorie/outils/pgrouting_r2gg.md %}) — routage côté PostGIS
 - [Phase 3]({% link _docs/missions/phase_3_simulation.md %}) — la pratique
 - [Documentation APOC 5.x](https://neo4j.com/docs/apoc/current/) (externe)

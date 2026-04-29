@@ -1,8 +1,9 @@
 ---
 layout: default
 title: GraphDB 101
-parent: Théorie
-nav_order: 6
+parent: Outils
+grand_parent: Théorie
+nav_order: 3
 ---
 
 # GraphDB 101 : le modèle graphe en bases de données
@@ -116,7 +117,7 @@ RETURN cible.nom, cible.nature;
 
 ## Algorithmes de graphe
 
-> Pour les procédures APOC (Dijkstra, betweenness, subgraphAll…) et les détails GDS, voir [APOC]({% link _docs/theorie/apoc.md %}).
+> Pour les procédures APOC (Dijkstra, betweenness, subgraphAll…) et les détails GDS, voir [APOC]({% link _docs/theorie/avance/apoc.md %}).
 
 Les principaux algorithmes disponibles dans Neo4j via APOC :
 
@@ -146,6 +147,6 @@ Neo4j n'est **pas** bon pour :
 
 ## Pour aller plus loin
 
-- [NoSQL vs SQL]({% link _docs/theorie/nosql_vs_sql.md %}) — panorama des familles NoSQL et théorème CAP
-- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — routage sur PostGIS
-- [APOC]({% link _docs/theorie/apoc.md %}) — procédures algorithmiques et GDS
+- [NoSQL vs SQL]({% link _docs/theorie/fondements/01_pourquoi_ce_cours.md %}) — panorama des familles NoSQL et théorème CAP
+- [pgRouting et r2gg]({% link _docs/theorie/outils/pgrouting_r2gg.md %}) — routage sur PostGIS
+- [APOC]({% link _docs/theorie/avance/apoc.md %}) — procédures algorithmiques et GDS

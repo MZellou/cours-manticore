@@ -1,8 +1,9 @@
 ---
 layout: default
 title: PostGIS — essentiels
-parent: Théorie
-nav_order: 8
+parent: Outils
+grand_parent: Théorie
+nav_order: 1
 ---
 
 # PostGIS — essentiels
@@ -158,6 +159,6 @@ WHERE role = 'attaque';
 
 ## Pour aller plus loin
 
-- [Modèle BDTOPO]({% link _docs/theorie/bdtopo.md %}) — quelles tables, quels champs
-- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — passer du spatial au graphe routier
-- [SQL : limites de la récursion]({% link _docs/theorie/sql_recursion_limits.md %}) — pour comprendre le besoin de Cypher
+- [Modèle BDTOPO]({% link _docs/theorie/fondements/modele_bdtopo.md %}) — quelles tables, quels champs
+- [pgRouting et r2gg]({% link _docs/theorie/outils/pgrouting_r2gg.md %}) — passer du spatial au graphe routier
+- [SQL : limites de la récursion]({% link _docs/theorie/avance/sql_recursion.md %}) — pour comprendre le besoin de Cypher

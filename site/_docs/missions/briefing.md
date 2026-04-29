@@ -22,6 +22,9 @@ layout: default
 | 8 | CA du Pays Basque | Frontière Espagne + montagne |
 | 9 | Métropole Rouen Normandie | Vallée Seine |
 | 10 | Bordeaux Métropole | Estuaire Gironde |
+| 11 | Nantes Métropole | Port atlantique + industrielle |
+| 12 | Métropole de Lyon | Plaine + nœud logistique |
+| 13 | Tours Métropole Val de Loire | Vallée Loire + carrefour |
 
 ### Rôles (4 par groupe)
 
@@ -63,9 +66,9 @@ Si vous êtes bloqué, consultez — l'objectif est de comprendre, pas de bloque
 
 Avant la Phase 1, parcourez ces pages (15 min total) :
 
-- [Pourquoi ce cours]({% link _docs/theorie/bdd_nosql.md %}) — fondations
-- [PostGIS — essentiels]({% link _docs/theorie/postgis_essentiels.md %}) — pour la Phase 1
-- [Modèle BDTOPO]({% link _docs/theorie/bdtopo.md %}) — les données
+- [Pourquoi ce cours]({% link _docs/theorie/fondements/01_pourquoi_ce_cours.md %}) — fondations
+- [PostGIS — essentiels]({% link _docs/theorie/outils/postgis_essentiels.md %}) — pour la Phase 1
+- [Modèle BDTOPO]({% link _docs/theorie/fondements/modele_bdtopo.md %}) — les données
 
 ---
 

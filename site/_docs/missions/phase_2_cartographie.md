@@ -14,9 +14,9 @@ layout: default
 <div class="prereq-theorie" markdown="1">
 📚 **Théorie pré-requise** — à parcourir avant cette phase
 
-- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — *pourquoi* on pivote en graphe (essentiel)
-- [Cypher en 5 minutes]({% link _docs/theorie/cypher_5min.md %}) — `MATCH`, `WHERE`, `MERGE`, patterns
-- [GraphDB 101]({% link _docs/theorie/graphdb_101.md %}) — index-free adjacency, LPG
+- [pgRouting et r2gg]({% link _docs/theorie/outils/pgrouting_r2gg.md %}) — *pourquoi* on pivote en graphe (essentiel)
+- [Cypher en 5 minutes]({% link _docs/theorie/outils/cypher_5min.md %}) — `MATCH`, `WHERE`, `MERGE`, patterns
+- [GraphDB 101]({% link _docs/theorie/outils/graphdb_101.md %}) — index-free adjacency, LPG
 
 **Pré-requis Phase 1** : la table `mission_pois` est non-vide pour les 4 rôles ([Checkpoint Phase 1]({% link _docs/missions/checkpoint_phase_1.md %})).
 </div>

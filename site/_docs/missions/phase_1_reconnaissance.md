@@ -14,10 +14,10 @@ layout: default
 <div class="prereq-theorie" markdown="1">
 📚 **Théorie pré-requise** — à parcourir avant d'attaquer cette phase
 
-- [Pourquoi ce cours]({% link _docs/theorie/bdd_nosql.md %}) — pose les fondations
-- [PostGIS — essentiels]({% link _docs/theorie/postgis_essentiels.md %}) — SRID, `ST_*`, GIST, DBSCAN
-- [Modèle BDTOPO]({% link _docs/theorie/bdtopo.md %}) — quelles tables, quels champs
-- [SQL — limites & EXPLAIN]({% link _docs/theorie/sql_recursion_limits.md %}) — pour la T1 ontologique
+- [Pourquoi ce cours]({% link _docs/theorie/fondements/01_pourquoi_ce_cours.md %}) — pose les fondations
+- [PostGIS — essentiels]({% link _docs/theorie/outils/postgis_essentiels.md %}) — SRID, `ST_*`, GIST, DBSCAN
+- [Modèle BDTOPO]({% link _docs/theorie/fondements/modele_bdtopo.md %}) — quelles tables, quels champs
+- [SQL — limites & EXPLAIN]({% link _docs/theorie/avance/sql_recursion.md %}) — pour la T1 ontologique
 
 **Ton rôle** : [⚔️ Attaque]({% link _docs/roles/attaque.md %}) · [🛡️ Défense]({% link _docs/roles/defense.md %}) · [📦 Ravitaillement]({% link _docs/roles/ravitaillement.md %}) · [⚡ Énergie]({% link _docs/roles/energie.md %})
 </div>
@@ -93,7 +93,7 @@ L'ontologie a 3 niveaux hiérarchiques : Database → Object → Detail.
 🧠 **Réflexion guidée — dialogue avec le LLM**
 
 **Questions à creuser**
-- Pourquoi `WITH RECURSIVE` est-il *plus verbeux* que `(d)-[:EST_SOUS_TYPE_DE*]->(o)` en Cypher ? (cf. [SQL — limites]({% link _docs/theorie/sql_recursion_limits.md %}))
+- Pourquoi `WITH RECURSIVE` est-il *plus verbeux* que `(d)-[:EST_SOUS_TYPE_DE*]->(o)` en Cypher ? (cf. [SQL — limites]({% link _docs/theorie/avance/sql_recursion.md %}))
 - Que se passe-t-il si l'ontologie a 7 niveaux au lieu de 3 ? Et 15 ?
 - À quel moment l'arbre devient-il un **graphe** (avec cycles) ? Le `WITH RECURSIVE` tient-il le coup ?
 

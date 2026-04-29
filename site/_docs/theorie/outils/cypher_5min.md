@@ -1,8 +1,9 @@
 ---
 layout: default
 title: Cypher en 5 minutes
-parent: Théorie
-nav_order: 9
+parent: Outils
+grand_parent: Théorie
+nav_order: 2
 ---
 
 # Cypher en 5 minutes
@@ -179,6 +180,6 @@ Ouvrez `http://localhost:7474`.
 
 ## Pour aller plus loin
 
-- [GraphDB 101]({% link _docs/theorie/graphdb_101.md %}) — le modèle LPG complet
-- [APOC]({% link _docs/theorie/apoc.md %}) — algorithmes (betweenness, sub-graphes)
+- [GraphDB 101]({% link _docs/theorie/outils/graphdb_101.md %}) — le modèle LPG complet
+- [APOC]({% link _docs/theorie/avance/apoc.md %}) — algorithmes (betweenness, sub-graphes)
 - [Phase 2]({% link _docs/missions/phase_2_cartographie.md %}) — passer à la pratique

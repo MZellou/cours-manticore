@@ -136,10 +136,121 @@
   .solution-block > p:first-child {
     padding-top: 0.8em;
   }
+
+  /* Slides toggle button */
+  .slides-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid rgba(88,166,255,0.4);
+    border-radius: 4px;
+    background: rgba(88,166,255,0.08);
+    color: #58a6ff;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: none;
+    margin-bottom: 1rem;
+    transition: all 0.15s ease;
+  }
+  .slides-toggle-btn:hover {
+    background: rgba(88,166,255,0.15);
+    border-color: #58a6ff;
+  }
 </style>
 
 <script>
   (function() {
+    // Slides mode: detect ?slides=1 and transform page into presentation
+    document.addEventListener('DOMContentLoaded', function() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('slides') !== '1') {
+        // Add toggle button on Théorie pages
+        var isTheorie = window.location.pathname.includes('/theorie');
+        if (isTheorie) {
+          var main = document.querySelector('main') || document.querySelector('#main-content');
+          if (main) {
+            var btn = document.createElement('a');
+            var url = new URL(window.location);
+            url.searchParams.set('slides', '1');
+            btn.href = url.toString();
+            btn.className = 'slides-toggle-btn';
+            btn.innerHTML = '⛶ Mode Slides';
+            btn.style.float = 'right';
+            main.insertBefore(btn, main.firstChild);
+          }
+        }
+        return;
+      }
+
+      // ── SLIDES MODE ── Transform the page into a slide deck
+      var main = document.querySelector('#main-content') || document.querySelector('main');
+      if (!main) return;
+      var html = main.innerHTML;
+
+      // Parse content into slides (split on <h2)
+      var parts = html.split(/<h2[^>]*>/i);
+      var slides = [];
+      var pageTitle = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : 'Slides';
+
+      parts.forEach(function(part, i) {
+        if (i === 0) {
+          // Before first h2 = intro / title
+          var h1close = part.replace(/^[\s\S]*?<\/h1>/i, '');
+          if (h1close.trim()) slides.push({ title: pageTitle, html: h1close });
+          return;
+        }
+        // Each part starts with the h2 content (after the tag, since we split on the tag)
+        var titleEnd = part.indexOf('</h2>');
+        var title = titleEnd > 0 ? part.substring(0, titleEnd) : 'Slide ' + (slides.length + 1);
+        var content = titleEnd > 0 ? part.substring(titleEnd + 5) : part;
+        if (content.trim()) slides.push({ title: title.trim(), html: content });
+      });
+
+      if (slides.length === 0) return;
+
+      // Build slide deck DOM
+      document.head.innerHTML = '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + pageTitle + '</title>' +
+        '<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#0d1117;color:#e6edf3;overflow:hidden;height:100vh}.deck{width:100%;height:calc(100vh - 42px)}.slide{display:none;position:absolute;inset:0;padding:3rem 5rem;overflow-y:auto;font-size:1.5rem;line-height:1.6;flex-direction:column;justify-content:center}.slide.active{display:flex}.slide:first-child{text-align:center}h1{font-size:2.4rem;color:#58a6ff;margin-bottom:1rem}h2{display:none}h3{font-size:1.8rem;color:#d2a8ff;margin:1.2rem 0 .6rem}p{margin:.6rem 0}blockquote{border-left:4px solid #f0883e;background:rgba(240,136,62,.1);padding:1rem 1.5rem;margin:1rem 0;border-radius:4px;font-style:italic}pre{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:1rem 1.5rem;margin:1rem 0;font-size:1.1rem;overflow-x:auto}code{font-family:SF Mono,Fira Code,monospace}:not(pre)>code{background:#161b22;padding:2px 6px;border-radius:3px;font-size:1.2rem}table{border-collapse:collapse;margin:1rem 0;width:100%;font-size:1.15rem}th{background:#161b22;color:#58a6ff}th,td{border:1px solid #30363d;padding:.5rem .8rem;text-align:left}tr:nth-child(even){background:rgba(255,255,255,.03)}ul,ol{margin:.5rem 0 .5rem 2rem}li{margin:.3rem 0}hr{display:none}a{color:#58a6ff;text-decoration:none}.nav{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:.4rem 1.5rem;background:#161b22;border-top:1px solid #30363d;font-size:.85rem;z-index:100}.nav button{background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:.35rem .9rem;border-radius:4px;cursor:pointer}.nav button:hover{background:#30363d}.counter{color:#8b949e}.titlebar{color:#8b949e;flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 1rem}.exit{color:#f85149}</style>';
+
+      document.body.innerHTML = '';
+      var deck = document.createElement('div');
+      deck.className = 'deck';
+      document.body.appendChild(deck);
+
+      slides.forEach(function(s, i) {
+        var div = document.createElement('div');
+        div.className = 'slide' + (i === 0 ? ' active' : '');
+        div.innerHTML = s.html;
+        deck.appendChild(div);
+      });
+
+      var nav = document.createElement('div');
+      nav.className = 'nav';
+      nav.innerHTML = '<button onclick="window._s(window._i-1)">← Préc.</button>' +
+        '<span class="titlebar" id="st"></span><span class="counter" id="sc"></span>' +
+        '<button onclick="window._s(window._i+1)">Suiv. →</button>' +
+        '<button class="exit" onclick="window._x()">✕</button>';
+      document.body.appendChild(nav);
+
+      window._i = 0;
+      window._s = function(i) {
+        window._i = Math.max(0, Math.min(slides.length - 1, i));
+        deck.querySelectorAll('.slide').forEach(function(s, j) { s.classList.toggle('active', j === window._i); });
+        document.getElementById('sc').textContent = (window._i + 1) + ' / ' + slides.length;
+        document.getElementById('st').textContent = slides[window._i].title;
+      };
+      window._x = function() { var u = new URL(window.location); u.searchParams.delete('slides'); window.location.href = u.toString(); };
+      window._s(0);
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); window._s(window._i + 1); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); window._s(window._i - 1); }
+        else if (e.key === 'Escape') window._x();
+        else if (e.key === 'f' || e.key === 'F') { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+      });
+    });
+
     document.addEventListener('DOMContentLoaded', attachAll);
 
     function attachAll() {

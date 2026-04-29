@@ -1,8 +1,9 @@
 ---
 layout: default
 title: pgRouting et r2gg
-parent: Théorie
-nav_order: 10
+parent: Outils
+grand_parent: Théorie
+nav_order: 4
 ---
 
 # pgRouting et r2gg : du tronçon au plus court chemin
@@ -188,6 +189,6 @@ On *pourrait* migrer le graphe routier dans Neo4j, mais :
 
 ## Pour aller plus loin
 
-- [PostGIS — essentiels]({% link _docs/theorie/postgis_essentiels.md %}) — pré-requis spatial
-- [APOC]({% link _docs/theorie/apoc.md %}) — algorithmes côté Neo4j (betweenness, sub-graphes)
+- [PostGIS — essentiels]({% link _docs/theorie/outils/postgis_essentiels.md %}) — pré-requis spatial
+- [APOC]({% link _docs/theorie/avance/apoc.md %}) — algorithmes côté Neo4j (betweenness, sub-graphes)
 - [Phase 2]({% link _docs/missions/phase_2_cartographie.md %}) — la pratique

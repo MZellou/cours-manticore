@@ -1,8 +1,9 @@
 ---
 layout: default
 title: Modèle BDTOPO
-parent: Théorie
-nav_order: 7
+parent: Fondements
+nav_order: 2
+grand_parent: Théorie
 ---
 
 # Modèle BDTOPO : comprendre les données du TD
@@ -146,4 +147,4 @@ Table : `mission_custom_pois` (id, nom, type, puissance_mw, geometrie).
 
 ## Référence complète
 
-Voir la page [Contenu des données BDTOPO]({% link _docs/theorie/contenu_donnees.md %}) pour le détail complet de chaque table (comptages, nomenclature, filtres par rôle).
+Voir la page [Contenu des données BDTOPO]({% link _docs/theorie/avance/contenu_donnees.md %}) pour le détail complet de chaque table (comptages, nomenclature, filtres par rôle).

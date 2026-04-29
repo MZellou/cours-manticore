@@ -36,7 +36,7 @@ Phase 2 : on ajoute la **topologie** — *qui est connecté à qui, par quel che
 
 Vous avez ignoré la table `troncon_de_route` jusqu'ici (trop volumineuse, peu utile pour des POIs ponctuels). En Phase 2, **r2gg** la transforme en un **graphe** (`ways` + `ways_vertices_pgr`) — c'est ce graphe que vous interrogez.
 
-→ Lecture : [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) (5 min)
+→ Lecture : [pgRouting et r2gg]({% link _docs/theorie/outils/pgrouting_r2gg.md %}) (5 min)
 
 ### Du **mono-paradigme SQL** au **bi-paradigme SQL + Cypher**
 
@@ -45,7 +45,7 @@ Vous avez écrit du SQL toute la Phase 1. Phase 2 ajoute Cypher pour :
 - Le réseau de POIs (relations `[:DISTANCE]`)
 - Les patterns multi-étapes
 
-→ Lecture : [Cypher en 5 minutes]({% link _docs/theorie/cypher_5min.md %}) (5 min)
+→ Lecture : [Cypher en 5 minutes]({% link _docs/theorie/outils/cypher_5min.md %}) (5 min)
 
 ---
 
@@ -69,8 +69,8 @@ Vous allez le **mesurer** :
 ## Avant de cliquer "Phase 2"
 
 - [ ] [Checkpoint Phase 1]({% link _docs/missions/checkpoint_phase_1.md %}) passé
-- [ ] [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) lu
-- [ ] [Cypher en 5 minutes]({% link _docs/theorie/cypher_5min.md %}) lu
+- [ ] [pgRouting et r2gg]({% link _docs/theorie/outils/pgrouting_r2gg.md %}) lu
+- [ ] [Cypher en 5 minutes]({% link _docs/theorie/outils/cypher_5min.md %}) lu
 - [ ] Neo4j Browser ouvert dans un onglet (`http://localhost:7474`)
 
 ---

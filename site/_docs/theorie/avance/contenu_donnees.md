@@ -1,8 +1,9 @@
 ---
 layout: default
 title: Contenu des données BDTOPO
-parent: Théorie
-nav_order: 2
+parent: Avancé
+grand_parent: Théorie
+nav_order: 3
 ---
 
 > Statistiques par EPCI et graphiques générés par `scripts/generate_theory_stats.py` depuis `data/epci_extracts/`.

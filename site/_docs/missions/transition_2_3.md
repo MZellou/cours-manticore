@@ -41,7 +41,7 @@ CALL apoc.algo.betweenness(['POI'], ['DISTANCE'], 'BOTH') YIELD node, score …
 CALL apoc.path.subgraphAll(start, {maxLevel: 2}) …
 ```
 
-→ Lecture : [APOC]({% link _docs/theorie/apoc.md %}) (5 min, **essentiel**)
+→ Lecture : [APOC]({% link _docs/theorie/avance/apoc.md %}) (5 min, **essentiel**)
 
 #### 2. **Lecture de plans** (`EXPLAIN ANALYZE` / `PROFILE`)
 
@@ -50,7 +50,7 @@ Phase 3 vous demande de **mesurer** SQL vs Cypher. Vous devez savoir lire un pla
 - `Seq Scan` (mauvais) vs `Index Scan` (bon)
 - `AllNodesScan` (catastrophique) vs `NodeIndexSeek` (bon)
 
-→ Lecture : [SQL — limites & EXPLAIN]({% link _docs/theorie/sql_recursion_limits.md %}) (5 min)
+→ Lecture : [SQL — limites & EXPLAIN]({% link _docs/theorie/avance/sql_recursion.md %}) (5 min)
 
 #### 3. **Simulation destructive**
 
@@ -77,8 +77,8 @@ Vous allez **modifier `ways`** (mettre `cost = -1` sur des arêtes), mesurer, pu
 ## Avant de cliquer "Phase 3"
 
 - [ ] [Checkpoint Phase 2]({% link _docs/missions/checkpoint_phase_2.md %}) passé
-- [ ] [APOC]({% link _docs/theorie/apoc.md %}) lu
-- [ ] [SQL — limites & EXPLAIN]({% link _docs/theorie/sql_recursion_limits.md %}) lu
+- [ ] [APOC]({% link _docs/theorie/avance/apoc.md %}) lu
+- [ ] [SQL — limites & EXPLAIN]({% link _docs/theorie/avance/sql_recursion.md %}) lu
 - [ ] Backup `ways` prêt à être créé : `CREATE TABLE ways_backup AS SELECT * FROM ways;`
 
 ---

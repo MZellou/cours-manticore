@@ -1,8 +1,9 @@
 ---
 layout: default
 title: SQL — limites & EXPLAIN
-parent: Théorie
-nav_order: 12
+parent: Avancé
+grand_parent: Théorie
+nav_order: 2
 ---
 
 # SQL : limites de la récursion et lecture de plans
@@ -45,7 +46,7 @@ MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:Object {name: 'Tronçon de route'})
 RETURN d.name;
 ```
 
-→ même résultat, **2 lignes**, et la traversée est en `O(1)` par saut grâce à l'**index-free adjacency** (cf. [GraphDB 101]({% link _docs/theorie/graphdb_101.md %})).
+→ même résultat, **2 lignes**, et la traversée est en `O(1)` par saut grâce à l'**index-free adjacency** (cf. [GraphDB 101]({% link _docs/theorie/outils/graphdb_101.md %})).
 
 ---
 
@@ -131,7 +132,7 @@ RETURN d.name;
 | `Seq Scan` | `AllNodesScan` |
 | `Index Scan` | `NodeIndexSeek` |
 
-→ Détails dans [APOC]({% link _docs/theorie/apoc.md %}#lire-un-plan-cypher--profile).
+→ Détails dans [APOC]({% link _docs/theorie/avance/apoc.md %}#lire-un-plan-cypher--profile).
 
 ---
 
@@ -151,6 +152,6 @@ Vous mesurerez **`Execution Time`** côté SQL et **`db hits`** côté Cypher.
 
 ## Pour aller plus loin
 
-- [GraphDB 101]({% link _docs/theorie/graphdb_101.md %}) — pourquoi la traversée graphe est en `O(1)`
-- [APOC]({% link _docs/theorie/apoc.md %}) — algorithmes côté Cypher
-- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — Dijkstra sous SQL
+- [GraphDB 101]({% link _docs/theorie/outils/graphdb_101.md %}) — pourquoi la traversée graphe est en `O(1)`
+- [APOC]({% link _docs/theorie/avance/apoc.md %}) — algorithmes côté Cypher
+- [pgRouting et r2gg]({% link _docs/theorie/outils/pgrouting_r2gg.md %}) — Dijkstra sous SQL

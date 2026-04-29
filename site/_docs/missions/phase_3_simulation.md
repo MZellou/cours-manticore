@@ -14,9 +14,9 @@ layout: default
 <div class="prereq-theorie" markdown="1">
 📚 **Théorie pré-requise** — à parcourir avant cette phase
 
-- [APOC — algorithmes de graphe]({% link _docs/theorie/apoc.md %}) — `betweenness`, `subgraphAll`, `allShortestPaths` (essentiel)
-- [SQL — limites & EXPLAIN]({% link _docs/theorie/sql_recursion_limits.md %}) — lire un plan `EXPLAIN ANALYZE` / `PROFILE`
-- [pgRouting et r2gg]({% link _docs/theorie/pgrouting_et_r2gg.md %}) — `pgr_connectedComponents`, simulation de coupes
+- [APOC — algorithmes de graphe]({% link _docs/theorie/avance/apoc.md %}) — `betweenness`, `subgraphAll`, `allShortestPaths` (essentiel)
+- [SQL — limites & EXPLAIN]({% link _docs/theorie/avance/sql_recursion.md %}) — lire un plan `EXPLAIN ANALYZE` / `PROFILE`
+- [pgRouting et r2gg]({% link _docs/theorie/outils/pgrouting_r2gg.md %}) — `pgr_connectedComponents`, simulation de coupes
 
 **Pré-requis Phase 2** : graphe ways + ways_vertices_pgr OK, Neo4j peuplé ([Checkpoint Phase 2]({% link _docs/missions/checkpoint_phase_2.md %})).
 </div>

@@ -186,4 +186,4 @@ python scripts/admin_generate_gold_dumps.py --epci "Brest Métropole"
 ### EPCIs trop grands (timeout pgRouting)
 
 Éviter Grand Paris (356k routes). Sweet spot : 30k-140k routes.
-Voir le détail dans [Contenu des données]({% link _docs/theorie/contenu_donnees.md %}#5-points-dattention-pour-le-td).
+Voir le détail dans [Contenu des données]({% link _docs/theorie/avance/contenu_donnees.md %}#5-points-dattention-pour-le-td).
