@@ -1,0 +1,279 @@
+---
+title: "Corrigé Rôles Bonus"
+order: 4
+---
+# Corrigé — Questions bonus des 4 rôles
+
+> Solutions des 16 questions bonus. Cliquer sur "Copier" pour récupérer le code.
+
+---
+
+## ⚔️ Attaque
+
+### B1 — Couverture aérienne
+
+```sql
+SELECT a.toponyme AS aero, e.toponyme AS port,
+       ST_Distance(a.geometrie, e.geometrie) AS dist_m
+FROM aerodrome a
+JOIN equipement_de_transport e
+  ON ST_DWithin(a.geometrie, e.geometrie, 5000)
+WHERE a.categorie IN ('Internationale', 'Nationale')
+  AND e.nature = 'Port';
+```
+
+**Variante multi-rayons** :
+
+```sql
+SELECT '5km' AS rayon, count(*) FROM aerodrome a
+JOIN equipement_de_transport e ON ST_DWithin(a.geometrie, e.geometrie, 5000)
+WHERE a.categorie IN ('Internationale', 'Nationale') AND e.nature = 'Port'
+UNION ALL
+SELECT '10km', count(*) FROM aerodrome a
+JOIN equipement_de_transport e ON ST_DWithin(a.geometrie, e.geometrie, 10000)
+WHERE a.categorie IN ('Internationale', 'Nationale') AND e.nature = 'Port'
+UNION ALL
+SELECT '20km', count(*) FROM aerodrome a
+JOIN equipement_de_transport e ON ST_DWithin(a.geometrie, e.geometrie, 20000)
+WHERE a.categorie IN ('Internationale', 'Nationale') AND e.nature = 'Port';
+```
+
+### B2 — Forces militaires par cluster
+
+```sql
+WITH forces AS (
+    SELECT ST_Force2D(geometrie) AS geom, nature, toponyme
+    FROM zone_d_activite_ou_d_interet
+    WHERE categorie = 'Administratif ou militaire'
+      AND nature IN ('Gendarmerie', 'Caserne', 'Camp militaire non clos')
+),
+clustered AS (
+    SELECT *, ST_ClusterDBSCAN(geom, eps := 3000, minpoints := 2) OVER () AS cid
+    FROM forces
+)
+SELECT cid, count(*) AS nb_forces, array_agg(toponyme) AS sites
+FROM clustered WHERE cid IS NOT NULL
+GROUP BY cid ORDER BY nb_forces DESC;
+```
+
+### B3 — Tour de contrôle vs aérodromes
+
+```sql
+SELECT a.toponyme, a.categorie,
+       (SELECT count(*) FROM construction_ponctuelle c
+        WHERE c.nature ILIKE 'Tour de contrôle%'
+          AND ST_DWithin(c.geometrie, a.geometrie, 1000)) AS tours_proches
+FROM aerodrome a
+WHERE a.categorie IN ('Internationale', 'Nationale');
+```
+
+### B4 — Vitesse d'accès aux cibles
+
+```sql
+SELECT p.nom AS cible, p.nature,
+       avg(r.vitesse_moyenne_vl) AS vitesse_moy_kmh
+FROM mission_pois p
+JOIN troncon_de_route r ON ST_DWithin(p.geom, r.geometrie, 2000)
+WHERE p.role = 'attaque'
+GROUP BY p.nom, p.nature
+ORDER BY vitesse_moy_kmh;
+```
+
+---
+
+## 🛡️ Défense
+
+### B1 — Hôpitaux et gares : réseau d'évacuation
+
+```sql
+SELECT h.toponyme AS hopital, g.toponyme AS gare,
+       ST_Distance(h.geometrie, g.geometrie) AS dist_m
+FROM zone_d_activite_ou_d_interet h
+JOIN equipement_de_transport g
+  ON ST_DWithin(h.geometrie, g.geometrie, 1000)
+WHERE h.nature IN ('Hôpital', 'Établissement hospitalier')
+  AND g.nature LIKE 'Gare%'
+ORDER BY dist_m;
+```
+
+**Hôpitaux SANS gare** :
+
+```sql
+SELECT h.toponyme AS hopital_sans_gare
+FROM zone_d_activite_ou_d_interet h
+WHERE h.nature IN ('Hôpital', 'Établissement hospitalier')
+  AND NOT EXISTS (
+    SELECT 1 FROM equipement_de_transport g
+    WHERE g.nature LIKE 'Gare%'
+      AND ST_DWithin(h.geometrie, g.geometrie, 1000)
+  );
+```
+
+### B2 — Ponts critiques sur les axes principaux
+
+```sql
+SELECT c.toponyme AS pont, r.nature AS route_nature, r.importance
+FROM construction_surfacique c
+JOIN troncon_de_route r
+  ON ST_Intersects(c.geometrie, r.geometrie)
+WHERE c.nature = 'Pont'
+  AND CAST(r.importance AS INTEGER) <= 2;
+```
+
+### B3 — Buffer de sécurité autour des hôpitaux
+
+```sql
+WITH hopital_buffers AS (
+    SELECT toponyme, ST_Buffer(geometrie, 500) AS buffer
+    FROM zone_d_activite_ou_d_interet
+    WHERE nature IN ('Hôpital', 'Établissement hospitalier')
+)
+SELECT h.toponyme AS hopital, count(*) AS pois_dans_buffer
+FROM hopital_buffers h
+JOIN mission_pois p ON ST_Intersects(p.geom, h.buffer)
+WHERE p.role != 'defense'
+GROUP BY h.toponyme
+ORDER BY pois_dans_buffer DESC;
+```
+
+### B4 — Densité de forces de l'ordre par zone
+
+```sql
+SELECT count(*) AS nb_forces,
+       ST_Area(e.geometrie) / 1000000 AS superficie_km2,
+       count(*) / (ST_Area(e.geometrie) / 1000000) AS densite_par_km2
+FROM zone_d_activite_ou_d_interet z, epci e
+WHERE z.categorie = 'Administratif ou militaire'
+  AND z.nature IN ('Gendarmerie', 'Caserne')
+  AND ST_Intersects(z.geometrie, e.geometrie)
+GROUP BY e.geometrie;
+```
+
+---
+
+## 📦 Ravitaillement
+
+### B1 — Ports et zones industrielles
+
+```sql
+SELECT p.toponyme AS port, p.nature_detaillee AS type_port,
+       z.toponyme AS zone, z.nature AS type_zone,
+       ST_Distance(p.geometrie, z.geometrie) AS dist_m
+FROM equipement_de_transport p
+JOIN zone_d_activite_ou_d_interet z
+  ON ST_DWithin(p.geometrie, z.geometrie, 3000)
+WHERE p.nature = 'Port'
+  AND p.nature_detaillee IN ('Port de commerce', 'Port de pêche')
+  AND z.nature IN ('Zone industrielle', 'Zone d''activités')
+ORDER BY dist_m;
+```
+
+### B2 — Voies ferrées fret
+
+```sql
+SELECT count(*) AS nb_troncons,
+       sum(ST_Length(geometrie)) / 1000 AS longueur_km
+FROM troncon_de_voie_ferree
+WHERE usage = 'Fret'
+  AND ST_Intersects(geometrie, (SELECT geometrie FROM epci_zone));
+```
+
+**Variante — gares fret sur ces voies** :
+
+```sql
+SELECT count(*) AS gares_fret
+FROM equipement_de_transport
+WHERE nature IN ('Gare fret uniquement', 'Gare voyageurs et fret')
+  AND ST_Intersects(geometrie, (SELECT geometrie FROM epci_zone));
+```
+
+### B3 — Capacité de stockage
+
+```sql
+SELECT nature, count(*) AS nb, sum(volume) AS volume_total
+FROM reservoir
+WHERE nature = 'Réservoir industriel'
+  AND ST_Intersects(geometrie, (SELECT geometrie FROM epci_zone))
+GROUP BY nature;
+```
+
+### B4 — Matrice port ↔ gare fret
+
+```sql
+SELECT p.toponyme AS port, g.toponyme AS gare_proche,
+       ST_Distance(p.geometrie, g.geometrie) AS dist_m
+FROM equipement_de_transport p
+CROSS JOIN LATERAL (
+    SELECT toponyme, geometrie
+    FROM equipement_de_transport g
+    WHERE g.nature IN ('Gare fret uniquement', 'Gare voyageurs et fret')
+    ORDER BY geometrie <-> p.geometrie LIMIT 1
+) g
+WHERE p.nature = 'Port' AND p.nature_detaillee = 'Port de commerce'
+ORDER BY dist_m;
+```
+
+---
+
+## ⚡ Énergie
+
+### B1 — Postes HT et hôpitaux
+
+```sql
+SELECT pt.nature, pt.importance, h.toponyme AS hopital,
+       ST_Distance(pt.geometrie, h.geometrie) AS dist_m
+FROM poste_de_transformation pt
+JOIN zone_d_activite_ou_d_interet h
+  ON ST_DWithin(pt.geometrie, h.geometrie, 1000)
+WHERE CAST(pt.importance AS INTEGER) <= 3
+  AND h.nature IN ('Hôpital', 'Établissement hospitalier')
+ORDER BY pt.importance, dist_m;
+```
+
+**Lien Phase 3** : si ce poste tombe, l'hôpital identifié perd son alimentation électrique prioritaire.
+
+### B2 — Lignes THT et routes
+
+```sql
+SELECT l.voltage, count(*) AS routes_croisees
+FROM ligne_electrique l
+JOIN troncon_de_route r
+  ON ST_Intersects(l.geometrie, r.geometrie)
+WHERE l.voltage IN ('400 kV', '225 kV')
+GROUP BY l.voltage;
+```
+
+**Variante — routes d'importance ≤ 2** :
+
+```sql
+SELECT l.voltage, count(*) AS routes_nationales_croisees
+FROM ligne_electrique l
+JOIN troncon_de_route r
+  ON ST_Intersects(l.geometrie, r.geometrie)
+WHERE l.voltage IN ('400 kV', '225 kV')
+  AND CAST(r.importance AS INTEGER) <= 2
+GROUP BY l.voltage;
+```
+
+### B3 — Centrales nucléaires : rayon d'influence
+
+```sql
+SELECT 'Centrale ' || c.nom AS centrale, p.role, count(*) AS pois
+FROM mission_custom_pois c
+JOIN mission_pois p
+  ON ST_DWithin(c.geometrie, p.geom, 20000)
+GROUP BY c.nom, p.role
+ORDER BY c.nom, count DESC;
+```
+
+### B4 — Mix énergétique
+
+```sql
+SELECT 'Éolienne' AS source, count(*) FROM construction_ponctuelle WHERE nature = 'Éolienne'
+UNION ALL
+SELECT 'Barrage', count(*) FROM construction_surfacique WHERE nature = 'Barrage'
+UNION ALL
+SELECT 'Poste HT critique', count(*) FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3
+UNION ALL
+SELECT 'Centrale nucléaire', count(*) FROM mission_custom_pois;
+```

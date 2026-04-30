@@ -1,0 +1,120 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - "*.qmd"
+    - "theorie/**/*.qmd"
+    - "mission/**/*.qmd"
+    - "roles/*.qmd"
+    - "corriges/*.qmd"
+    - "reference/*.qmd"
+  resources:
+    - "assets/**"
+
+website:
+  title: "Opération Manticore"
+  description: "Cours BDD NoSQL — Graph + Spatial · PostGIS + pgRouting + Neo4j"
+  repo-url: https://github.com/mzellou/cours-manticore
+  repo-actions: [edit, issue]
+  page-navigation: true
+  search:
+    type: overlay
+  navbar:
+    background: dark
+    left:
+      - text: Accueil
+        href: index.qmd
+      - text: Théorie
+        href: theorie/index.qmd
+      - text: Mission
+        href: mission/index.qmd
+      - text: Rôles
+        href: roles/attaque.qmd
+      - text: Corrigés
+        href: corriges/phase_1.qmd
+      - text: Référence
+        href: reference/setup.qmd
+    right:
+      - icon: github
+        href: https://github.com/mzellou/cours-manticore
+
+  sidebar:
+    - title: "Théorie"
+      style: docked
+      contents:
+        - theorie/index.qmd
+        - section: "Fondements"
+          contents:
+            - theorie/fondements/pourquoi.qmd
+            - theorie/fondements/modele_bdtopo.qmd
+        - section: "Outils"
+          contents:
+            - theorie/outils/postgis.qmd
+            - theorie/outils/graphdb_101.qmd
+            - theorie/outils/cypher_5min.qmd
+            - theorie/outils/pgrouting.qmd
+        - section: "Avancé"
+          contents:
+            - theorie/avance/apoc.qmd
+            - theorie/avance/sql_recursion.qmd
+            - theorie/avance/contenu_donnees.qmd
+
+    - title: "Mission"
+      style: docked
+      contents:
+        - mission/index.qmd
+        - mission/briefing.qmd
+        - mission/phase_1.qmd
+        - mission/checkpoint_1.qmd
+        - mission/transition_1_2.qmd
+        - mission/phase_2.qmd
+        - mission/checkpoint_2.qmd
+        - mission/transition_2_3.qmd
+        - mission/phase_3.qmd
+        - mission/debriefing.qmd
+
+    - title: "Rôles"
+      style: docked
+      contents:
+        - roles/attaque.qmd
+        - roles/defense.qmd
+        - roles/ravitaillement.qmd
+        - roles/energie.qmd
+
+    - title: "Corrigés"
+      style: docked
+      contents:
+        - corriges/phase_1.qmd
+        - corriges/phase_2.qmd
+        - corriges/phase_3.qmd
+        - corriges/bonus.qmd
+
+    - title: "Référence"
+      style: docked
+      contents:
+        - reference/setup.qmd
+        - reference/scripts.qmd
+        - reference/faq.qmd
+        - reference/glossaire.qmd
+        - reference/instructeur.qmd
+
+  page-footer:
+    left: "Opération Manticore · IGN/MSST"
+    right: "Build avec [Quarto](https://quarto.org)"
+
+format:
+  html:
+    theme:
+      dark: [darkly]
+      light: [cosmo]
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    code-overflow: wrap
+    code-line-numbers: false
+    link-external-newwindow: true
+    smooth-scroll: true
+    fontsize: 1rem
+
+filters:
+  - quizdown

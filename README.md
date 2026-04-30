@@ -4,7 +4,7 @@
 
 > 🎯 Projet immersif : équipes d'agents militaires cartographiant les infrastructures critiques d'un EPCI.
 
-📖 **Site du cours** : voir le dossier `site/` (Jekyll + just-the-docs, déployé via GitHub Pages)
+📖 **Site du cours** : voir le dossier `*.qmd` à la racine (Quarto, déployé via GitHub Pages)
 
 ---
 
@@ -27,6 +27,8 @@ make data-push     # push données vers R2 (prof only)
 make up            # démarrer PostGIS + Neo4j
 make down          # arrêter les conteneurs
 make clean         # arrêter + supprimer volumes
+make preview       # prévisualiser le site Quarto (localhost:4200)
+make build         # construire le site Quarto dans _site/
 ```
 
 ---
@@ -34,8 +36,13 @@ make clean         # arrêter + supprimer volumes
 ## Structure
 
 ```
-site/                     # GitHub Pages (Jekyll + just-the-docs)
-  _pages/                 # Contenu du cours (missions, rôles, théorie)
+theorie/                  # Pages théoriques (Quarto)
+mission/                  # Briefings étudiant (Quarto)
+  briefing.qmd, phase_{1,2,3}.qmd, checkpoint_{1,2}.qmd
+roles/                    # Rôles (Quarto)
+corriges/                 # Solutions (Quarto)
+reference/                # Setup, scripts, FAQ, glossaire (Quarto)
+slides/                   # Slides revealjs (générés depuis théorie)
 scripts/                  # Scripts Python (setup + phases 1-4)
   00_setup.py             # Load EPCI + Ontology + nuclear plants
   01_explore_postgis.py   # Phase 1: POI queries + ST_ClusterDBSCAN
@@ -43,14 +50,14 @@ scripts/                  # Scripts Python (setup + phases 1-4)
   03_routing_pgrouting.py # Phase 2+3: Dijkstra + constrained routing
   04_benchmark_comparison.py  # Phase 3: SQL vs Cypher benchmark
   admin_generate_gold_dumps.py  # Instructor: r2gg for 10 EPCIs
-mission/                  # Briefings étudiant (source markdown)
-  roles/{attaque,defense,ravitaillement,energie}.md
 docker-compose.yml        # PostGIS + Neo4j
 docker-compose.routing.yml  # OSRM + Valhalla (optional)
 postgres-pgrouting.Dockerfile
 pyproject.toml            # Python deps (uv)
 Makefile                  # Student setup automation
 rclone.conf.example       # Template R2 credentials
+_quarto.yml               # Configuration site Quarto
+.github/workflows/quarto.yml  # Deploy GitHub Pages
 ```
 
 ---
@@ -59,4 +66,4 @@ rclone.conf.example       # Template R2 credentials
 
 - `make data-push` pour uploader les données sur R2
 - `python scripts/admin_generate_gold_dumps.py --all` pour pré-générer les dumps
-- Guide complet : `site/_pages/instructor/`
+- Guide complet : `reference/instructeur.qmd`

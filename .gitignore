@@ -24,5 +24,13 @@ rclone.conf
 # Archive
 archive/
 
+# Quarto
+_site/
+.quarto/
+_extensions/
+
 # Route-graph-generator tracked via submodule (not .gitignore)
 .wrangler/
+
+/.quarto/
+**/*.quarto_ipynb

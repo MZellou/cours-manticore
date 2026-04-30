@@ -1,0 +1,17 @@
+---
+title: "Pourquoi ce cours ?"
+format:
+  revealjs:
+    theme: dark
+    incremental: true
+    slide-number: true
+    chalkboard: false
+    transition: fade
+    width: 1280
+    height: 720
+    code-line-numbers: false
+    code-overflow: wrap
+    smaller: true
+---
+
+{{< include ../theorie/fondements/pourquoi.qmd >}}

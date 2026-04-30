@@ -1,0 +1,73 @@
+---
+title: "Opération Manticore"
+subtitle: "Cours BDD NoSQL — Graph + Spatial · PostGIS + pgRouting + Neo4j"
+toc: false
+---
+
+*0.5J théorie · 2J TD · 40 étudiants / 10 groupes × 4 rôles*
+
+> *Vous êtes agents de renseignement. Cartographiez les infrastructures critiques d'une zone EPCI et évaluez la résilience de son réseau routier face à une simulation d'attaque.*
+
+## ▶ Commence ici
+
+1. **[📖 Briefing général](mission/briefing.qmd)** — l'énoncé de la mission, les groupes, les rôles, les livrables.
+2. **[🛠 Setup technique](reference/setup.qmd)** — Docker + Python + EPCI assigné.
+3. **[🎯 Phase 1 — Reconnaissance](mission/phase_1.qmd)** — démarre le TD.
+
+::: {.callout-tip}
+Vous pouvez consulter les **[Corrigés](corriges/phase_1.qmd)** à tout moment.
+L'objectif est de comprendre, pas de bloquer. Le LLM est votre co-pilote, pas votre béquille.
+:::
+
+## Ordre de lecture recommandé
+
+```
+Briefing général
+     │
+     ├── Setup (1ère fois)
+     │
+     ├── Théorie pré-requise → CAP, NoSQL, PostGIS essentiels
+     │
+     ├── Phase 1 — Reconnaissance (PostGIS, SQL spatial)
+     │       ↓
+     │   Checkpoint Phase 1
+     │       ↓
+     ├── Théorie Phase 2 → r2gg, pgRouting, Cypher 5-min
+     │       ↓
+     ├── Phase 2 — Cartographie (graphe + Neo4j)
+     │       ↓
+     │   Checkpoint Phase 2
+     │       ↓
+     ├── Théorie Phase 3 → APOC, lecture de plans
+     │       ↓
+     └── Phase 3 — Simulation (benchmark + attaque)
+             ↓
+         Debriefing
+```
+
+## Les 4 rôles
+
+|   | Rôle | Mission |
+|---|------|---------|
+| ⚔️ | **[Attaque](roles/attaque.qmd)** | Cibles stratégiques (aérodromes, ports, casernes) |
+| 🛡️ | **[Défense](roles/defense.qmd)** | Points vitaux (hôpitaux, ponts, gares) |
+| 📦 | **[Ravitaillement](roles/ravitaillement.qmd)** | Flux logistiques (ports fret, zones industrielles) |
+| ⚡ | **[Énergie](roles/energie.qmd)** | Réseau énergétique (postes HT, lignes THT, centrales) |
+
+## Les 3 phases
+
+| Phase | Mode | Thème | Durée |
+|-------|------|-------|-------|
+| 🔍 [Phase 1 — Reconnaissance](mission/phase_1.qmd) | Solo (par rôle) | POIs critiques (PostGIS) | 4h |
+| 🗺️ [Phase 2 — Cartographie](mission/phase_2.qmd) | Groupe | Routes + graphe (pgRouting + Neo4j) | 5h |
+| 📊 [Phase 3 — Simulation](mission/phase_3.qmd) | Groupe | Benchmark SQL vs Cypher + attaque | 5h |
+
+## Quick start
+
+```bash
+git clone <repo> && cd cours-manticore
+make setup
+python scripts/00_setup.py --epci "<votre EPCI>"
+```
+
+→ Continuez avec le **[Briefing général](mission/briefing.qmd)**.

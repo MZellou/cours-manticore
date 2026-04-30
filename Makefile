@@ -37,3 +37,14 @@ restart: down up ## Restart all containers
 # --- Cleanup ---
 clean: ## Stop docker + remove volumes
 	docker compose down -v
+
+# --- Quarto site ---
+preview: ## Live preview the Quarto site (http://localhost:4200)
+	quarto preview
+
+build: ## Build the Quarto site to _site/
+	quarto render
+
+publish: build ## Build + push to gh-pages (deploy)
+	@echo ">>> Site built in _site/"
+	@echo ">>> Commit and push to trigger GitHub Pages deployment"

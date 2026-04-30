@@ -1,0 +1,17 @@
+---
+title: "GraphDB 101"
+format:
+  revealjs:
+    theme: dark
+    incremental: true
+    slide-number: true
+    chalkboard: false
+    transition: fade
+    width: 1280
+    height: 720
+    code-line-numbers: false
+    code-overflow: wrap
+    smaller: true
+---
+
+{{< include ../theorie/outils/graphdb_101.qmd >}}

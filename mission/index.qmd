@@ -1,0 +1,41 @@
+---
+title: "Missions — Opération Manticore"
+order: 1
+---
+
+# Opération Manticore — Vue d'ensemble
+
+> Vous êtes agents de renseignement. Votre mission : cartographier les infrastructures critiques d'une zone EPCI et évaluer la résilience de son réseau routier face à une simulation d'attaque.
+
+**Format :** 0.5J théorie + 2J hands-on — 40 étudiants / 10 groupes × 4 rôles.
+
+---
+
+## Avant de commencer
+
+Lisez le [Briefing général](briefing.qmd) : composition des groupes, rôles, livrables attendus.
+
+---
+
+## Les 3 phases
+
+| Phase | Intitulé | Mode | Durée |
+|-------|----------|------|-------|
+| [Phase 1 — Reconnaissance](phase_1.qmd) | POIs critiques par rôle (SQL + PostGIS) | Solo | 4h |
+| [Phase 2 — Cartographie](phase_2.qmd) | Graphe routier + Neo4j (pgRouting + Cypher) | Groupe | 5h |
+| [Phase 3 — Simulation](phase_3.qmd) | Attaque / benchmark SQL vs Cypher | Groupe | 5h |
+
+---
+
+## Transitions et checkpoints
+
+- [Checkpoint Phase 1](checkpoint_1.qmd) — sanity check avant Phase 2
+- [Transition 1 → 2](transition_1_2.qmd) — ce qui change entre les phases
+- [Checkpoint Phase 2](checkpoint_2.qmd) — sanity check avant Phase 3
+- [Transition 2 → 3](transition_2_3.qmd) — nouveaux outils (APOC, simulation)
+
+---
+
+## Fin de mission
+
+[Debriefing](debriefing.qmd) — livrables, grille de concepts, ressources pour aller plus loin.
