@@ -65,7 +65,7 @@ Briefing général
 ## Quick start
 
 ```bash
-git clone <repo> && cd cours-manticore
+git clone https://github.com/MZellou/cours-manticore.git && cd cours-manticore
 make setup
 python scripts/00_setup.py --epci "<votre EPCI>"
 ```

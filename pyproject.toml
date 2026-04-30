@@ -26,4 +26,13 @@ packages = ["scripts"]
 dev-dependencies = [
     "jupyter",
     "notebook",
+    "pytest>=8",
+    "pytest-xdist",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "skip_template: query has unresolved placeholders",
+    "needs_gold_dumps: requires pgRouting ways table",
+    "needs_neo4j: requires Neo4j connection",
 ]

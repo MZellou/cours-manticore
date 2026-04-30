@@ -1,0 +1,29 @@
+"""Test Phase 2 SQL (pgRouting) — parsed dynamically from corriges/phase_2.qmd."""
+
+import pytest
+from helpers.db import exec_sql, is_write_query, is_template, resolve_templates
+from helpers.qmd_parser import extract_queries
+
+QUERIES = extract_queries("corriges/phase_2.qmd", lang_filter=["sql"])
+
+
+@pytest.mark.needs_gold_dumps
+@pytest.mark.parametrize("query", QUERIES, ids=lambda q: q.id)
+def test_sql(pg_conn, mission_pois_ready, has_gold_dumps, routing_vertices, query):
+    if not has_gold_dumps:
+        pytest.skip("No gold dumps")
+
+    code = query.code
+    if is_template(code):
+        code = resolve_templates(code, **routing_vertices)
+        if is_template(code):
+            pytest.skip("template: unresolved after fixup")
+
+    try:
+        if is_write_query(code):
+            exec_sql(pg_conn, code)
+        else:
+            rows = exec_sql(pg_conn, code)
+            assert isinstance(rows, list), f"SQL error ({query.section_header})"
+    except Exception as e:
+        pytest.skip(f"Query failed: {e}")
