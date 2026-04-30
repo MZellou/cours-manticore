@@ -297,7 +297,7 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 | `aerodrome` | `categorie IN ('Internationale','Nationale')` | Aérodromes majeurs | 1 |
 | `equipement_de_transport` | `nature='Port' AND nature_detaillee='Port de commerce'` | Ports commerciaux | 1 |
 | `zone_d_activite_ou_d_interet` | `categorie='Administratif ou militaire' AND nature IN ('Gendarmerie','Caserne','Camp militaire non clos')` | Casernes, gendarmeries | ~5 |
-| `construction_ponctuelle` | `nature='Tour de contrôle aérien'` | Tours de contrôle | ~0-1 |
+| `equipement_de_transport` | `nature='Tour de contrôle aérien'` | Tours de contrôle | ~0-1 |
 
 ### Rôle DÉFENSE
 
@@ -308,7 +308,7 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 | `zone_d_activite_ou_d_interet` | `nature IN ('Hôpital','Établissement hospitalier','Maison de retraite')` | Hôpitaux, EHPAD |
 | `zone_d_activite_ou_d_interet` | `categorie='Administratif ou militaire' AND nature IN ('Gendarmerie','Caserne')` | Forces de l'ordre |
 | `equipement_de_transport` | `nature LIKE 'Gare%'` | Gares (évacuation) |
-| `construction_ponctuelle` | `nature IN ('Phare','Tour de guet')` | Points d'observation |
+| `construction_ponctuelle` | `nature='Phare' OR (nature='Autre construction élevée' AND nature_detaillee='Tour de guet')` | Points d'observation |
 | `construction_surfacique` | `nature='Pont'` | Ponts stratégiques |
 
 ### Rôle RAVITAILLEMENT
@@ -319,7 +319,7 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 |---|---|---|
 | `equipement_de_transport` | `nature IN ('Port') AND nature_detaillee IN ('Port de commerce','Port de pêche','Halte fluviale')` | Ports |
 | `equipement_de_transport` | `nature IN ('Gare fret uniquement','Gare voyageurs et fret')` | Gares fret |
-| `zone_d_activite_ou_d_interet` | `nature IN ('Zone industrielle','Zone d\'activités','Usine','Marché')` | Zones logistiques |
+| `zone_d_activite_ou_d_interet` | `nature IN ('Zone industrielle','Usine','Marché')` | Zones logistiques |
 | `reservoir` | `nature='Réservoir industriel'` | Réservoirs |
 | `troncon_de_voie_ferree` | `usage='Fret'` | Voies ferrées fret |
 
@@ -343,7 +343,7 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 | Table | Filtre | POIs obtenus |
 |---|---|---|
 | `zone_d_activite_ou_d_interet` | `categorie='Industriel et commercial' AND nature IN ('Zone industrielle','Usine','Déchèterie','Divers industriel')` | Zones industrielles |
-| `construction_ponctuelle` | `nature IN ('Puits de pétrole','Puits de gaz','Torchère','Cheminée')` | Installations lourdes |
+| `construction_ponctuelle` | `nature='Puits d''hydrocarbures'` | Puits de pétrole, de gaz |
 | `construction_lineaire` | `nature='Portique portuaire'` | Portiques (fret maritime) |
 | `equipement_de_transport` | `nature='Port' AND nature_detaillee IN ('Port de commerce','Bassin')` | Ports industriels |
 

@@ -18,7 +18,7 @@ Localiser les infrastructures vitales dont la perte affecterait la population.
 | `zone_d_activite_ou_d_interet` | `categorie = 'Administratif ou militaire' AND nature IN ('Gendarmerie', 'Caserne')` | Sécurité |
 | `equipement_de_transport` | `nature ILIKE 'Gare%'` | Évacuation |
 | `construction_surfacique` | `nature = 'Pont'` | Infrastructures clés |
-| `construction_ponctuelle` | `nature IN ('Phare', 'Tour de guet')` | Observation |
+| `construction_ponctuelle` | `nature = 'Phare' OR (nature = 'Autre construction élevée' AND nature_detaillee = 'Tour de guet')` | Observation |
 
 ## Requête de base
 

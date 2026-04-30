@@ -8,7 +8,7 @@ order: 1
 
 ---
 
-## T0a — SQL : GROUP BY, HAVING, ORDER BY
+## T0a — Explorer les données sources avec DuckDB
 
 ```sql
 -- Combien d'entrées par catégorie ?

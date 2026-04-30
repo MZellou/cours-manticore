@@ -16,7 +16,7 @@ Localiser les nœuds logistiques critiques (ports, gares fret, zones industriell
 |-------|--------|-------------|
 | `equipement_de_transport` | `nature = 'Port' AND nature_detaillee IN ('Port de commerce', 'Port de pêche', 'Halte fluviale')` | Ports |
 | `equipement_de_transport` | `nature IN ('Gare fret uniquement', 'Gare voyageurs et fret')` | Gares fret |
-| `zone_d_activite_ou_d_interet` | `nature IN ('Zone industrielle', 'Zone d''activités', 'Usine', 'Marché')` | Zones logistiques |
+| `zone_d_activite_ou_d_interet` | `nature IN ('Zone industrielle', 'Usine', 'Marché')` | Zones logistiques |
 | `reservoir` | `nature = 'Réservoir industriel'` | Stockage |
 
 ## Requête de base

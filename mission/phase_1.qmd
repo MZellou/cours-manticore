@@ -32,19 +32,54 @@ order: 2
 
 > Avant d'attaquer les POIs, remettons les bases en main.
 
-### T0a — SQL : GROUP BY, HAVING, ORDER BY
+### T0a — Explorer les données sources avec DuckDB
 
-La table `zone_d_activite_ou_d_interet` contient ~596k lignes. Explorez-la :
+Avant de requêter PostGIS, explorons les fichiers Parquet source pour comprendre les colonnes et les valeurs disponibles.
 
-**Objectifs** :
-1. Lister les catégories et leur nombre (`GROUP BY`)
-2. Filtrer les catégories avec > 10 000 entrées (`HAVING`)
-3. Explorer les natures dans la catégorie 'Santé'
+**Outil** : DuckDB (inlinable en CLI). Exemple pour `zone_d_activite_ou_d_interet` :
 
-**Exercice** : trouvez combien il y a de gendarmeries ET de casernes dans votre EPCI.
-*Indice : filtrez sur `categorie` ET `nature`.*
+```bash
+# Lister les colonnes de la table
+duckdb -c "DESCRIBE SELECT * FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet')"
 
-→ [Corrigé](../corriges/phase_1.qmd#t0a--sql--group-by-having-order-by)
+# Compter les lignes par catégorie
+duckdb -c "
+  SELECT categorie, count(*) as cnt
+  FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet')
+  GROUP BY categorie ORDER BY cnt DESC;"
+
+# Explorer les natures dans la catégorie 'Santé'
+duckdb -c "
+  SELECT nature, nature_detaillee, count(*) as cnt
+  FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet')
+  WHERE categorie = 'Santé'
+  GROUP BY ALL ORDER BY cnt DESC;"
+```
+
+**Lien avec l'ontologie** : les valeurs `nature` correspondent au niveau *Object* et `nature_detaillee` au niveau *Detail* de l'ontologie BDTOPO (voir `data/ontologie/`). Vérifiez :
+
+```bash
+# Croiser avec l'ontologie : quelles natures existent dans les données ET l'ontologie ?
+duckdb -c "
+  SELECT d.nature, d.cnt, o.short_def
+  FROM (
+    SELECT nature, count(*) as cnt
+    FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet')
+    WHERE categorie = 'Santé' GROUP BY nature
+  ) d
+  LEFT JOIN (
+    SELECT name as obj_name, substring(definition, 1, 120) as short_def
+    FROM read_parquet('data/ontologie/bdtopo_objects.parquet')
+    WHERE parent_db_name = 'zone_d_activite_ou_d_interet'
+  ) o ON d.nature = o.obj_name
+  ORDER BY d.cnt DESC;"
+```
+
+**Exercice** : utilisez DuckDB pour vérifier combien il y a de gendarmeries ET de casernes dans `zone_d_activite_ou_d_interet`. *Indice : filtrez sur `categorie` ET `nature`.*
+
+> **Pourquoi DuckDB ?** Les fichiers Parquet sont les données brutes. PostGIS les charge avec une transformation. Explorer d'abord les Parquet vous permet de découvrir les colonnes et valeurs *avant* d'écrire des requêtes SQL complexes. C'est aussi un moyen de faire le lien avec l'ontologie BDTOPO (hiérarchie Database → Object → Detail).
+
+→ [Corrigé](../corriges/phase_1.qmd#t0a--explorer-les-donnes-sources-avec-duckdb)
 
 ### T0b — SQL : Jointures spatiales
 

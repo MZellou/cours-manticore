@@ -17,7 +17,7 @@ Localiser les infrastructures dont la destruction maximiserait l'impact sur l'EP
 | `aerodrome` | `categorie IN ('Internationale', 'Nationale')` | Aérodromes majeurs |
 | `equipement_de_transport` | `nature = 'Port' AND nature_detaillee = 'Port de commerce'` | Ports commerciaux |
 | `zone_d_activite_ou_d_interet` | `categorie = 'Administratif ou militaire' AND nature IN ('Gendarmerie', 'Caserne', 'Camp militaire non clos')` | Forces armées |
-| `construction_ponctuelle` | `nature ILIKE 'Tour de contrôle%'` | Tours de contrôle |
+| `equipement_de_transport` | `nature = 'Tour de contrôle aérien'` | Tours de contrôle |
 
 ## Requête de base
 
@@ -57,7 +57,7 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 
 > Chaque aérodrome majeur a-t-il une tour de contrôle à proximité ?
 
-*Indice : sous-requête corrélée dans le SELECT — comptez les `construction_ponctuelle` avec `nature ILIKE 'Tour de contrôle%'` à moins de 1 km.*
+*Indice : sous-requête corrélée dans le SELECT — comptez les `equipement_de_transport` avec `nature = 'Tour de contrôle aérien'` à moins de 1 km.*
 
 ### B4 — Vitesse d'accès aux cibles
 

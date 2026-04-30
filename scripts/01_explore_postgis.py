@@ -48,8 +48,8 @@ ROLE_QUERIES = {
 
         SELECT 'tour_controle', cleabs, nature, nature_detaillee, NULL,
                ST_Force2D(geometrie) AS geom
-        FROM construction_ponctuelle
-        WHERE nature ILIKE 'Tour de contrôle%'
+        FROM equipement_de_transport
+        WHERE nature = 'Tour de contrôle aérien'
     """,
     "defense": """
         -- Points à protéger : hôpitaux, gendarmeries, gares, ponts, phares
@@ -85,7 +85,8 @@ ROLE_QUERIES = {
         SELECT 'observation', cleabs, nature, nature_detaillee, NULL,
                ST_Force2D(geometrie) AS geom
         FROM construction_ponctuelle
-        WHERE nature IN ('Phare', 'Tour de guet')
+        WHERE nature = 'Phare'
+           OR (nature = 'Autre construction élevée' AND nature_detaillee = 'Tour de guet')
     """,
     "ravitaillement": """
         -- Flux logistiques : ports, gares fret, zones industrielles, réservoirs
@@ -107,7 +108,7 @@ ROLE_QUERIES = {
         SELECT 'zone_logistique', cleabs, categorie, nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM zone_d_activite_ou_d_interet
-        WHERE nature IN ('Zone industrielle', "Zone d'activités", 'Usine', 'Marché')
+        WHERE nature IN ('Zone industrielle', 'Usine', 'Marché')
 
         UNION ALL
 
