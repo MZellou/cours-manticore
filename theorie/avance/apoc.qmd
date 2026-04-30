@@ -1,59 +1,21 @@
 ---
-title: "APOC — algorithmes de graphe"
+title: "APOC — avancé"
 order: 1
 ---
 
-# APOC — algorithmes de graphe
+# APOC — algorithmes avancés
 
-> **À lire avant la Phase 3.** APOC ajoute à Cypher des algorithmes absents du SQL pur (Dijkstra pondéré, subgraphes, centralité). Note : le cours utilise **Neo4j 5.x / APOC 5.x** — certaines API 4.x sont dépréciées.
-
----
-
-## Qu'est-ce qu'APOC ?
-
-**APOC** = *Awesome Procedures On Cypher*. C'est une **bibliothèque officielle** de procédures Cypher, livrée comme un plugin Neo4j.
-
-Dans le `docker-compose.yml` du cours, APOC est déjà chargé :
-
-```yaml
-NEO4J_PLUGINS: '["apoc"]'
-NEO4J_dbms_security_procedures_unrestricted: 'apoc.*'
-```
-
-Vérifier qu'il est dispo dans Neo4j Browser :
-
-```cypher
-CALL apoc.help('apoc') YIELD name RETURN count(*);
-```
+> **À lire avant la Phase 3.** Betweenness centrality, chemin avec contraintes, et lecture de plans Cypher. Prérequis : [APOC — les essentiels](../outils/apoc_basics.qmd).
 
 ---
 
-## `apoc.algo.dijkstra` — plus court chemin pondéré
+## `gds.betweenness.stream()` — centralité
 
-> APOC 5.x : signature inchangée. Contrairement à `shortestPath()` natif (non pondéré), APOC permet de spécifier une propriété de poids sur les arêtes.
-
-```cypher
-// Trouver le chemin le plus court entre deux POIs
-MATCH (start:POI {nom: 'Centrale_Flamanville'}),
-      (end:POI   {nom: 'Aeroport_Brest'})
-CALL apoc.algo.dijkstra(start, end, 'DISTANCE', 'meters')
-YIELD path, weight
-RETURN [n IN nodes(path) | n.nom] AS etapes, weight AS distance_m;
-```
-
-| Argument | Sens |
-|----------|------|
-| `start`, `end` | Nœuds de départ et d'arrivée |
-| `'DISTANCE'` | type de relation à traverser |
-| `'meters'` | propriété de poids sur la relation |
-
----
-
-## `gds.betweenness.stream()` — centralité (APOC 5.x)
-
-> **API critique** : `apoc.algo.betweenness` (4.x) est dépréciée. En APOC 5.x, la betweenness centrality passe par le catalogue GDS (*Graph Data Science*).
+> **API critique** : `apoc.algo.betweenness` (4.x) est dépréciée. En Neo4j 5.x, la betweenness centrality passe par le catalogue **GDS** (*Graph Data Science*).
 
 **Betweenness centrality** d'un nœud = nombre de plus courts chemins entre toutes les paires qui **passent par ce nœud**. Plus le score est haut, plus le nœud est un **choke point** potentiel.
+
+**Pourquoi projeter le graphe ?** GDS charge le graphe en mémoire pour des calculs optimisés. C'est obligatoire avant tout algorithme GDS.
 
 ```cypher
 // 1. Projetter le graphe dans le catalogue GDS
@@ -76,46 +38,11 @@ ORDER BY score DESC LIMIT 10;
 
 → Phase 3 T1 : c'est le candidat #1 pour la **stratégie offensive**.
 
----
-
-## `apoc.path.subgraphAll` — sous-graphe accessible
-
-Retourne tous les nœuds **et toutes les arêtes** atteignables depuis un point, dans une limite de profondeur.
+### Nettoyer le graphe projeté
 
 ```cypher
-MATCH (centre:POI {nature: 'Aérodrome'}) LIMIT 1
-CALL apoc.path.subgraphAll(centre, {
-  maxLevel: 3,
-  relationshipFilter: 'DISTANCE'
-})
-YIELD nodes, relationships
-RETURN size(nodes) AS nb_pois, size(relationships) AS nb_liens;
+CALL gds.graph.drop('myGraph');
 ```
-
-| Option | Sens |
-|--------|------|
-| `maxLevel` | profondeur maximale (sauts) |
-| `relationshipFilter` | restreindre aux relations de ce type |
-| `labelFilter` | restreindre aux labels (`'+POI'` = inclure, `'-Base'` = exclure) |
-
-→ Phase 3 T2c : sous-graphe "à 3 sauts d'un aérodrome".
-
----
-
-## `allShortestPaths()` — Cypher natif
-
-> **`allShortestPaths()` n'est pas APOC** — c'est une fonction native Cypher (== Cypher 5.x). Elle trouve tous les plus courts chemins entre deux nœuds (pas juste un).
-
-```cypher
-// Tous les chemins minimaux entre un POI attaque et un POI défense
-MATCH (a:POI {role: 'attaque'}), (d:POI {role: 'défense'}),
-      path = allShortestPaths((a)-[:DISTANCE*]-(d))
-RETURN [n IN nodes(path) | n.nom] AS chemin,
-       reduce(total = 0, r IN relationships(path) | total + r.meters) AS distance
-ORDER BY distance ASC LIMIT 5;
-```
-
-> En SQL pur, énumérer "tous les plus courts chemins" est **impossible** sans un script Python qui boucle sur Dijkstra. Cypher le fait en une ligne.
 
 ---
 
@@ -178,22 +105,10 @@ CREATE INDEX ON ()-[:DISTANCE]-();
 
 ---
 
-## Pièges fréquents
-
-| Symptôme | Cause probable |
-|----------|---------------|
-| `Procedure not found` | APOC pas chargé — vérifier `docker compose ps neo4j` |
-| `gds.betweenness.stream()` échoue | Graphe pas projeté dans GDS → faire `gds.graph.project()` d'abord |
-| Requête lente (beaucoup de db hits) | Manque d'index — utilisez `PROFILE` |
-| `apoc.algo.dijkstra` ignore le poids | Vérifier que la propriété est **numérique**, pas string |
-| `allShortestPaths` timeout | Graphe trop grand → limiter avec `maxLevel` |
-
----
-
 ## Pour aller plus loin
 
-- [GraphDB 101](../outils/graphdb_101.qmd) — le modèle LPG et traversée de graphe
-- [Cypher en 5 minutes](../outils/cypher_5min.qmd) — les bases
-- [pgRouting et r2gg](../outils/pgrouting.qmd) — routage côté PostGIS
+- [APOC — les essentiels](../outils/apoc_basics.qmd) — Dijkstra, subgraphAll, allShortestPaths
+- [SQL — limites & EXPLAIN](../outils/sql_recursion.qmd) — lecture de plans SQL
 - [Phase 3](../../mission/phase_3.qmd) — la pratique
 - [Documentation APOC 5.x](https://neo4j.com/docs/apoc/current/) (externe)
+- [Documentation GDS](https://neo4j.com/docs/graph-data-science/current/) (externe)

@@ -7,7 +7,7 @@ order: 1
 
 > Vous êtes agents de renseignement. Votre mission : cartographier les infrastructures critiques d'une zone EPCI et évaluer la résilience de son réseau routier face à une simulation d'attaque.
 
-**Format :** 0.5J théorie + 2J hands-on — 40 étudiants / 10 groupes × 4 rôles.
+**Format :** 0.5J théorie + 2J hands-on — 52 étudiants / 13 groupes × 4 rôles.
 
 ---
 

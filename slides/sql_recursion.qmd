@@ -14,4 +14,4 @@ format:
     smaller: true
 ---
 
-{{< include ../theorie/avance/sql_recursion.qmd >}}
+{{< include ../theorie/outils/sql_recursion.qmd >}}

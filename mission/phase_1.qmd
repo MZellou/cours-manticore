@@ -13,7 +13,7 @@ order: 2
 - [Pourquoi ce cours](../theorie/fondements/pourquoi.qmd) — pose les fondations
 - [PostGIS — essentiels](../theorie/outils/postgis.qmd) — SRID, `ST_*`, GIST, DBSCAN
 - [Modèle BDTOPO](../theorie/fondements/modele_bdtopo.qmd) — quelles tables, quels champs
-- [SQL — limites & EXPLAIN](../theorie/avance/sql_recursion.qmd) — pour la T1 ontologique
+- [SQL — limites & EXPLAIN](../theorie/outils/sql_recursion.qmd) — pour la T1 ontologique
 
 **Ton rôle** : [⚔️ Attaque](../roles/attaque.qmd) · [🛡️ Défense](../roles/defense.qmd) · [📦 Ravitaillement](../roles/ravitaillement.qmd) · [⚡ Énergie](../roles/energie.qmd)
 :::
@@ -59,7 +59,7 @@ Croisez deux tables avec une jointure spatiale (`ST_Intersects`, `ST_DWithin`).
 
 ### T0c — Cypher : premiers pas dans Neo4j
 
-Ouvrez [http://localhost:7474](http://localhost:7474). L'ontologie est déjà chargée.
+Ouvrez [http://localhost:7474](http://localhost:7474). L'ontologie est déjà chargée (si ce n'est pas le cas, les POIs seront migrés dans la Phase 2).
 
 **Objectifs** :
 1. Lister les nœuds de l'ontologie (`MATCH`)
@@ -87,7 +87,7 @@ L'ontologie a 3 niveaux hiérarchiques : Database → Object → Detail.
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
-- Pourquoi `WITH RECURSIVE` est-il *plus verbeux* que `(d)-[:EST_SOUS_TYPE_DE*]->(o)` en Cypher ? (cf. [SQL — limites](../theorie/avance/sql_recursion.qmd))
+- Pourquoi `WITH RECURSIVE` est-il *plus verbeux* que `(d)-[:EST_SOUS_TYPE_DE*]->(o)` en Cypher ? (cf. [SQL — limites](../theorie/outils/sql_recursion.qmd))
 - Que se passe-t-il si l'ontologie a 7 niveaux au lieu de 3 ? Et 15 ?
 - À quel moment l'arbre devient-il un **graphe** (avec cycles) ? Le `WITH RECURSIVE` tient-il le coup ?
 

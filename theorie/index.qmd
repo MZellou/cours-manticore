@@ -16,14 +16,14 @@ Fondements
   ├── Modèle BDTOPO
   │
   ├── Outils (au fil des phases)
-  │   ├── PostGIS — essentiels     → avant Phase 1
-  │   ├── Cypher en 5 minutes      → avant Phase 2
-  │   ├── GraphDB 101              → avant Phase 2
-  │   └── pgRouting et r2gg        → avant Phase 2
+  │   ├── PostGIS — essentiels       → avant Phase 1
+  │   ├── SQL — limites & EXPLAIN    → avant Phase 1 (ontologie)
+  │   ├── Cypher en 5 minutes        → avant Phase 2
+  │   ├── GraphDB 101                → avant Phase 2
+  │   └── pgRouting et r2gg          → avant Phase 2
   │
   └── Avancé (Phase 3+)
       ├── APOC — algorithmes
-      ├── SQL — limites & EXPLAIN
       └── Contenu des données (référence)
 ```
 
@@ -31,4 +31,4 @@ Fondements
 
 - **[Fondements](fondements/pourquoi.qmd)** — Ce qu'il faut savoir avant le TD
 - **[Outils](outils/postgis.qmd)** — Les outils dans l'ordre d'utilisation
-- **[Avancé](avance/apoc.qmd)** — Pour aller plus loin (Phase 3+)
+- **[Avancé](avance/apoc.qmd)** — Pour aller plus loin (Phase 3)

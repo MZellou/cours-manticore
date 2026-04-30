@@ -1,3 +1,5 @@
+# AGENT ok.md
+
 # cours-manticore — Agent Guide (Opération Manticore V2)
 
 ## Project identity
@@ -11,7 +13,15 @@ Teaching repo: DB course (NoSQL graph + spatial), IGN/BDTOPO context.
 ```bash
 cp .env.example .env && docker compose up -d   # PostGIS (w/ pgRouting) + Neo4j
 uv sync                                          # Python deps (>=3.11)
+python scripts/00_setup.py --epci "<EPCI name>" # canonical entry point: loads ontology + POIs + nuclear plants
 ```
+
+Optional routing stack (OSRM + Valhalla, not needed for the TD):
+`docker compose -f docker-compose.routing.yml up -d`
+
+**Default credentials** (from `.env.example`):
+- PostGIS — db `bdtopo_manticore`, user `postgres`, pass `manticore2026`
+- Neo4j — user `neo4j`, pass `manticore2026`
 
 **Makefile shortcuts:**
 ```bash
@@ -21,6 +31,9 @@ make data-pull     # Pull data from Cloudflare R2
 make data-push     # Push data to R2 (instructor only)
 make up / make down         # Start/stop containers
 make clean / make restart  # Clean volumes or full restart
+make preview       # Live preview Quarto site (localhost:4200)
+make build         # Build Quarto site to _site/
+make publish       # Build + push to gh-pages (via GitHub Actions)
 ```
 
 - PostGIS: `localhost:5432` (includes pgRouting)
@@ -38,18 +51,21 @@ scripts/
   02_migrate_to_neo4j.py   # Phase 2: Migrate ontology + POIs → Neo4j (APOC)
   03_routing_pgrouting.py  # Phase 2+3: Dijkstra + constrained routing + choke points
   04_benchmark_comparison.py  # Phase 3: SQL vs Cypher benchmark + generate_situation_map()
+  admin_extract_epci_data.py  # Instructor: per-EPCI BDTOPO slicing (BBOX pushdown)
   admin_generate_gold_dumps.py  # Instructor: r2gg for 10 EPCIs
 data/
   epci.parquet                    # EPCI geometries
   poi_source/                     # BDTOPO Parquet files (per table)
   ontologie/                      # BDTOPO ontology Parquet files
   gold_dumps/                     # Pre-computed road topology (r2gg output)
-mission/                   # Student briefings
-  00_briefing.md           # Group assignments + roles
-  phase_{1,2,3}_*.md       # Phase briefings
-  roles/{attaque,defense,ravitaillement,energie}.md
-slides/                    # Marp theory slides
-site/                      # Jekyll + just-the-docs (GitHub Pages)
+theorie/                   # Theory pages (Quarto)
+mission/                   # Student briefings (Quarto)
+  briefing.md, phase_{1,2,3}.qmd, checkpoint_{1,2}.qmd, transition_{1_2,2_3}.qmd, debriefing.qmd
+roles/                    # Role briefings (Quarto)
+corriges/                 # Solutions (Quarto)
+reference/                # Setup, scripts, FAQ, glossaire, instructeur (Quarto)
+slides/                   # Revealjs slides (generated from theory via {{< include >}})
+route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold_dumps.py only
 ```
 
 ## Key concepts
@@ -63,15 +79,13 @@ site/                      # Jekyll + just-the-docs (GitHub Pages)
 
 ## Best Practices & Lessons Learned
 
-### Data Extraction
-- **Parquet BBOX pushdown:** Reading `geometrie_bbox[0]` from a row gets the FIRST row's bbox, not the row group extent. Use `pf.metadata.row_group(i).column(j).statistics` on `geometrie_bbox.{xmin,xmax,ymin,ymax}` sub-columns.
-- **DuckDB > shapely for bulk EPCI filtering:** ~25s for 13 EPCIs vs shapely row-by-row. BBOX pre-extraction is sufficient; exact filtering happens in PostGIS at query time.
-- **EPCI key:** Always use `code_siren` (string, 9 chars) as canonical key. Never `nom_officiel` (accents, spaces, fragile).
-
-### Project Structure
-- **Admin scripts:** Keep `admin_*.py` separate from student scripts. Produce small per-EPCI artifacts students can download independently.
-- **Gold Dumps for road topology:** Pre-computed, avoid live r2gg in TD.
+- **Spatial Filtering:** BBOX pushdown (pyarrow) before shapely intersection.
+- **Parquet BBOX gotcha:** `geometrie_bbox[0]` on a row gives the FIRST row's bbox, not the row-group extent. Use `pf.metadata.row_group(i).column(j).statistics` on `geometrie_bbox.{xmin,xmax,ymin,ymax}` sub-columns.
+- **DuckDB > shapely** for bulk EPCI filtering (~25s for 13 EPCIs vs row-by-row); BBOX pre-extract is enough — exact filtering happens in PostGIS at query time.
+- **Canonical EPCI key:** `code_siren` (9-char string). Never `nom_officiel` (accents/spaces are fragile).
+- **Performance:** Gold Dumps for road topology, avoid live r2gg in TD.
 - **Nuclear plants:** Not in BDTOPO — injected as custom POIs at setup.
-- **Role queries:** Each role has specific table+filter combos (see `contenu_donnees.md`).
+- **Role queries:** Each role has specific table+filter combos (see `reference/glossaire.qmd`).
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).
-- **site/**: Jekyll + just-the-docs deployed to GitHub Pages; run `make docs` or build manually.
+- **Site:** Quarto website deployed to GitHub Pages via `.github/workflows/quarto.yml`. Source files at root (`*.qmd`), built to `_site/`. Theory pages under `theorie/`, mission pages under `mission/`, roles under `roles/`, corrigés under `corriges/`. Slides in `slides/` use `{{< include >}}` to reuse theory content.
+- **Quizdown:** Checkpoints (`mission/checkpoint_*.qmd`) include interactive quizzes via `quizdown` Quarto extension.

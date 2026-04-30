@@ -34,3 +34,5 @@ _extensions/
 
 /.quarto/
 **/*.quarto_ipynb
+
+.opencode/

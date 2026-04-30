@@ -6,7 +6,7 @@ order: 1
 
 > **Vous êtes agents de renseignement. Votre mission : cartographier les infrastructures critiques d'une zone EPCI et évaluer la résilience de son réseau routier face à une simulation d'attaque.**
 
-## Composition (40 étudiants / 10 groupes × 4 agents)
+## Composition (52 étudiants / 13 groupes × 4 agents)
 
 | Groupe | EPCI assigné | Profil tactique |
 |--------|-------------|-----------------|

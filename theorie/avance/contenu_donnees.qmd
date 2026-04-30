@@ -256,31 +256,31 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 
 #### Répartition des POIs par type (vue consolidée)
 
-![POI counts](../../site/assets/img/theory/chart_poi_counts.png)
+![POI counts](../../assets/img/theory/chart_poi_counts.png)
 
 **Ce graphe montre** le nombre de POIs par catégorie pour chaque EPCI. Lyon domine sur presque tous les types (11 millions d'habitants). Brest, Dunkerque et Le Havre se distinguent sur les équipements de transport (ports, marinas). Grenoble et Lyon trustent les constructions linéaires (tunnels, viaducs alpins).
 
 #### Réseau routier : urbanisation vs rural
 
-![Road network](../../site/assets/img/theory/chart_road_network.png)
+![Road network](../../assets/img/theory/chart_road_network.png)
 
-**Deux couleurs** : bleu = tronçons en zone urbaine, orange = rural. Les EPCIs métropoles (Lyon, Lille, Bordeaux) ont un réseau quasi-intégralement urbain. Le Cotentin et le Pays Basque sont profondément ruraux. Useful pour le TD ravitaillement : les livraisons en zone rurale dépendent des chemins (plus lents, plus vulnérables).
+**Deux couleurs** : bleu = tronçons en zone urbaine, orange = rural. Les EPCIs métropoles (Lyon, Lille, Bordeaux) ont un réseau quasi-intégralement urbain. Le Cotentin et le Pays Basque sont profondément ruraux. Utile pour le TD ravitaillement : les livraisons en zone rurale dépendent des chemins (plus lents, plus vulnérables).
 
 #### Chaleur : alignment des rôles
 
-![Role heatmap](../../site/assets/img/theory/chart_role_heatmap.png)
+![Role heatmap](../../assets/img/theory/chart_role_heatmap.png)
 
 **Lignes** = rôles (Attaque, Défense, Ravitaillement, Énergie). **Couleurs** = pertinence des tables pour ce rôle (échelle log). Un coefficient élevé (rouge) signifie que cette table contient beaucoup de POIs utiles à ce rôle dans la majorité des EPCIs. Par exemple : Ravitaillement → `reservoir` (eau potable, industiel) est pertinent partout.
 
 #### Composition du réseau routier par type de voie
 
-![Road composition](../../site/assets/img/theory/chart_road_composition.png)
+![Road composition](../../assets/img/theory/chart_road_composition.png)
 
 **Barres empilées** : autoroute (foncé) / 2 canaux (medium) / 1 canal (clair) / chemins & autres (très clair). Permet d'évaluer la capacité de déplacement rapide : un EPCI avec beaucoup d'orange clair = réseau sparse, temps de trajet plus longs. Bordeaux et Lille ont la meilleure densité autoroutière.
 
 #### Inventaire global des données (par table)
 
-![Data inventory](../../site/assets/img/theory/chart_data_inventory.png)
+![Data inventory](../../assets/img/theory/chart_data_inventory.png)
 
 **Totaux agrégés sur les 13 EPCIs** pour chaque table source. `troncon_de_route` domine (~1,5 million de segments routiers). `construction_lineaire` et `construction_ponctuelle` sont les deuxièmes postes. Utile pour comprendre le poids de chaque table dans les requêtes JOIN.
 
@@ -363,7 +363,7 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 - **Pays Basque** : 23k chemins + 13k sentiers → terrain montagneux, routage intéressant.
 - **Cotentin** : péninsule, peu de routes alternatives → choke points évidents.
 - **Île de Ré** : 0 gares, 0 aérodromes → rôle Défense ou Ravitaillement maritime uniquement.
-- **Ajaccien** : 0 autoroute → pas de réseau高速.
+- **Ajaccien** : 0 autoroute → pas de réseau à grande vitesse.
 - **Grenoble** : cuvette, 1 713 restrictions de poids → zone montagneuse.
 
 ### 5.3 Centrales nucléaires (non dans BDTOPO)

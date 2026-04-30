@@ -182,7 +182,7 @@ python scripts/02_migrate_to_neo4j.py
 **Objectifs dans Neo4j Browser** :
 1. Vérifier les POIs chargés (`MATCH (p:POI)`)
 2. Traverser l'ontologie (`[:EST_SOUS_TYPE_DE*]`)
-3. Calculer un plus court chemin entre POIs (`apoc.algo.dijkstra`)
+3. Calculer un plus court chemin entre POIs (`apoc.algo.dijkstra` — cf. [APOC essentiels](../theorie/outils/apoc_basics.qmd))
 
 → [Corrigé](../corriges/phase_2.qmd#t5--migrer-dans-neo4j)
 
@@ -216,9 +216,9 @@ python scripts/02_migrate_to_neo4j.py
 
 ---
 
-## Cypher approfondi (1h)
+## Cypher approfondi (1h) — *Bonus / Aller plus loin*
 
-> Maintenant que les données sont dans Neo4j, allez plus loin que les requêtes de base.
+> Maintenant que les données sont dans Neo4j, allez plus loin que les requêtes de base. **Ces tâches sont optionnelles** — passez à la section suivante si le temps est limité.
 
 ### T7 — Créer des nœuds personnalisés (CREATE / MERGE)
 
@@ -267,7 +267,7 @@ Votre groupe a des **bases avancées** et des **points de ralliement** qui ne so
 
 → [Corrigé](../corriges/phase_2.qmd#t10--matrice-de-distances)
 
-### T11 — Isochrones (zone accessible en X minutes)
+### T11 — Isochrones (zone accessible en X minutes) — *Bonus*
 
 Une isochrone montre la zone atteignable en un temps donné depuis un point.
 
@@ -332,10 +332,10 @@ Puis utilise UNWIND pour lister les noms par rôle."
 - [ ] Dijkstra retourne un chemin valide entre 2 POIs de rôles différents
 - [ ] Le routage contraint montre une différence mesurable vs le routage normal
 - [ ] Neo4j contient les POIs des 4 rôles + requêtes Cypher fonctionnelles
-- [ ] T7 : au moins 2 nœuds personnalisés créés dans Neo4j
-- [ ] T8 : nombre de POIs isolés identifié
+- [ ] T7 : au moins 2 nœuds personnalisés créés dans Neo4j *(bonus)*
+- [ ] T8 : nombre de POIs isolés identifié *(bonus)*
 - [ ] T10 : matrice de distances calculée pour au moins 1 rôle
-- [ ] T11 : isochrone calculée (nombre de sommets atteignables)
+- [ ] T11 : isochrone calculée (nombre de sommets atteignables) *(bonus)*
 - [ ] T12 : tableau comparatif complété avec mesures réelles
 
 ::: {.callout-warning title="✅ Checkpoint"}

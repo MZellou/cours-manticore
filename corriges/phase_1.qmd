@@ -71,14 +71,14 @@ WHERE z.nature IN ('Hôpital', 'Établissement hospitalier');
 ## T0c — Cypher : premiers pas
 
 ```cypher
--- Lister les niveaux de l'ontologie
+// Lister les niveaux de l'ontologie
 MATCH (n:ClasseOntologie) RETURN n.obj_type, n.name LIMIT 20;
 
--- Trouver les enfants directs de "Tronçon de route"
+// Trouver les enfants directs de "Tronçon de route"
 MATCH (d)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Tronçon de route'})
 RETURN d.obj_type, d.name;
 
--- Compter les nœuds par label
+// Compter les nœuds par label
 MATCH (n) RETURN labels(n)[0] AS label, count(*) ORDER BY count DESC;
 ```
 

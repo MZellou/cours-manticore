@@ -50,13 +50,14 @@ website:
         - section: "Outils"
           contents:
             - theorie/outils/postgis.qmd
-            - theorie/outils/graphdb_101.qmd
             - theorie/outils/cypher_5min.qmd
+            - theorie/outils/graphdb_101.qmd
             - theorie/outils/pgrouting.qmd
+            - theorie/outils/sql_recursion.qmd
+            - theorie/outils/apoc_basics.qmd
         - section: "Avancé"
           contents:
             - theorie/avance/apoc.qmd
-            - theorie/avance/sql_recursion.qmd
             - theorie/avance/contenu_donnees.qmd
 
     - title: "Mission"

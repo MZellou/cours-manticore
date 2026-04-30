@@ -4,7 +4,7 @@ subtitle: "Cours BDD NoSQL — Graph + Spatial · PostGIS + pgRouting + Neo4j"
 toc: false
 ---
 
-*0.5J théorie · 2J TD · 40 étudiants / 10 groupes × 4 rôles*
+*0.5J théorie · 2J TD · 52 étudiants / 13 groupes × 4 rôles*
 
 > *Vous êtes agents de renseignement. Cartographiez les infrastructures critiques d'une zone EPCI et évaluez la résilience de son réseau routier face à une simulation d'attaque.*
 

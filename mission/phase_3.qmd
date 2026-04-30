@@ -10,8 +10,9 @@ order: 8
 **Durée estimée** : 5h (benchmark 1h30 + simulation itérative 2h + analyse réseau 1h + rédaction 30min)
 
 ::: {.callout-note title="📚 Théorie pré-requise"}
-- [APOC — algorithmes de graphe](../theorie/avance/apoc.qmd) — `betweenness`, `subgraphAll`, `allShortestPaths` (essentiel)
-- [SQL — limites & EXPLAIN](../theorie/avance/sql_recursion.qmd) — lire un plan `EXPLAIN ANALYZE` / `PROFILE`
+- [APOC — avancé](../theorie/avance/apoc.qmd) — `betweenness`, `expandConfig`, `PROFILE` (essentiel)
+- [APOC — essentiels](../theorie/outils/apoc_basics.qmd) — `dijkstra`, `subgraphAll` (rappel)
+- [SQL — limites & EXPLAIN](../theorie/outils/sql_recursion.qmd) — lire un plan `EXPLAIN ANALYZE` / `PROFILE`
 - [pgRouting et r2gg](../theorie/outils/pgrouting.qmd) — `pgr_connectedComponents`, simulation de coupes
 
 **Pré-requis Phase 2** : graphe ways + ways_vertices_pgr OK, Neo4j peuplé ([Checkpoint Phase 2](checkpoint_2.qmd)).
@@ -224,7 +225,9 @@ Vous êtes le **rôle Attaque**. Trouvez les 5 arêtes dont la coupure **maximis
 
 ---
 
-## Partie C — Analyse de réseau (1h)
+## Partie C — Analyse de réseau (1h) — *Bonus / Aller plus loin*
+
+> Ces tâches approfondissent l'analyse réseau. **Optionnelles** si le temps est limité — concentrez-vous sur la Partie B (simulation) et la Partie D (rapport).
 
 ### T9 — Composantes connexes avant/après destruction
 

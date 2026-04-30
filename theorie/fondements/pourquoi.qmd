@@ -122,7 +122,7 @@ Si ACID = rigueur, BASE = **pragmatisme** :
 db.hopitaux.insertOne({ nom: "CHU Brest", lits: 800, urgences: true });
 db.hopitaux.insertOne({ nom: "Clinique Kérauden", specialite: "cardiologie" });
 
-// Requête灵活 — pas besoin de ALTER TABLE
+// Requête flexible — pas besoin de ALTER TABLE
 db.hopitaux.find({ lits: { $gte: 500 } });
 ```
 

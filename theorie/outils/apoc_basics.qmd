@@ -1,0 +1,104 @@
+---
+title: "APOC — les essentiels"
+order: 6
+---
+
+# APOC — les essentiels
+
+> **À lire avant la Phase 2.** APOC ajoute à Cypher des procédures indispensables : Dijkstra pondéré, sous-graphes, plus courts chemins. Note : le cours utilise **Neo4j 5.x / APOC 5.x**.
+
+---
+
+## Qu'est-ce qu'APOC ?
+
+**APOC** = *Awesome Procedures On Cypher*. C'est une **bibliothèque officielle** de procédures Cypher, livrée comme un plugin Neo4j.
+
+Dans le `docker-compose.yml` du cours, APOC est déjà chargé :
+
+```yaml
+NEO4J_PLUGINS: '["apoc"]'
+NEO4J_dbms_security_procedures_unrestricted: 'apoc.*'
+```
+
+Vérifier qu'il est dispo dans Neo4j Browser :
+
+```cypher
+CALL apoc.help('apoc') YIELD name RETURN count(*);
+```
+
+---
+
+## `apoc.algo.dijkstra` — plus court chemin pondéré
+
+> Contrairement à `shortestPath()` natif (non pondéré), APOC permet de spécifier une propriété de poids sur les arêtes.
+
+```cypher
+MATCH (start:POI {nom: 'Centrale_Flamanville'}),
+      (end:POI   {nom: 'Aeroport_Brest'})
+CALL apoc.algo.dijkstra(start, end, 'DISTANCE', 'meters')
+YIELD path, weight
+RETURN [n IN nodes(path) | n.nom] AS etapes, weight AS distance_m;
+```
+
+| Argument | Sens |
+|----------|------|
+| `start`, `end` | Nœuds de départ et d'arrivée |
+| `'DISTANCE'` | type de relation à traverser |
+| `'meters'` | propriété de poids sur la relation |
+
+---
+
+## `apoc.path.subgraphAll` — sous-graphe accessible
+
+Retourne tous les nœuds **et toutes les arêtes** atteignables depuis un point, dans une limite de profondeur.
+
+```cypher
+MATCH (centre:POI {nature: 'Aérodrome'}) LIMIT 1
+CALL apoc.path.subgraphAll(centre, {
+  maxLevel: 3,
+  relationshipFilter: 'DISTANCE'
+})
+YIELD nodes, relationships
+RETURN size(nodes) AS nb_pois, size(relationships) AS nb_liens;
+```
+
+| Option | Sens |
+|--------|------|
+| `maxLevel` | profondeur maximale (sauts) |
+| `relationshipFilter` | restreindre aux relations de ce type |
+| `labelFilter` | restreindre aux labels (`'+POI'` = inclure, `'-Base'` = exclure) |
+
+---
+
+## `allShortestPaths()` — Cypher natif
+
+> **`allShortestPaths()` n'est pas APOC** — c'est une fonction native Cypher. Elle trouve tous les plus courts chemins entre deux nœuds (pas juste un).
+
+```cypher
+MATCH (a:POI {role: 'attaque'}), (d:POI {role: 'défense'}),
+      path = allShortestPaths((a)-[:DISTANCE*]-(d))
+RETURN [n IN nodes(path) | n.nom] AS chemin,
+       reduce(total = 0, r IN relationships(path) | total + r.meters) AS distance
+ORDER BY distance ASC LIMIT 5;
+```
+
+> En SQL pur, énumérer "tous les plus courts chemins" est **impossible** sans un script Python qui boucle sur Dijkstra. Cypher le fait en une ligne.
+
+---
+
+## Pièges fréquents
+
+| Symptôme | Cause probable |
+|----------|---------------|
+| `Procedure not found` | APOC pas chargé — vérifier `docker compose ps neo4j` |
+| `apoc.algo.dijkstra` ignore le poids | Vérifier que la propriété est **numérique**, pas string |
+| `allShortestPaths` timeout | Graphe trop grand → limiter avec `maxLevel` |
+
+---
+
+## Pour aller plus loin
+
+- [Cypher en 5 minutes](cypher_5min.qmd) — les bases du langage
+- [GraphDB 101](graphdb_101.qmd) — le modèle LPG et traversée de graphe
+- [APOC avancé](../avance/apoc.qmd) — betweenness, expandConfig, PROFILE (Phase 3)
+- [Phase 2](../../mission/phase_2.qmd) — passer à la pratique

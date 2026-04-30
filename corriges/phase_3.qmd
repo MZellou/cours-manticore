@@ -30,10 +30,18 @@ SELECT edge FROM pgr_dijkstra(
 **Approche Neo4j (betweenness centrality)** :
 
 ```cypher
-CALL apoc.algo.betweenness('POI', 'DISTANCE', 'meters') YIELD nodeId, score
-MATCH (p:POI) WHERE id(p) = nodeId
+// 1. Projetter le graphe dans le catalogue GDS
+CALL gds.graph.project('myGraph', 'POI', 'DISTANCE');
+
+// 2. Calculer la betweenness
+CALL gds.betweenness.stream('myGraph')
+YIELD nodeId, score
+WITH gds.util.asNode(nodeId) AS p, score
 RETURN p.nom, p.role, score AS centralite
 ORDER BY centralite DESC LIMIT 10;
+
+// 3. Nettoyer
+CALL gds.graph.drop('myGraph');
 ```
 
 Une seule requête — pas besoin de boucle Python.

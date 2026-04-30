@@ -178,5 +178,5 @@ Ouvrez `http://localhost:7474`.
 ## Pour aller plus loin
 
 - [GraphDB 101](graphdb_101.qmd) — le modèle LPG complet
-- [APOC](../avance/apoc.qmd) — algorithmes (betweenness, sub-graphes)
+- [APOC — les essentiels](apoc_basics.qmd) — algorithmes (Dijkstra, sub-graphes)
 - [Phase 2](../../mission/phase_2.qmd) — passer à la pratique

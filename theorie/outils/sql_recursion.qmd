@@ -43,7 +43,7 @@ MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:Object {name: 'Tronçon de route'})
 RETURN d.name;
 ```
 
-→ même résultat, **2 lignes**, et la traversée est en `O(1)` par saut grâce à l'**index-free adjacency** (cf. [GraphDB 101](../outils/graphdb_101.qmd)).
+→ même résultat, **2 lignes**, et la traversée est en `O(1)` par saut grâce à l'**index-free adjacency** (cf. [GraphDB 101](graphdb_101.qmd)).
 
 ---
 
@@ -129,7 +129,7 @@ RETURN d.name;
 | `Seq Scan` | `AllNodesScan` |
 | `Index Scan` | `NodeIndexSeek` |
 
-→ Détails dans [APOC](apoc.qmd#lire-un-plan-cypher--profile).
+→ Détails dans [APOC](../avance/apoc.qmd#lire-un-plan-cypher--profile).
 
 ---
 
@@ -149,6 +149,6 @@ Vous mesurerez **`Execution Time`** côté SQL et **`db hits`** côté Cypher.
 
 ## Pour aller plus loin
 
-- [GraphDB 101](../outils/graphdb_101.qmd) — pourquoi la traversée graphe est en `O(1)`
-- [APOC](apoc.qmd) — algorithmes côté Cypher
-- [pgRouting et r2gg](../outils/pgrouting.qmd) — Dijkstra sous SQL
+- [GraphDB 101](graphdb_101.qmd) — pourquoi la traversée graphe est en `O(1)`
+- [APOC](../avance/apoc.qmd) — algorithmes côté Cypher
+- [pgRouting et r2gg](pgrouting.qmd) — Dijkstra sous SQL

@@ -35,11 +35,12 @@ Phase 3 : on l'**attaque** et on **mesure** sa résilience.
 Jusqu'ici on faisait `MATCH … RETURN`. Phase 3, on appelle des **procédures** :
 
 ```cypher
-CALL apoc.algo.betweenness(['POI'], ['DISTANCE'], 'BOTH') YIELD node, score …
+CALL gds.graph.project('myGraph', 'POI', 'DISTANCE');
+CALL gds.betweenness.stream('myGraph') YIELD nodeId, score …
 CALL apoc.path.subgraphAll(start, {maxLevel: 2}) …
 ```
 
-→ Lecture : [APOC](../theorie/avance/apoc.qmd) (5 min, **essentiel**)
+→ Lecture : [APOC — avancé](../theorie/avance/apoc.qmd) (5 min, **essentiel**)
 
 #### 2. **Lecture de plans** (`EXPLAIN ANALYZE` / `PROFILE`)
 
@@ -48,7 +49,7 @@ Phase 3 vous demande de **mesurer** SQL vs Cypher. Vous devez savoir lire un pla
 - `Seq Scan` (mauvais) vs `Index Scan` (bon)
 - `AllNodesScan` (catastrophique) vs `NodeIndexSeek` (bon)
 
-→ Lecture : [SQL — limites & EXPLAIN](../theorie/avance/sql_recursion.qmd) (5 min)
+→ Lecture : [SQL — limites & EXPLAIN](../theorie/outils/sql_recursion.qmd) (5 min)
 
 #### 3. **Simulation destructive**
 
@@ -75,6 +76,6 @@ Vous allez **modifier `ways`** (mettre `cost = -1` sur des arêtes), mesurer, pu
 ## Avant de cliquer "Phase 3"
 
 - [ ] [Checkpoint Phase 2](checkpoint_2.qmd) passé
-- [ ] [APOC](../theorie/avance/apoc.qmd) lu
-- [ ] [SQL — limites & EXPLAIN](../theorie/avance/sql_recursion.qmd) lu
+- [ ] [APOC — avancé](../theorie/avance/apoc.qmd) lu
+- [ ] [SQL — limites & EXPLAIN](../theorie/outils/sql_recursion.qmd) lu
 - [ ] Backup `ways` prêt à être créé : `CREATE TABLE ways_backup AS SELECT * FROM ways;`

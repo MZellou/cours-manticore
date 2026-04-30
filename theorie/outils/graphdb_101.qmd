@@ -100,7 +100,7 @@ MATCH (aero:POI {nature: 'Aérodrome'})-[:DISTANCE*1..2]->(cible:POI)
 RETURN cible.nom, cible.nature;
 ```
 
-> Le `*1..2` dans Cypher correspond au `WITH RECURSIVE` en SQL. La différence : Cypher le fait en **O(arêtes traversées)** — le moteur de graphe suit directement les pointeurs. SQL doit dabord **construire une table temporaire** en mémoire, puis interroger.
+> Le `*1..2` dans Cypher correspond au `WITH RECURSIVE` en SQL. La différence : Cypher le fait en **O(arêtes traversées)** — le moteur de graphe suit directement les pointeurs. SQL doit d'abord **construire une table temporaire** en mémoire, puis interroger.
 
 | Tâche | SQL | Cypher |
 |-------|-----|--------|
@@ -114,7 +114,7 @@ RETURN cible.nom, cible.nature;
 
 ## Algorithmes de graphe
 
-> Pour les procédures APOC (Dijkstra, betweenness, subgraphAll…) et les détails GDS, voir [APOC](../avance/apoc.qmd).
+> Pour les procédures APOC (Dijkstra, betweenness, subgraphAll…) et les détails GDS, voir [APOC — les essentiels](apoc_basics.qmd).
 
 Les principaux algorithmes disponibles dans Neo4j via APOC :
 
@@ -122,7 +122,7 @@ Les principaux algorithmes disponibles dans Neo4j via APOC :
 |------------|------|---------------|
 | `apoc.algo.dijkstra` | Plus court chemin pondéré | `apoc.algo.dijkstra(start, end, 'DISTANCE', 'meters')` |
 | `apoc.path.subgraphAll` | Tous les nœuds dans un rayon | `apoc.path.subgraphAll(node, {maxLevel: 3})` |
-| `gds.betweenness.stream()` | Centralité (APOC 5.x) | Mesure le score de betweenness sur un graphe projeté |
+| `gds.betweenness.stream()` | Centralité (GDS 5.x) | Mesure le score de betweenness sur un graphe projeté |
 | `gds.pageRank.stream()` | PageRank | Popularité/rôle stratégique d'un nœud |
 
 ---
@@ -146,4 +146,5 @@ Neo4j n'est **pas** bon pour :
 
 - [NoSQL vs SQL](../fondements/pourquoi.qmd) — panorama des familles NoSQL et théorème CAP
 - [pgRouting et r2gg](pgrouting.qmd) — routage sur PostGIS
-- [APOC](../avance/apoc.qmd) — procédures algorithmiques et GDS
+- [APOC — les essentiels](apoc_basics.qmd) — Dijkstra, subgraphAll, allShortestPaths
+- [APOC avancé](../avance/apoc.qmd) — betweenness, expandConfig, GDS

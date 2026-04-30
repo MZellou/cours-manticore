@@ -109,14 +109,14 @@ python scripts/02_migrate_to_neo4j.py
 ```
 
 ```cypher
--- Vérifier les POIs chargés
+// Vérifier les POIs chargés
 MATCH (p:POI) RETURN p.role, count(*) ORDER BY count DESC;
 
--- Traversée ontologique
+// Traversée ontologique
 MATCH path = (d:Detail)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
 RETURN [n IN nodes(path) | n.name] AS hierarchy LIMIT 5;
 
--- Chemin le plus court entre POIs
+// Chemin le plus court entre POIs
 MATCH (a:POI), (b:POI) WHERE id(a) < id(b)
 CALL apoc.algo.dijkstra(a, b, 'DISTANCE', 'meters')
 YIELD path, weight
@@ -129,7 +129,7 @@ ORDER BY weight DESC LIMIT 10
 ## T7 — Créer des nœuds personnalisés (CREATE / MERGE)
 
 ```cypher
--- Créer une base avancée
+// Créer une base avancée
 CREATE (b:Base {
     nom: 'Point de ralliement Alpha',
     type: 'base_avancee',
@@ -138,7 +138,7 @@ CREATE (b:Base {
 })
 RETURN b;
 
--- Créer un point d'observation
+// Créer un point d'observation
 CREATE (o:Base {
     nom: 'Observatoire hauteur 302',
     type: 'observation',
@@ -146,12 +146,12 @@ CREATE (o:Base {
 })
 RETURN o;
 
--- Connecter la base aux POIs proches (< 10km)
+// Connecter la base aux POIs proches (< 10km)
 MATCH (b:Base {nom: 'Point de ralliement Alpha'})
 MATCH (p:POI)
 WITH b, p, point({latitude: toFloat(split(b.coords, ', ')[0]),
                   longitude: toFloat(split(b.coords, ', ')[1])}) AS basePt,
-     point({latitude: ST_Y(p.geom), longitude: ST_X(p.geom)}) AS poiPt
+     point({latitude: p.lat, longitude: p.lon}) AS poiPt
 WITH b, p, distance(basePt, poiPt) AS dist
 WHERE dist < 10000
 MERGE (b)-[r:DISTANCE {meters: toInteger(dist)}]->(p)

@@ -81,7 +81,7 @@ Pour distribuer aux étudiants :
 
 ## 7. Évaluation
 
-Voir la [grille d'évaluation](../mission/debriefing.qmd#grille-dévaluation) :
+Voir la [grille de relecture](../mission/debriefing.qmd#grille-de-relecture-des-concepts) :
 - Requêtes SQL : **25%**
 - Requêtes Cypher : **20%**
 - Routage pgRouting : **20%**
@@ -121,7 +121,7 @@ MATCH (n) RETURN labels(n)[0] AS label, count(*) ORDER BY count DESC;
 MATCH ()-[r]->() RETURN type(r) AS rel, count(*) ORDER BY count DESC;
 ```
 
-## 8. Data hosting — Cloudflare R2
+## 9. Data hosting — Cloudflare R2
 
 Les données du TD sont hébergées sur un bucket R2 public. Les étudiants les téléchargent avec un simple `make data-pull` (aucune authentification requise).
 
