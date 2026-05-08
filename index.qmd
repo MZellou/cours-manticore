@@ -10,12 +10,12 @@ toc: false
 
 ## ▶ Commence ici
 
-1. **[📖 Briefing général](mission/briefing.qmd)** — l'énoncé de la mission, les groupes, les rôles, les livrables.
-2. **[🛠 Setup technique](reference/setup.qmd)** — Docker + Python + EPCI assigné.
-3. **[🎯 Phase 1 — Reconnaissance](mission/phase_1.qmd)** — démarre le TD.
+1. **[📖 Briefing général](pages/mission/briefing.qmd)** — l'énoncé de la mission, les groupes, les rôles, les livrables.
+2. **[🛠 Setup technique](pages/reference/setup.qmd)** — Docker + Python + EPCI assigné.
+3. **[🎯 Phase 1 — Reconnaissance](pages/mission/phase_1.qmd)** — démarre le TD.
 
 ::: {.callout-tip}
-Vous pouvez consulter les **[Corrigés](corriges/phase_1.qmd)** à tout moment.
+Vous pouvez consulter les **[Corrigés](pages/corriges/phase_1.qmd)** à tout moment.
 L'objectif est de comprendre, pas de bloquer. Le LLM est votre co-pilote, pas votre béquille.
 :::
 
@@ -49,18 +49,18 @@ Briefing général
 
 |   | Rôle | Mission |
 |---|------|---------|
-| ⚔️ | **[Attaque](roles/attaque.qmd)** | Cibles stratégiques (aérodromes, ports, casernes) |
-| 🛡️ | **[Défense](roles/defense.qmd)** | Points vitaux (hôpitaux, ponts, gares) |
-| 📦 | **[Ravitaillement](roles/ravitaillement.qmd)** | Flux logistiques (ports fret, zones industrielles) |
-| ⚡ | **[Énergie](roles/energie.qmd)** | Réseau énergétique (postes HT, lignes THT, centrales) |
+| ⚔️ | **[Attaque](pages/roles/attaque.qmd)** | Cibles stratégiques (aérodromes, ports, casernes) |
+| 🛡️ | **[Défense](pages/roles/defense.qmd)** | Points vitaux (hôpitaux, ponts, gares) |
+| 📦 | **[Ravitaillement](pages/roles/ravitaillement.qmd)** | Flux logistiques (ports fret, zones industrielles) |
+| ⚡ | **[Énergie](pages/roles/energie.qmd)** | Réseau énergétique (postes HT, lignes THT, centrales) |
 
 ## Les 3 phases
 
 | Phase | Mode | Thème | Durée |
 |-------|------|-------|-------|
-| 🔍 [Phase 1 — Reconnaissance](mission/phase_1.qmd) | Solo (par rôle) | POIs critiques (PostGIS) | 4h |
-| 🗺️ [Phase 2 — Cartographie](mission/phase_2.qmd) | Groupe | Routes + graphe (pgRouting + Neo4j) | 5h |
-| 📊 [Phase 3 — Simulation](mission/phase_3.qmd) | Groupe | Benchmark SQL vs Cypher + attaque | 5h |
+| 🔍 [Phase 1 — Reconnaissance](pages/mission/phase_1.qmd) | Solo (par rôle) | POIs critiques (PostGIS) | 4h |
+| 🗺️ [Phase 2 — Cartographie](pages/mission/phase_2.qmd) | Groupe | Routes + graphe (pgRouting + Neo4j) | 5h |
+| 📊 [Phase 3 — Simulation](pages/mission/phase_3.qmd) | Groupe | Benchmark SQL vs Cypher + attaque | 5h |
 
 ## Quick start
 
@@ -70,4 +70,4 @@ make setup
 python scripts/00_setup.py --epci "<votre EPCI>"
 ```
 
-→ Continuez avec le **[Briefing général](mission/briefing.qmd)**.
+→ Continuez avec le **[Briefing général](pages/mission/briefing.qmd)**.

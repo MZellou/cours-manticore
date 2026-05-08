@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Pull course data from public Cloudflare R2 bucket (no auth needed)
-R2_BASE="${R2_BASE_URL:-https://pub-XXXX.r2.dev}"
+R2_BASE="${R2_BASE_URL:-https://pub-957b1b37b8354b00bdee80b8b70f7e50.r2.dev}"
 LOCAL="${DATA_DIR:-data}"
 PARALLEL="${PARALLEL:-4}"
 

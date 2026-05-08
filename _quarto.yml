@@ -3,11 +3,11 @@ project:
   output-dir: _site
   render:
     - "*.qmd"
-    - "theorie/**/*.qmd"
-    - "mission/**/*.qmd"
-    - "roles/*.qmd"
-    - "corriges/*.qmd"
-    - "reference/*.qmd"
+    - "pages/theorie/**/*.qmd"
+    - "pages/mission/**/*.qmd"
+    - "pages/roles/*.qmd"
+    - "pages/corriges/*.qmd"
+    - "pages/reference/*.qmd"
   resources:
     - "assets/**"
 
@@ -25,15 +25,15 @@ website:
       - text: Accueil
         href: index.qmd
       - text: Théorie
-        href: theorie/index.qmd
+        href: pages/theorie/index.qmd
       - text: Mission
-        href: mission/index.qmd
+        href: pages/mission/index.qmd
       - text: Rôles
-        href: roles/attaque.qmd
+        href: pages/roles/attaque.qmd
       - text: Corrigés
-        href: corriges/phase_1.qmd
+        href: pages/corriges/phase_1.qmd
       - text: Référence
-        href: reference/setup.qmd
+        href: pages/reference/setup.qmd
     right:
       - icon: github
         href: https://github.com/mzellou/cours-manticore
@@ -42,62 +42,62 @@ website:
     - title: "Théorie"
       style: docked
       contents:
-        - theorie/index.qmd
+        - pages/theorie/index.qmd
         - section: "Fondements"
           contents:
-            - theorie/fondements/pourquoi.qmd
-            - theorie/fondements/modele_bdtopo.qmd
+            - pages/theorie/fondements/pourquoi.qmd
+            - pages/theorie/fondements/modele_bdtopo.qmd
         - section: "Outils"
           contents:
-            - theorie/outils/postgis.qmd
-            - theorie/outils/cypher_5min.qmd
-            - theorie/outils/graphdb_101.qmd
-            - theorie/outils/pgrouting.qmd
-            - theorie/outils/sql_recursion.qmd
-            - theorie/outils/apoc_basics.qmd
+            - pages/theorie/outils/postgis.qmd
+            - pages/theorie/outils/cypher_5min.qmd
+            - pages/theorie/outils/graphdb_101.qmd
+            - pages/theorie/outils/pgrouting.qmd
+            - pages/theorie/outils/sql_recursion.qmd
+            - pages/theorie/outils/apoc_basics.qmd
         - section: "Avancé"
           contents:
-            - theorie/avance/apoc.qmd
-            - theorie/avance/contenu_donnees.qmd
+            - pages/theorie/avance/apoc.qmd
+            - pages/theorie/avance/contenu_donnees.qmd
 
     - title: "Mission"
       style: docked
       contents:
-        - mission/index.qmd
-        - mission/briefing.qmd
-        - mission/phase_1.qmd
-        - mission/checkpoint_1.qmd
-        - mission/transition_1_2.qmd
-        - mission/phase_2.qmd
-        - mission/checkpoint_2.qmd
-        - mission/transition_2_3.qmd
-        - mission/phase_3.qmd
-        - mission/debriefing.qmd
+        - pages/mission/index.qmd
+        - pages/mission/briefing.qmd
+        - pages/mission/phase_1.qmd
+        - pages/mission/checkpoint_1.qmd
+        - pages/mission/transition_1_2.qmd
+        - pages/mission/phase_2.qmd
+        - pages/mission/checkpoint_2.qmd
+        - pages/mission/transition_2_3.qmd
+        - pages/mission/phase_3.qmd
+        - pages/mission/debriefing.qmd
 
     - title: "Rôles"
       style: docked
       contents:
-        - roles/attaque.qmd
-        - roles/defense.qmd
-        - roles/ravitaillement.qmd
-        - roles/energie.qmd
+        - pages/roles/attaque.qmd
+        - pages/roles/defense.qmd
+        - pages/roles/ravitaillement.qmd
+        - pages/roles/energie.qmd
 
     - title: "Corrigés"
       style: docked
       contents:
-        - corriges/phase_1.qmd
-        - corriges/phase_2.qmd
-        - corriges/phase_3.qmd
-        - corriges/bonus.qmd
+        - pages/corriges/phase_1.qmd
+        - pages/corriges/phase_2.qmd
+        - pages/corriges/phase_3.qmd
+        - pages/corriges/bonus.qmd
 
     - title: "Référence"
       style: docked
       contents:
-        - reference/setup.qmd
-        - reference/scripts.qmd
-        - reference/faq.qmd
-        - reference/glossaire.qmd
-        - reference/instructeur.qmd
+        - pages/reference/setup.qmd
+        - pages/reference/scripts.qmd
+        - pages/reference/faq.qmd
+        - pages/reference/glossaire.qmd
+        - pages/reference/instructeur.qmd
 
   page-footer:
     left: "Opération Manticore · IGN/MSST"
