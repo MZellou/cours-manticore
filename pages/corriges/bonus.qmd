@@ -263,7 +263,7 @@ FROM mission_custom_pois c
 JOIN mission_pois p
   ON ST_DWithin(c.geometrie, p.geom, 20000)
 GROUP BY c.nom, p.role
-ORDER BY c.nom, count DESC;
+ORDER BY c.nom, pois DESC;
 ```
 
 ::: {.callout-note title="⚛️ Résultat = 0 lignes ? C'est normal"}

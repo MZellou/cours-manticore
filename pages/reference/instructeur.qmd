@@ -348,9 +348,9 @@ UNION ALL SELECT 'vertices', count(*) FROM pgr_242900314.ways_vertices_pgr;
 
 Checklist exhaustive à exécuter avant chaque session sur **3 EPCIs représentatifs** : Brest Métropole (port militaire), CA du Cotentin (péninsule + nucléaire Flamanville), Grenoble-Alpes-Métropole (cuvette montagneuse). Si les trois passent, les 10 autres EPCIs passent à 99 %.
 
-::: {.callout-warning}
-**Piège connu — `mission_pois` est tronqué à chaque run de `01_explore_postgis.py`.**
-La ligne `DROP TABLE IF EXISTS mission_pois CASCADE` (script L233) supprime la table au début de chaque exécution. Conséquence : après 4 appels séquentiels, **seul le dernier rôle survit**. La migration Neo4j ne verra alors qu'un seul rôle. → Utiliser le bloc d'accumulation SQL fourni en [§11.2](#sec-phase1) avant la migration.
+::: {.callout-tip}
+**`01_explore_postgis.py` est idempotent depuis 2026-05.**
+Le script utilise désormais `DELETE FROM mission_pois WHERE role = '<role>'` puis `INSERT` — chaque rôle écrase uniquement sa tranche. Lancer les 4 rôles séquentiellement accumule donc les POIs sans perte. Le bloc d'accumulation SQL en §11.2 reste utile pour reproduire pas-à-pas en cours sans dépendre du script.
 :::
 
 ---
@@ -664,7 +664,36 @@ GROUP BY c.nom, p.role;
 
 ---
 
-### 11.6 Rotation 3 EPCIs
+### 11.6 Leçons apprises (testing 2026-05)
+
+Pièges identifiés en validant les 3 EPCIs avant la session — utile pour anticiper les questions étudiants.
+
+**A. Convention `cost = -1` r2gg (~28 % des arêtes Brest non-carrossables voiture).**
+Les Gold Dumps héritent de la convention pgRouting : `cost = -1` signifie "arête présente mais interdite à la voiture" (chemins, escaliers, pistes cyclables). `pgr_dijkstra` filtre nativement ces arêtes, donc un POI snapé sur un sommet entouré uniquement de `cost=-1` est **inatteignable**. Cas observé : aérodrome de Brest = vertex isolé. → `03_routing_pgrouting.py` filtre les POIs sur sommets ayant ≥ 1 arête `cost > 0` (CTE `carrossables`) avant d'appeler Dijkstra.
+
+**B. SRID des `mission_custom_pois` (Flamanville).**
+Le script `00_setup.py` projette les centrales nucléaires en EPSG:2154 avant insertion, et la colonne `mission_custom_pois.geometrie` est désormais déclarée `GEOMETRY(Point, 2154)` cohérente. Si vous voyez `transform: latitude or longitude exceeded limits` lors du chargement Phase 1 Énergie sur Cotentin, c'est qu'une ancienne version (colonne tagguée 4326 sur des coordonnées L93) traîne encore : `DROP TABLE mission_custom_pois CASCADE; python scripts/00_setup.py --epci "<EPCI>"` corrige.
+
+**C. Cypher `*1..3` exclut la racine, SQL `WITH RECURSIVE` l'inclut.**
+La même requête "tous les sous-types de Tronçon de route" retourne **11** en SQL et **10** en Cypher — pas un bug. SQL ajoute la racine via le `UNION ALL` initial ; le pattern Cypher `(n)-[:EST_SOUS_TYPE_DE*1..3]->(root)` exige au moins 1 hop, donc la racine elle-même n'est pas un chemin. Pour matcher SQL : `*0..3`. À mentionner pendant le benchmark Phase 3.
+
+**D. `MERGE :POI {cleabs}` collapse les doublons inter-rôles.**
+Sur Cotentin, 314 POIs PostGIS → 255 nœuds Neo4j (59 collisions). Les ponts apparaissent à la fois en `defense` et `attaque`, les ports en `attaque` et `ravitaillement`. `MERGE (poi:POI {cleabs: …}) SET poi.role = …` écrase la dernière `role` rencontrée. Trois fixes possibles (cf. callout Phase 2) : clé composite `{cleabs, role}`, multi-label, ou modélisation `(:POI)-[:JOUE_ROLE]->(:Role)`.
+
+**E. `ways_vertices_pgr` doit être une TABLE matérialisée.**
+La tentation pédagogique (créer une vue `ways_vertices_pgr` qui projette `ST_Transform(the_geom, 2154)` à la volée) tue l'index GIST : KNN `<->` devient un Seq Scan O(n) sur 28k+ sommets, et la CTE `carrossables` (Phase 2) hange plusieurs minutes. `00_setup.py` matérialise la table + crée l'index GIST après chaque restauration de Gold Dump.
+
+**F. Pass criteria observés.**
+
+| EPCI | Routes | POIs (4 rôles) | Custom | Ways | Particularité Phase 3 |
+|------|--------|---------------:|-------:|-----:|----------------------|
+| Brest Métropole | 31 k | 296 | 0 | 37 974 | aéroport vertex isolé (cost=-1 partout) |
+| CA du Cotentin | 56 941 | 314 | 1 (Flamanville) | 65 774 | Bonus B3 → 4 rôles × 20 km |
+| Grenoble-Alpes-Métropole | 48 436 | 848 | 0 | 69 692 | Énergie sans chemin contraint (vallées); choke point alpin Δ=+12.8 % |
+
+---
+
+### 11.7 Rotation 3 EPCIs
 
 Exécuter §11.0 → §11.5 pour chacun :
 
@@ -685,7 +714,7 @@ python scripts/00_setup.py --epci "Grenoble-Alpes-Métropole"
 
 ---
 
-### 11.7 Critères de passage
+### 11.8 Critères de passage
 
 | # | Vérification | Attendu |
 |---|-------------|---------|
@@ -707,5 +736,5 @@ python scripts/00_setup.py --epci "Grenoble-Alpes-Métropole"
 | 16 | Composantes connexes | ≥ 1 |
 | 17 | Cut / restore arête | Distance change puis revient à la ref |
 | 18 | Cartes PNG | 4 fichiers `data/carte_situation*.png` |
-| 19 | Bonus 4 rôles | Tous s'exécutent (Énergie B3 = 0 pour Brest/Grenoble OK) |
+| 19 | Bonus 4 rôles | Tous s'exécutent (Énergie B3 : 0 lignes pour Brest/Grenoble, 4 rôles × N pour Cotentin) |
 | 20 | Cotentin uniquement | `mission_custom_pois` ≥ 1 (Flamanville) |
