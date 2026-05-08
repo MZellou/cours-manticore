@@ -127,7 +127,7 @@ python scripts/02_migrate_to_neo4j.py
 
 Vérifier qu'APOC est installé :
 
-```cypher
+```sql
 RETURN apoc.version();
 ```
 

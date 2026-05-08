@@ -29,7 +29,7 @@ SELECT edge FROM pgr_dijkstra(
 
 **Approche Neo4j (betweenness centrality)** :
 
-```cypher
+```sql
 // 1. Projetter le graphe dans le catalogue GDS
 CALL gds.graph.project('myGraph', 'POI', 'DISTANCE');
 
@@ -50,7 +50,7 @@ Une seule requête — pas besoin de boucle Python.
 
 ## T2a — Tous les chemins entre deux rôles
 
-```cypher
+```sql
 MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*]-(d:POI {role: 'defense', nature: 'Hôpital'})
 RETURN
     [n IN nodes(path) | n.nom] AS etapes,
@@ -83,7 +83,7 @@ ORDER BY cost LIMIT 5;
 
 ## T2b — Plus court chemin avec nœud intermédiaire
 
-```cypher
+```sql
 MATCH (a:POI {role: 'attaque'})
 MATCH (e:POI {role: 'energie'})
 MATCH (r:POI {role: 'ravitaillement'})
@@ -101,7 +101,7 @@ ORDER BY total_m LIMIT 1;
 
 ## T2c — Sous-graphe accessible depuis un POI
 
-```cypher
+```sql
 MATCH (aero:POI {source: 'aerodrome'})
 CALL apoc.path.subgraphAll(aero, {
     maxLevel: 2,
@@ -135,7 +135,7 @@ SELECT count(*) FROM h;
 
 **Cypher** :
 
-```cypher
+```sql
 PROFILE MATCH path = (d:Detail)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
 RETURN count(path);
 ```
@@ -157,7 +157,7 @@ Neo4j n'a pas d'index spatial natif sur les relations `DISTANCE`.
 La requête "POIs à moins de 500m d'une route" nécessite un calcul de distance par paire :
 pas scalable.
 
-```cypher
+```sql
 // Approximation (ne filtre PAS sur 500m réels)
 MATCH (p:POI) WHERE EXISTS { (p)-[:DISTANCE*]-() }
 RETURN count(p);
@@ -190,7 +190,7 @@ FROM ways_backup WHERE ways.id = ways_backup.id;
 
 **Équivalent Cypher** (vérification de connectivité) :
 
-```cypher
+```sql
 MATCH (a:POI {role: 'attaque'})-[:DISTANCE*]-(b:POI {role: 'defense'})
 RETURN EXISTS { (a)-[:DISTANCE*]-(b) } AS encore_connectes;
 ```
@@ -286,7 +286,7 @@ FROM pgr_connectedComponents(
 GROUP BY component ORDER BY nb_sommets DESC LIMIT 5;
 ```
 
-```cypher
+```sql
 // Vérifier la connexité du graphe POI
 MATCH (a:POI), (b:POI)
 WHERE id(a) < id(b)
@@ -298,7 +298,7 @@ RETURN EXISTS { (a)-[:DISTANCE*]-(b) } AS connectes,
 
 ## T10 — Centralité de degré
 
-```cypher
+```sql
 -- Degré de chaque POI
 MATCH (p:POI)-[r:DISTANCE]-(neighbor)
 RETURN p.nom, p.role, count(neighbor) AS degre

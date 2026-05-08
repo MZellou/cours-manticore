@@ -34,7 +34,7 @@ Phase 3 : on l'**attaque** et on **mesure** sa résilience.
 
 Jusqu'ici on faisait `MATCH … RETURN`. Phase 3, on appelle des **procédures** :
 
-```cypher
+```sql
 CALL gds.graph.project('myGraph', 'POI', 'DISTANCE');
 CALL gds.betweenness.stream('myGraph') YIELD nodeId, score …
 CALL apoc.path.subgraphAll(start, {maxLevel: 2}) …

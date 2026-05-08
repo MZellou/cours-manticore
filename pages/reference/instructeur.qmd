@@ -115,7 +115,7 @@ UNION ALL SELECT 'bdtopo_ontology', count(*) FROM bdtopo_ontology;
 
 ### Neo4j : vérifier la migration
 
-```cypher
+```sql
 // Compter les nœuds par label
 MATCH (n) RETURN labels(n)[0] AS label, count(*) ORDER BY count DESC;
 

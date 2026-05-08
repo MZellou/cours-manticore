@@ -80,7 +80,7 @@ FROM pair, pgr_dijkstra(
 
 Dans Neo4j Browser :
 
-```cypher
+```sql
 MATCH (p:POI)
 RETURN p.role AS role, count(*) AS nb
 ORDER BY role;
@@ -92,7 +92,7 @@ ORDER BY role;
 
 ## 5. L'ontologie est dans Neo4j
 
-```cypher
+```sql
 MATCH (n:ClasseOntologie) RETURN count(n) AS nb_classes;
 MATCH ()-[r:EST_SOUS_TYPE_DE]->() RETURN count(r) AS nb_relations;
 ```
@@ -103,13 +103,13 @@ MATCH ()-[r:EST_SOUS_TYPE_DE]->() RETURN count(r) AS nb_relations;
 
 ## 6. Les indexes Neo4j sont en place
 
-```cypher
+```sql
 SHOW INDEXES;
 ```
 
 → Au moins un index sur `(:POI {cleabs})` ou `(:POI {role})`. Sinon, requêtes lentes en Phase 3 :
 
-```cypher
+```sql
 CREATE INDEX poi_cleabs IF NOT EXISTS FOR (p:POI) ON (p.cleabs);
 CREATE INDEX poi_role IF NOT EXISTS FOR (p:POI) ON (p.role);
 ```
@@ -118,7 +118,7 @@ CREATE INDEX poi_role IF NOT EXISTS FOR (p:POI) ON (p.role);
 
 ## 7. APOC est chargé
 
-```cypher
+```sql
 CALL apoc.help('apoc') YIELD name RETURN count(*) AS apoc_procedures;
 ```
 

@@ -30,7 +30,6 @@ services:
     image: neo4j:5
     container_name: manticore-neo4j
     restart: unless-stopped
-    env_file: .env
     environment:
       NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PASSWORD}
       NEO4J_server_memory_heap_max__size: 1G

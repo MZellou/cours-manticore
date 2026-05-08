@@ -22,6 +22,7 @@ import time
 import pandas as pd
 import psycopg2
 import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 from psycopg2.extras import execute_values
 from shapely import prepared, wkb
@@ -211,17 +212,18 @@ def get_epci_info(query):
 def filter_row_groups(pf, xmin, ymin, xmax, ymax):
     kept = []
     for rg_idx in range(pf.metadata.num_row_groups):
-        rg_meta = pf.metadata.row_group(rg_idx)
-        # On utilise les stats de la colonne geometrie_bbox si dispo, sinon on lit
-        # Ici on va lire la première ligne du row group pour la bbox (BDTOPO style)
         table = pf.read_row_group(rg_idx, columns=["geometrie_bbox"])
-        bb = table.column("geometrie_bbox")[0].as_py()
+        col = table.column("geometrie_bbox")
+        rg_xmin = pc.min(pc.struct_field(col, "xmin")).as_py()
+        rg_xmax = pc.max(pc.struct_field(col, "xmax")).as_py()
+        rg_ymin = pc.min(pc.struct_field(col, "ymin")).as_py()
+        rg_ymax = pc.max(pc.struct_field(col, "ymax")).as_py()
         if (
-            bb
-            and bb["xmin"] < xmax
-            and bb["xmax"] > xmin
-            and bb["ymin"] < ymax
-            and bb["ymax"] > ymin
+            rg_xmin is not None
+            and rg_xmin < xmax
+            and rg_xmax > xmin
+            and rg_ymin < ymax
+            and rg_ymax > ymin
         ):
             kept.append(rg_idx)
     return kept
@@ -305,7 +307,11 @@ def insert_batch(conn, table_name, table_arrow, epci_geom_prepared, cols_to_keep
         insert_sql = f"INSERT INTO {table_name} ({', '.join(quoted_cols)}) VALUES %s"
 
     with conn.cursor() as cur:
-        execute_values(cur, insert_sql, data, page_size=500)
+        if has_geom:
+            tmpl = "(" + ", ".join(["%s"] * len(cols)) + ", ST_Transform(ST_Force2D(ST_GeomFromWKB(%s, 4326)), 2154))"
+            execute_values(cur, insert_sql, data, template=tmpl, page_size=500)
+        else:
+            execute_values(cur, insert_sql, data, page_size=500)
     conn.commit()
     return len(df)
 
@@ -518,9 +524,11 @@ def main():
         t0 = time.time()
         pf = pq.ParquetFile(p_path)
 
+        cols_to_keep = KEEP_COLS.get(table_name)
         if skip_sf:
-            # Données déjà filtrées : on lit tout, pas de filtrage row group
-            cols_to_keep = KEEP_COLS.get(table_name)
+            rg_ids = list(range(pf.metadata.num_row_groups))
+        else:
+            rg_ids = filter_row_groups(pf, *bbox)
 
         # Création table
         create_table(conn, table_name, pf.schema_arrow, cols_to_keep)

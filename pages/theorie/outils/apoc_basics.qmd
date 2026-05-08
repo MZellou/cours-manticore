@@ -22,7 +22,7 @@ NEO4J_dbms_security_procedures_unrestricted: 'apoc.*'
 
 Vérifier qu'il est dispo dans Neo4j Browser :
 
-```cypher
+```sql
 CALL apoc.help('apoc') YIELD name RETURN count(*);
 ```
 
@@ -32,7 +32,7 @@ CALL apoc.help('apoc') YIELD name RETURN count(*);
 
 > Contrairement à `shortestPath()` natif (non pondéré), APOC permet de spécifier une propriété de poids sur les arêtes.
 
-```cypher
+```sql
 MATCH (start:POI {nom: 'Centrale_Flamanville'}),
       (end:POI   {nom: 'Aeroport_Brest'})
 CALL apoc.algo.dijkstra(start, end, 'DISTANCE', 'meters')
@@ -52,7 +52,7 @@ RETURN [n IN nodes(path) | n.nom] AS etapes, weight AS distance_m;
 
 Retourne tous les nœuds **et toutes les arêtes** atteignables depuis un point, dans une limite de profondeur.
 
-```cypher
+```sql
 MATCH (centre:POI {nature: 'Aérodrome'}) LIMIT 1
 CALL apoc.path.subgraphAll(centre, {
   maxLevel: 3,
@@ -74,7 +74,7 @@ RETURN size(nodes) AS nb_pois, size(relationships) AS nb_liens;
 
 > **`allShortestPaths()` n'est pas APOC** — c'est une fonction native Cypher. Elle trouve tous les plus courts chemins entre deux nœuds (pas juste un).
 
-```cypher
+```sql
 MATCH (a:POI {role: 'attaque'}), (d:POI {role: 'défense'}),
       path = allShortestPaths((a)-[:DISTANCE*]-(d))
 RETURN [n IN nodes(path) | n.nom] AS chemin,

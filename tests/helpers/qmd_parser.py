@@ -18,7 +18,9 @@ class Query:
     section_header: str = ""
 
 
-def extract_queries(qmd_path: Path | str, lang_filter: list[str] | None = None) -> list[Query]:
+def extract_queries(
+    qmd_path: Path | str, lang_filter: list[str] | None = None
+) -> list[Query]:
     """Parse a .qmd file and extract all code blocks.
 
     Args:
@@ -35,7 +37,7 @@ def extract_queries(qmd_path: Path | str, lang_filter: list[str] | None = None) 
     current_section = ""
     idx = 0
 
-    # Regex: ```sql ... ``` or ```cypher ... ```
+    # Regex: ```sql ... ``` or ```sql ... ```
     pattern = re.compile(r"```(sql|cypher|python)\s*\n(.*?)```", re.DOTALL)
 
     for match in pattern.finditer(content):
@@ -51,13 +53,15 @@ def extract_queries(qmd_path: Path | str, lang_filter: list[str] | None = None) 
         block_start = match.start()
         current_section = _find_section_before(content, block_start)
 
-        queries.append(Query(
-            id=f"{stem}_{idx:03d}",
-            lang=lang,
-            code=code,
-            source_file=stem,
-            section_header=current_section,
-        ))
+        queries.append(
+            Query(
+                id=f"{stem}_{idx:03d}",
+                lang=lang,
+                code=code,
+                source_file=stem,
+                section_header=current_section,
+            )
+        )
         idx += 1
 
     return queries

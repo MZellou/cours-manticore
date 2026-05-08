@@ -62,7 +62,7 @@ SELECT depth, obj_type, name FROM hierarchy ORDER BY depth;
 
 ### En Cypher
 
-```cypher
+```sql
 MATCH path = (d)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
 RETURN [n IN nodes(path) | n.name] AS hierarchy;
 ```

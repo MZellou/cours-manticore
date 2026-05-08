@@ -66,7 +66,7 @@ Neo4j   :  MATCH (n)-[r]->(m) WHERE id(n) = 42;     → pointeur direct O(1)
 
 ### Patterns de base
 
-```cypher
+```sql
 // Trouver tous les POIs d'attaque
 MATCH (p:POI {role: 'attaque'}) RETURN p.nom, p.source;
 
@@ -94,7 +94,7 @@ WITH RECURSIVE reach AS (
 SELECT * FROM pois WHERE id IN (SELECT id_to FROM reach);
 ```
 
-```cypher
+```sql
 // Cypher : un pattern, exécuté nativement par le moteur de graphe
 MATCH (aero:POI {nature: 'Aérodrome'})-[:DISTANCE*1..2]->(cible:POI)
 RETURN cible.nom, cible.nature;

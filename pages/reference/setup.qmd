@@ -100,7 +100,7 @@ SELECT PostGIS_Version();
 
 Ouvrir [http://localhost:7474](http://localhost:7474) (login : `neo4j` / `manticore2026`).
 
-```cypher
+```sql
 // Vérifier qu'APOC est installé
 RETURN apoc.version();
 ```

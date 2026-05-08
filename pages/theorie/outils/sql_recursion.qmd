@@ -38,7 +38,7 @@ Trois problèmes opérationnels :
 
 L'équivalent Cypher :
 
-```cypher
+```sql
 MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:Object {name: 'Tronçon de route'})
 RETURN d.name;
 ```
@@ -115,7 +115,7 @@ Execution Time: 423.5 ms       ← le chiffre qui compte
 
 ## Cypher PROFILE = équivalent
 
-```cypher
+```sql
 PROFILE
 MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:Object {name: 'Tronçon de route'})
 RETURN d.name;

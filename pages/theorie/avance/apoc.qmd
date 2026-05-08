@@ -17,7 +17,7 @@ order: 1
 
 **Pourquoi projeter le graphe ?** GDS charge le graphe en mémoire pour des calculs optimisés. C'est obligatoire avant tout algorithme GDS.
 
-```cypher
+```sql
 // 1. Projetter le graphe dans le catalogue GDS
 CALL gds.graph.project('myGraph', 'POI', 'DISTANCE');
 
@@ -40,7 +40,7 @@ ORDER BY score DESC LIMIT 10;
 
 ### Nettoyer le graphe projeté
 
-```cypher
+```sql
 CALL gds.graph.drop('myGraph');
 ```
 
@@ -50,7 +50,7 @@ CALL gds.graph.drop('myGraph');
 
 Variante riche : accepte des filtres de chemin complexes (interdire un type de nœud, obliger à passer par un autre…).
 
-```cypher
+```sql
 // Chemin attaque → défense en évitant les POIs énergie
 MATCH (a:POI {role: 'attaque', nom: 'Centrale_Flamanville'})
 CALL apoc.path.expandConfig(a, {
@@ -72,7 +72,7 @@ RETURN path LIMIT 3;
 
 Comme `EXPLAIN ANALYZE` en SQL :
 
-```cypher
+```sql
 PROFILE
 MATCH (p:POI)-[:DISTANCE*1..3]-(q:POI)
 WHERE p.role = 'attaque' AND q.role = 'défense'
@@ -90,7 +90,7 @@ RETURN p, q LIMIT 10;
 
 ### Comment corriger
 
-```cypher
+```sql
 // Si AllNodesScan sur :POI → créer un index sur le rôle
 CREATE INDEX poi_role IF NOT EXISTS FOR (p:POI) ON (p.role);
 

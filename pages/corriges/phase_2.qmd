@@ -108,7 +108,7 @@ CASE WHEN importance >= 3 THEN cost*0.5 ELSE cost END
 python scripts/02_migrate_to_neo4j.py
 ```
 
-```cypher
+```sql
 // Vérifier les POIs chargés
 MATCH (p:POI) RETURN p.role, count(*) ORDER BY count DESC;
 
@@ -128,7 +128,7 @@ ORDER BY weight DESC LIMIT 10
 
 ## T7 — Créer des nœuds personnalisés (CREATE / MERGE)
 
-```cypher
+```sql
 // Créer une base avancée
 CREATE (b:Base {
     nom: 'Point de ralliement Alpha',
@@ -162,7 +162,7 @@ RETURN count(r) AS relations_creees;
 
 ## T8 — OPTIONAL MATCH et UNWIND
 
-```cypher
+```sql
 -- POIs sans connexion (isolés)
 MATCH (p:POI)
 WHERE NOT (p)-[:DISTANCE]-()
@@ -189,7 +189,7 @@ RETURN role, nom ORDER BY role, nom;
 
 **Chemins via énergie uniquement** :
 
-```cypher
+```sql
 MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*]-(e:POI {role: 'energie'})-[:DISTANCE*]-(d:POI {role: 'defense'})
 RETURN
     [n IN nodes(path) | n.nom] AS etapes,
@@ -200,7 +200,7 @@ ORDER BY distance_m LIMIT 5;
 
 **Triangles** :
 
-```cypher
+```sql
 MATCH (a:POI)-[:DISTANCE]-(b:POI)-[:DISTANCE]-(c:POI)-[:DISTANCE]-(a)
 WHERE id(a) < id(b) AND id(b) < id(c)
 RETURN a.nom, b.nom, c.nom LIMIT 10;
@@ -208,7 +208,7 @@ RETURN a.nom, b.nom, c.nom LIMIT 10;
 
 **Défi — Chemin en évitant les POIs énergie** :
 
-```cypher
+```sql
 MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*]-(d:POI {role: 'defense'})
 WHERE ALL(n IN nodes(path) WHERE n.role IS NULL OR n.role <> 'energie')
 RETURN [n IN nodes(path) | n.nom] AS etapes,
