@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Pull course data from Cloudflare R2 via rclone (requires R2 creds in .env)
+ENV_FILE="${ENV_FILE:-.env}"
+[ -f "$ENV_FILE" ] && set -a && source "$ENV_FILE" && set +a
 DATA_DIR="${DATA_DIR:-data}"
 BUCKET="${R2_BUCKET:-cours-manticore}"
 mkdir -p "$DATA_DIR"
