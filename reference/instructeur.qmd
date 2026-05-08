@@ -11,6 +11,7 @@ order: 9
 
 ## 1. Checklist pré-cours
 
+- [ ] **docker et rclone installés**
 - [ ] **Docker stack** : `docker compose up -d` → les 2 conteneurs sont `healthy`
 - [ ] **Données publiées sur R2** : `make data-push` (voir [section dédiée](#8-data-hosting--cloudflare-r2))
 - [ ] **Gold Dumps** : générés pour les 10 EPCIs (`python scripts/admin_generate_gold_dumps.py --all`)

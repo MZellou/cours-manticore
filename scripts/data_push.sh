@@ -4,7 +4,7 @@ set -euo pipefail
 # Syncs: epci_extracts, ontologie, gold_dumps, epci.parquet
 CONF="${RCLONE_CONF:-rclone.conf}"
 LOCAL="${DATA_DIR:-data}"
-REMOTE="${RCLONE_REMOTE:-data-manticore:}"
+REMOTE="${RCLONE_REMOTE:-manticore:manticore/}"
 
 for dir in epci_extracts ontologie gold_dumps; do
   [ -d "$LOCAL/$dir" ] || continue

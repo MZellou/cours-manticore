@@ -11,7 +11,7 @@
 ## Quick start (étudiant)
 
 ```bash
-git clone --recurse-submodules <repo-url> && cd cours-manticore
+git clone --recurse-submodules https://github.com/MZellou/cours-manticore.git && cd cours-manticore
 cp rclone.conf.example rclone.conf  # fill your R2 credentials
 cp .env.example .env
 make setup                          # pull data + docker + uv
