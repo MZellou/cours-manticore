@@ -9,7 +9,7 @@ project:
     - "pages/corriges/*.qmd"
     - "pages/reference/*.qmd"
   resources:
-    - "assets/**"
+    - "pages/assets/**"
 
 website:
   title: "Opération Manticore"

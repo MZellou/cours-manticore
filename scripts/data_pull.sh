@@ -4,7 +4,7 @@ set -euo pipefail
 ENV_FILE="${ENV_FILE:-.env}"
 [ -f "$ENV_FILE" ] && set -a && source "$ENV_FILE" && set +a
 DATA_DIR="${DATA_DIR:-data}"
-BUCKET="${R2_BUCKET:-cours-manticore}"
+BUCKET="${R2_BUCKET:-manticore}"
 mkdir -p "$DATA_DIR"
 
 # Configure rclone on-the-fly from env vars
