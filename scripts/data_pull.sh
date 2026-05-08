@@ -1,40 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Pull course data from public Cloudflare R2 bucket
+# Pull course data from Cloudflare R2 via rclone
 # Usage: ./data_pull.sh [--epci CODE]
-R2_BASE="${R2_BASE_URL:-https://pub-957b1b37b8354b00bdee80b8b70f7e50.r2.dev}"
+# Needs rclone.conf with remote "manticore"
+CONF="${RCLONE_CONF:-rclone.conf}"
+REMOTE="${RCLONE_REMOTE:-manticore:manticore}"
 DATA_DIR="${DATA_DIR:-data}"
 EPCI=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --epci) EPCI="$2"; shift 2 ;;
-    *) echo "Unknown option: $1"; exit 1 ;;
+    *) echo "Unknown: $1"; exit 1 ;;
   esac
 done
 
 mkdir -p "$DATA_DIR"
 
-echo ">>> Fetching manifest..."
-mapfile -t FILES < <(curl -fsSL "${R2_BASE}/files.txt")
-
-echo ">>> Downloading $((${#FILES[@]} - 1)) files..."
-for f in "${FILES[@]}"; do
-  [ -z "$f" ] && continue
-
-  # Filter by EPCI if specified
-  if [ -n "$EPCI" ]; then
-    case "$f" in
-      epci.parquet|ontologie/*) ;;
-      epci_extracts/"$EPCI"/*|gold_dumps/"$EPCI"/*) ;;
-      *) continue ;;
-    esac
-  fi
-
-  dir="$DATA_DIR/$(dirname "$f")"
-  mkdir -p "$dir"
-  echo "  $f"
-  curl -fsSL "${R2_BASE}/${f}" -o "$DATA_DIR/$f"
-done
+if [ -n "$EPCI" ]; then
+  # Selective sync: only shared + specific EPCI subdirs
+  rclone --config "$CONF" copy "$REMOTE/epci.parquet" "$DATA_DIR/" --progress
+  rclone --config "$CONF" copy "$REMOTE/ontologie/" "$DATA_DIR/ontologie/" --progress
+  rclone --config "$CONF" copy "$REMOTE/epci_extracts/$EPCI/" "$DATA_DIR/epci_extracts/$EPCI/" --progress
+  rclone --config "$CONF" copy "$REMOTE/gold_dumps/$EPCI/" "$DATA_DIR/gold_dumps/$EPCI/" --progress
+else
+  # Full sync
+  rclone --config "$CONF" copy "$REMOTE" "$DATA_DIR/" --progress --exclude "files.txt"
+fi
 
 echo ">>> Done."
