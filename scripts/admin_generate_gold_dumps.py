@@ -199,6 +199,8 @@ def load_epci_tables(siren: str):
     with conn.cursor() as cur:
         for table_name in R2GG_SOURCE_TABLES:
             try:
+                # Fix SRID: BDTOPO parquets are in EPSG:4326
+                cur.execute(f"UPDATE {table_name} SET geometrie = ST_SetSRID(geometrie, 4326) WHERE ST_SRID(geometrie) = 0;")
                 cur.execute(f"CREATE INDEX idx_{table_name}_geom ON {table_name} USING GIST (geometrie);")
             except Exception:
                 pass  # table peut ne pas exister
@@ -247,24 +249,36 @@ def generate_r2gg_configs(siren: str, bbox: tuple) -> Path:
     with open(r2gg_config_dir / "log_config.json", "w") as f:
         json.dump(log_config, f, indent=2)
 
-    # Costs config (simplifié — cost en distance + temps)
+    # Costs config (format r2gg)
     costs_config = {
+        "variables": [
+            {"name": "nature", "column_name": "nature", "mapping": "value"},
+            {"name": "length_m", "column_name": "length_m", "mapping": "value"},
+            {"name": "vitesse_voiture", "column_name": "vitesse_moyenne_vl", "mapping": "value"},
+            {"name": "sens", "column_name": "direction", "mapping": "value"},
+            {"name": "acces_pieton", "column_name": "acces_pieton", "mapping": "value"},
+            {"name": "urbain", "column_name": "urbain", "mapping": {"True": 5, "False": 0}},
+        ],
         "outputs": [
             {
-                "name": "cost_s_car",
-                "type": "time",
-                "profile": "car",
-                "optimization": "fastest",
-                "formula": "length_m / 130.0 * 3600.0"
+                "name": "cost_m_car",
+                "speed_value": "vitesse_voiture",
+                "direct_conditions": "sens>=0;vitesse_voiture>0",
+                "reverse_conditions": "sens<=0;vitesse_voiture>0",
+                "turn_restrictions": True,
+                "cost_type": "distance",
+                "operations": [["add", "length_m"]],
             },
             {
-                "name": "cost_m_car",
-                "type": "distance",
-                "profile": "car",
-                "optimization": "shortest",
-                "formula": "length_m"
+                "name": "cost_s_car",
+                "speed_value": "vitesse_voiture",
+                "direct_conditions": "sens>=0;vitesse_voiture>0",
+                "reverse_conditions": "sens<=0;vitesse_voiture>0",
+                "turn_restrictions": True,
+                "cost_type": "duration",
+                "operations": [["add", "length_m"], ["divide", "vitesse_voiture"], ["multiply", 3.6], ["add", "urbain"]],
             },
-        ]
+        ],
     }
     with open(r2gg_config_dir / "costs.json", "w") as f:
         json.dump(costs_config, f, indent=2)
@@ -316,7 +330,7 @@ def generate_r2gg_configs(siren: str, bbox: tuple) -> Path:
                                 "baseId": "base_pivot"
                             },
                             "conversion": {
-                                "file": str(Path(R2GG_DIR) / "sql" / "bdtopo_v3.3.sql")
+                                "file": str(Path(R2GG_DIR) / "sql" / "bdtopo_v3.3_local.sql")
                             }
                         },
                         "storage": {
@@ -391,7 +405,6 @@ def run_r2gg(config_path: Path, step: str = "all"):
     r2gg_pivot2pgrouting = shutil.which("r2gg-pivot2pgrouting")
 
     if not r2gg_sql2pivot:
-        # Essayer via python -m
         print("  [INFO] r2gg CLI non trouvé dans PATH, utilisation de python -m")
         r2gg_sql2pivot = f"{sys.executable} -m r2gg.cli sql2pivot"
         r2gg_pivot2pgrouting = f"{sys.executable} -m r2gg.cli pivot2pgrouting"
@@ -417,6 +430,24 @@ def run_r2gg(config_path: Path, step: str = "all"):
         print(f"  ✓ r2gg-sql2pivot OK ({time.time() - t0:.1f}s)")
 
     if step in ("pgr", "all"):
+        # Créer le schéma de sortie s'il n'existe pas
+        config_data = json.loads(Path(config_str).read_text())
+        out_schema = config_data["generation"]["resource"]["sources"][0]["storage"]["base"]["baseId"]
+        # Trouver le schéma depuis les bases
+        for base in config_data["generation"]["bases"]:
+            if base["id"] == out_schema:
+                schema_name = base["schema"]
+                break
+        else:
+            schema_name = "public"
+
+        conn = get_conn()
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute(f"CREATE SCHEMA IF NOT EXISTS {schema_name};")
+        conn.close()
+        print(f"  → Schema {schema_name} prêt")
+
         print(f"  → r2gg-pivot2pgrouting ...")
         t0 = time.time()
         result = subprocess.run(

@@ -86,6 +86,9 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 - **Performance:** Gold Dumps for road topology, avoid live r2gg in TD.
 - **Gold Dumps pipeline:** `admin_generate_gold_dumps.py` does LOAD (parquet → PostGIS) → R2GG (sql2pivot + pivot2pgrouting) → DUMP (pg_dump). r2gg needs `pip install -e route-graph-generator/` + system deps (`libxml2-dev`, `libxslt1-dev`).
 - **00_setup.py gold dumps:** Automatically restores `data/gold_dumps/{siren}/ways.sql` if present. Use `--skip-gold-dumps` to skip.
+- **BDTOPO SRID:** Parquet geometries are WGS84 (4326), NOT Lambert-93 (2154). Always `ST_SetSRID(geom, 4326)` after loading.
+- **r2gg without FDW:** Use `sql/bdtopo_v3.3_local.sql` (no Foreign Data Wrapper) — reads tables directly from same DB. Must `CREATE SCHEMA pgr_{siren}` before pivot2pgrouting.
+- **r2gg deps:** Patch `requirements/base.txt` to use `psycopg2-binary` instead of `psycopg2`. `matieres_dangereuses_interdites` is TEXT in parquet, needs CASE cast to BOOLEAN in SQL.
 - **Nuclear plants:** Not in BDTOPO — injected as custom POIs at setup.
 - **Role queries:** Each role has specific table+filter combos (see `reference/glossaire.qmd`).
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).
