@@ -15,6 +15,7 @@ Les tables BDTOPO sont filtrées par la BBOX de l'EPCI.
 
 import argparse
 import os
+import subprocess
 import sys
 import time
 
@@ -405,6 +406,60 @@ def inject_custom_pois(conn, epci_geom_prepared):
     print(f"  [OK] {count} centrale(s) injectée(s) dans l'EPCI.")
 
 
+def load_gold_dumps(siren):
+    """Charge les Gold Dumps pgRouting pré-calculés dans PostGIS.
+
+    Les dumps sont générés par admin_generate_gold_dumps.py et contiennent
+    les tables ways, ways_vertices_pgr et turn_restrictions dans un schéma
+    pgr_{siren}. On les restore dans le schéma public pour le TD.
+    """
+    dump_path = f"{LOCAL_DATA}/gold_dumps/{siren}/ways.sql"
+    if not os.path.exists(dump_path):
+        print(f"\n[GOLD DUMPS] Fichier absent: {dump_path}")
+        print("  → Le routage pgRouting ne sera pas disponible.")
+        print("  → Générer les dumps: python scripts/admin_generate_gold_dumps.py --epci {siren}")
+        return False
+
+    print(f"\n[GOLD DUMPS] Restauration depuis {dump_path}...")
+    env = {
+        "PGHOST": os.getenv("POSTGIS_HOST", "localhost"),
+        "PGPORT": os.getenv("POSTGIS_PORT", "5432"),
+        "PGDATABASE": os.getenv("POSTGIS_DB", "bdtopo_manticore"),
+        "PGUSER": os.getenv("POSTGIS_USER", "postgres"),
+        "PGPASSWORD": os.getenv("POSTGIS_PASSWORD", "manticore2026"),
+    }
+
+    # Le dump contient les tables dans le schéma pgr_{siren}
+    # On restore tel quel — les scripts de routage utilisent le schéma pgr_
+    result = subprocess.run(
+        ["psql", "-f", dump_path],
+        env={**os.environ, **env},
+        capture_output=True, text=True, timeout=120,
+    )
+    if result.returncode != 0:
+        print(f"  ✗ Erreur pg_restore: {result.stderr[:500]}")
+        return False
+
+    # Vérifier les comptages
+    conn = get_conn()
+    schema = f"pgr_{siren}"
+    try:
+        with conn.cursor() as cur:
+            try:
+                cur.execute(f"SELECT count(*) FROM {schema}.ways")
+                n_ways = cur.fetchone()[0]
+                cur.execute(f"SELECT count(*) FROM {schema}.ways_vertices_pgr")
+                n_verts = cur.fetchone()[0]
+                print(f"  ✓ Restauré: {n_ways} ways, {n_verts} vertices (schéma {schema})")
+            except Exception as e:
+                print(f"  ⚠ Tables restaurées mais vérification impossible: {e}")
+                return True
+    finally:
+        conn.close()
+
+    return True
+
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -422,6 +477,10 @@ def main():
     parser.add_argument(
         "--skip-spatial-filter", action="store_true",
         help="Skip shapely filtering (use when source is already BBOX-filtered)"
+    )
+    parser.add_argument(
+        "--skip-gold-dumps", action="store_true",
+        help="Skip gold dumps restoration"
     )
     args = parser.parse_args()
 
@@ -486,6 +545,12 @@ def main():
 
     conn.close()
     print(f"\n[FINISH] Opération terminée. Total: {total} objets chargés.")
+
+    # 3. Gold Dumps (pgRouting)
+    if not args.skip_gold_dumps:
+        load_gold_dumps(siren)
+    else:
+        print("\n[GOLD DUMPS] Skip (--skip-gold-dumps)")
 
 
 if __name__ == "__main__":

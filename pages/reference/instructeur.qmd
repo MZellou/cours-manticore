@@ -13,11 +13,12 @@ order: 9
 
 - [ ] **docker et rclone installés**
 - [ ] **Docker stack** : `docker compose up -d` → les 2 conteneurs sont `healthy`
-- [ ] **Données publiées sur R2** : `make data-push` (voir [section dédiée](#8-data-hosting--cloudflare-r2))
-- [ ] **Gold Dumps** : générés pour les 10 EPCIs (`python scripts/admin_generate_gold_dumps.py --all`)
-- [ ] **Pages théorie** : passer en revue `_docs/theorie/*.md` (servent de support pour la 0.5J théorie)
+- [ ] **Données publiées sur R2** : `make data-push` (voir [§9](#9-data-hosting--cloudflare-r2))
+- [ ] **Gold Dumps** : générés pour les 13 EPCIs (voir [§10](#10-génération-des-gold-dumps-pgrouting)) et publiés sur R2
+- [ ] **Pages théorie** : passer en revue `pages/theorie/*.qmd` (servent de support pour la 0.5J théorie)
 - [ ] **Neo4j heap** : adapté aux laptops étudiants (512M si < 8 Go RAM)
 - [ ] **`.env`** : distribué aux étudiants (copie de `.env.example`)
+- [ ] **r2gg installé** (instructeur uniquement) : `pip install -e route-graph-generator/`
 
 ## 2. Assignation groupes × EPCI
 
@@ -126,7 +127,7 @@ MATCH ()-[r]->() RETURN type(r) AS rel, count(*) ORDER BY count DESC;
 
 Les données du TD sont hébergées sur un bucket R2 public. Les étudiants les téléchargent avec un simple `make data-pull` (aucune authentification requise).
 
-### 8.1 Initialisation (une seule fois)
+### 9.1 Initialisation (une seule fois)
 
 1. **Installer Wrangler** (CLI Cloudflare) :
    ```bash
@@ -155,7 +156,7 @@ Les données du TD sont hébergées sur un bucket R2 public. Les étudiants les 
    # → Entrer Access Key ID + Secret Access Key
    ```
 
-### 8.2 Publier les données (`make data-push`)
+### 9.2 Publier les données (`make data-push`)
 
 Les étudiants ont besoin de 4 dossiers :
 
@@ -171,9 +172,9 @@ make data-push
 # → rclone sync vers data-manticore:epci_extracts, ontologie, gold_dumps + epci.parquet
 ```
 
-> **⚠️** Gold Dumps doivent être générés avant : `python scripts/admin_generate_gold_dumps.py --all`
+> **⚠️** Gold Dumps doivent être générés avant : voir [§10](#10-génération-des-gold-dumps-pgrouting)
 
-### 8.3 URL publique
+### 9.3 URL publique
 
 Le base URL public est : `https://pub-XXXX.r2.dev/`
 
@@ -182,7 +183,161 @@ Exemples :
 https://pub-XXXX.r2.dev/epci.parquet
 https://pub-XXXX.r2.dev/epci_extracts/200023414/troncon_de_route.parquet
 https://pub-XXXX.r2.dev/ontologie/bdtopo_database.parquet
-https://pub-XXXX.r2.dev/gold_dumps/200023414/ways.sql
+https://pub-XXXX.r2.dev/gold_dumps/242900314/ways.sql
 ```
 
 > **Note** : R2 public buckets ne supportent pas le directory listing. Les étudiants doivent connaître les chemins exacts (gérés par `data_pull.sh`).
+
+---
+
+## 10. Génération des Gold Dumps (pgRouting)
+
+Les Gold Dumps sont les **graphes routiers pré-calculés** (tables `ways`, `ways_vertices_pgr`, `turn_restrictions`) pour chaque EPCI. Ils sont utilisés dans les Phases 2 et 3 pour le routage pgRouting (Dijkstra, choke points, routage contraint).
+
+Sans ces dumps, les exercices de routage sont **skippés automatiquement** par les scripts et les tests.
+
+### 10.1 Architecture du pipeline
+
+```
+┌─────────────────┐     ┌──────────────┐     ┌──────────────────────────┐
+│ Parquets EPCI   │     │    r2gg      │     │    pgRouting tables      │
+│ troncon_de_route│ ──→ │ sql2pivot    │ ──→ │ ways (edges)             │
+│ non_communication│    │ pivot2pgr    │     │ ways_vertices_pgr (nodes)│
+└─────────────────┘     └──────────────┘     │ turn_restrictions        │
+                                              └──────────────────────────┘
+                                                       │
+                                                       ▼
+                                              pg_dump → ways.sql
+                                                       │
+                                                       ▼
+                                              data/gold_dumps/{siren}/
+```
+
+### 10.2 Prérequis (machine instructeur)
+
+| Prérequis | Installation | Vérification |
+|-----------|-------------|-------------|
+| **Docker** + Docker Compose | — | `docker compose ps` |
+| **PostGIS 18-3.6** avec pgRouting | `docker compose build` | `SELECT pgr_version();` |
+| **r2gg** (route-graph-generator) | `pip install -e route-graph-generator/` | `which r2gg-sql2pivot` |
+| **Données EPCI** | `make data-pull` ou `admin_extract_epci_data.py` | `ls data/epci_extracts/` |
+| **Python ≥ 3.11** | `uv sync` | `python --version` |
+
+### 10.3 Installation de r2gg
+
+r2gg est un package Python de l'IGNF, inclus comme submodule dans le repo :
+
+```bash
+# 0. Prérequis système (Ubuntu/Debian)
+sudo apt-get install -y libxml2-dev libxslt1-dev
+
+# 1. Initialiser le submodule (si pas déjà fait)
+git submodule update --init route-graph-generator
+
+# 2. Installer dans le venv du projet
+uv pip install -e route-graph-generator/
+
+# 3. Vérifier
+r2gg-sql2pivot --help
+```
+
+> **Note** : r2gg dépend de `psycopg2`, `sqlparse`, `lxml`. Si l'install échoue, vérifier les dépendances système (`libxml2-dev`, `libxslt1-dev`, `libpq-dev`).
+
+### 10.4 Génération pour un EPCI
+
+```bash
+# Générer le gold dump pour Brest (SIREN: 242900314)
+python scripts/admin_generate_gold_dumps.py --epci "Brest Métropole"
+
+# Ou par SIREN
+python scripts/admin_generate_gold_dumps.py --epci 242900314
+```
+
+**Pipeline exécuté automatiquement :**
+
+1. **LOAD** : Charge `troncon_de_route` + `non_communication` depuis `data/epci_extracts/{siren}/` dans PostGIS
+2. **R2GG** : Lance `r2gg-sql2pivot` puis `r2gg-pivot2pgrouting` → crée les tables dans le schéma `pgr_{siren}`
+3. **DUMP** : Exporte via `pg_dump` → `data/gold_dumps/{siren}/ways.sql`
+
+**Sortie attendue :**
+```
+data/gold_dumps/242900314/
+├── ways.sql          # SQL dump (10-50 MB par EPCI)
+└── r2gg_config/      # Configs r2gg (pour debug)
+    ├── r2gg_config.json
+    ├── db_pivot.json
+    ├── db_output.json
+    ├── costs.json
+    └── log_config.json
+```
+
+### 10.5 Génération pour tous les EPCIs
+
+```bash
+# Générer les 13 EPCIs (compter ~5-15 min par EPCI)
+python scripts/admin_generate_gold_dumps.py --all
+```
+
+> **⚠️ Temps** : Chaque EPCI prend 5-15 minutes selon sa taille. Les 13 EPCIs = ~1-3 heures.
+
+### 10.6 Commandes partielles (debug)
+
+```bash
+# Ne faire que le chargement des parquets en base
+python scripts/admin_generate_gold_dumps.py --epci 242900314 --load-only
+
+# Ne faire que r2gg (si tables déjà chargées par 00_setup.py)
+python scripts/admin_generate_gold_dumps.py --epci 242900314 --skip-load
+
+# Ne faire que l'export pg_dump (si r2gg déjà passé)
+python scripts/admin_generate_gold_dumps.py --epci 242900314 --dump-only
+```
+
+### 10.7 Publication sur R2
+
+Après génération, publier les dumps pour que les étudiants puissent les télécharger :
+
+```bash
+# Pousser les gold dumps sur R2
+make data-push
+
+# Les étudiants les récupèrent avec :
+make data-pull
+```
+
+### 10.8 Chargement automatique chez les étudiants
+
+Les gold dumps sont **automatiquement chargés** par `00_setup.py` :
+
+```bash
+# Le setup charge les tables BDTOPO + restaure les gold dumps
+python scripts/00_setup.py --epci "Brest Métropole"
+```
+
+Pour skipper le chargement des gold dumps :
+```bash
+python scripts/00_setup.py --epci "Brest Métropole" --skip-gold-dumps
+```
+
+### 10.9 Vérification
+
+```sql
+-- Vérifier les tables pgRouting
+SELECT schemaname, tablename FROM pg_tables WHERE tablename IN ('ways', 'ways_vertices_pgr', 'turn_restrictions');
+
+-- Comptages
+SELECT 'ways' AS t, count(*) FROM pgr_242900314.ways
+UNION ALL SELECT 'vertices', count(*) FROM pgr_242900314.ways_vertices_pgr;
+```
+
+### 10.10 Troubleshooting
+
+| Problème | Solution |
+|----------|----------|
+| **`r2gg-sql2pivot: command not found`** | `pip install -e route-graph-generator/` |
+| **`extension pgrouting does not exist`** | Rebuild Docker : `docker compose build && docker compose up -d` |
+| **Tables vides après r2gg** | Vérifier que `troncon_de_route` contient des données dans la BBOX de l'EPCI |
+| **`non_communication` absent** | Normal si pas dans les extraits — r2gg génère un graphe sans restrictions de tour |
+| **pg_dump trop gros** | Normal : 10-50 MB par EPCI selon la densité routière |
+| **Timeout r2gg** | Augmenter le timeout dans le script (défaut: 600s par étape) |
+| **FDW errors** | Le SQL r2gg utilise FDW pour se connecter à la base source. Vérifier les credentials dans les configs JSON |

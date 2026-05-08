@@ -5,7 +5,7 @@
 ## Project identity
 
 Teaching repo: DB course (NoSQL graph + spatial), IGN/BDTOPO context.
-**Format:** 0.5J theory + 2J hands-on, 40 students / 10 groups × 4 roles.
+**Format:** 0.5J theory + 2J hands-on, 40 students / 10 groups × 4 roles (× 3 EPCIs bonus = 13 EPCIs total).
 **Immersive project:** 3 connected phases (Reconnaissance → Cartographie → Simulation).
 
 ## Environment
@@ -52,7 +52,7 @@ scripts/
   03_routing_pgrouting.py  # Phase 2+3: Dijkstra + constrained routing + choke points
   04_benchmark_comparison.py  # Phase 3: SQL vs Cypher benchmark + generate_situation_map()
   admin_extract_epci_data.py  # Instructor: per-EPCI BDTOPO slicing (BBOX pushdown)
-  admin_generate_gold_dumps.py  # Instructor: r2gg for 10 EPCIs
+  admin_generate_gold_dumps.py  # Instructor: r2gg pipeline (LOAD → R2GG → DUMP) for 13 EPCIs
 data/
   epci.parquet                    # EPCI geometries
   poi_source/                     # BDTOPO Parquet files (per table)
@@ -71,7 +71,7 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 ## Key concepts
 
 - **4 roles:** Attaque (targets), Défense (protection), Ravitaillement (logistics), Énergie (energy grid)
-- **10 EPCIs:** Diverse profiles (ports, borders, mountains, nuclear)
+- **13 EPCIs:** Diverse profiles (ports, borders, mountains, nuclear)
 - BDTOPO ontology: 3 levels (`Database → Object → Detail`) linked by `parent_id`
 - Neo4j labels: `:ClasseOntologie`, `:POI` with role/source properties
 - Main relations: `[:EST_SOUS_TYPE_DE]`, `[:DISTANCE {meters}]`
@@ -84,6 +84,8 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 - **DuckDB > shapely** for bulk EPCI filtering (~25s for 13 EPCIs vs row-by-row); BBOX pre-extract is enough — exact filtering happens in PostGIS at query time.
 - **Canonical EPCI key:** `code_siren` (9-char string). Never `nom_officiel` (accents/spaces are fragile).
 - **Performance:** Gold Dumps for road topology, avoid live r2gg in TD.
+- **Gold Dumps pipeline:** `admin_generate_gold_dumps.py` does LOAD (parquet → PostGIS) → R2GG (sql2pivot + pivot2pgrouting) → DUMP (pg_dump). r2gg needs `pip install -e route-graph-generator/` + system deps (`libxml2-dev`, `libxslt1-dev`).
+- **00_setup.py gold dumps:** Automatically restores `data/gold_dumps/{siren}/ways.sql` if present. Use `--skip-gold-dumps` to skip.
 - **Nuclear plants:** Not in BDTOPO — injected as custom POIs at setup.
 - **Role queries:** Each role has specific table+filter combos (see `reference/glossaire.qmd`).
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).
