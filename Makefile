@@ -17,8 +17,8 @@ setup: ## Full student setup: submodule + data + docker + uv
 	@echo ">>> Setup your EPCI: python scripts/00_setup.py --epci \"<votre EPCI>\""
 
 # --- Data (R2) ---
-data-pull: ## Pull data from Cloudflare R2 (needs R2 creds in .env)
-	./scripts/data_pull.sh
+data-pull: ## Pull data from Cloudflare R2 (public, no auth needed)
+	./scripts/data_pull.sh$(if $(EPCI), --epci $(EPCI),)
 
 data-push: ## Push data to Cloudflare R2 (instructor only)
 	@test -f rclone.conf || (echo "Missing rclone.conf" && exit 1)
