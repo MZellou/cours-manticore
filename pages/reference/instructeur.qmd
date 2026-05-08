@@ -341,3 +341,371 @@ UNION ALL SELECT 'vertices', count(*) FROM pgr_242900314.ways_vertices_pgr;
 | **pg_dump trop gros** | Normal : 10-50 MB par EPCI selon la densité routière |
 | **Timeout r2gg** | Augmenter le timeout dans le script (défaut: 600s par étape) |
 | **FDW errors** | Le SQL r2gg utilise FDW pour se connecter à la base source. Vérifier les credentials dans les configs JSON |
+
+---
+
+## 11. Validation end-to-end des phases
+
+Checklist exhaustive à exécuter avant chaque session sur **3 EPCIs représentatifs** : Brest Métropole (port militaire), CA du Cotentin (péninsule + nucléaire Flamanville), Grenoble-Alpes-Métropole (cuvette montagneuse). Si les trois passent, les 10 autres EPCIs passent à 99 %.
+
+::: {.callout-warning}
+**Piège connu — `mission_pois` est tronqué à chaque run de `01_explore_postgis.py`.**
+La ligne `DROP TABLE IF EXISTS mission_pois CASCADE` (script L233) supprime la table au début de chaque exécution. Conséquence : après 4 appels séquentiels, **seul le dernier rôle survit**. La migration Neo4j ne verra alors qu'un seul rôle. → Utiliser le bloc d'accumulation SQL fourni en [§11.2](#sec-phase1) avant la migration.
+:::
+
+---
+
+### 11.0 Sanity check baseline (par EPCI)
+
+À exécuter après chaque `00_setup.py --epci "<EPCI>"`.
+
+```bash
+docker compose exec postgis psql -U postgres -d bdtopo_manticore -c "
+  SELECT pgr_version();
+  SELECT extversion FROM pg_extension WHERE extname='vector';
+  SELECT 'ontology' AS t, count(*) FROM bdtopo_ontology
+    UNION ALL SELECT 'custom_pois', count(*) FROM mission_custom_pois
+    UNION ALL SELECT 'troncon_route', count(*) FROM troncon_de_route
+    UNION ALL SELECT 'ways', count(*) FROM ways
+    UNION ALL SELECT 'vertices', count(*) FROM ways_vertices_pgr;
+"
+```
+
+Neo4j browser (<http://localhost:7474>) :
+
+```cypher
+CALL apoc.help('apoc') YIELD name RETURN count(*) AS apoc_loaded;
+```
+
+---
+
+### 11.1 Warm-ups (T0a / T0b / T0c) {#sec-warmups}
+
+Les étudiants démarrent par ces 3 mini-exos. **Si l'un échoue, toute la phase est bloquée.**
+
+**T0a — DuckDB** (avant chargement PostGIS) :
+
+```bash
+duckdb -c "SELECT categorie, count(*) AS nb
+           FROM 'data/poi_source/zone_d_activite_ou_d_interet.parquet'
+           GROUP BY categorie ORDER BY nb DESC LIMIT 5;"
+```
+
+**T0b — PostGIS jointure spatiale** (3 lignes attendues pour Brest, plus pour Grenoble) :
+
+```sql
+SELECT a.toponyme AS aero, z.toponyme AS hopital
+FROM aerodrome a
+JOIN zone_d_activite_ou_d_interet z
+  ON ST_DWithin(a.geometrie, z.geometrie, 2000)
+WHERE z.nature IN ('Hôpital', 'Établissement hospitalier');
+```
+
+**T0c — Cypher ontologie** (nécessite migration Neo4j déjà faite) :
+
+```cypher
+MATCH (d:Detail)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Construction ponctuelle'})
+RETURN count(d) AS nb_sous_types;
+```
+
+> ⚠️ T0c suppose que `02_migrate_to_neo4j.py` a déjà tourné. Pour la première validation, exécuter T0c en dernier.
+
+---
+
+### 11.2 Phase 1 — Reconnaissance {#sec-phase1}
+
+**Étape 1 — Tester les 4 rôles individuellement** (chaque appel reset `mission_pois`) :
+
+```bash
+python scripts/01_explore_postgis.py --role attaque
+python scripts/01_explore_postgis.py --role defense
+python scripts/01_explore_postgis.py --role ravitaillement
+python scripts/01_explore_postgis.py --role energie
+```
+
+Vérifier dans la sortie console : pour **chaque rôle**, `Total POIs identifiés > 0` et `Top 10 grappes` non vide (sauf EPCI très petit).
+
+**Étape 2 — Bloc d'accumulation des 4 rôles** (workaround au truncate) :
+
+```sql
+DROP TABLE IF EXISTS mission_pois CASCADE;
+CREATE TABLE mission_pois (
+    id SERIAL PRIMARY KEY,
+    role TEXT, source TEXT, cleabs TEXT,
+    categorie TEXT, nature TEXT, nom TEXT,
+    geom GEOMETRY(Geometry, 2154)
+);
+
+-- Attaque
+INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+SELECT 'attaque', 'aerodrome', cleabs, categorie, nature, toponyme, ST_Force2D(geometrie)
+FROM aerodrome WHERE categorie IN ('Internationale', 'Nationale');
+
+-- Défense
+INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+SELECT 'defense', 'hopital', cleabs, categorie, nature, toponyme, ST_Force2D(geometrie)
+FROM zone_d_activite_ou_d_interet
+WHERE nature IN ('Hôpital', 'Établissement hospitalier');
+
+-- Ravitaillement
+INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+SELECT 'ravitaillement', 'port', cleabs, nature, nature_detaillee, toponyme, ST_Force2D(geometrie)
+FROM equipement_de_transport WHERE nature = 'Port';
+
+-- Énergie (poste HT + custom centrales)
+INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+SELECT 'energie', 'poste_ht', cleabs, nature, CAST(importance AS INTEGER)::TEXT, NULL, ST_Force2D(geometrie)
+FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3;
+
+INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+SELECT 'energie', 'centrale', id::TEXT, type, puissance_mw::TEXT, nom, geometrie
+FROM mission_custom_pois;
+
+CREATE INDEX ON mission_pois USING GIST (geom);
+```
+
+> Ce bloc est volontairement **réduit** (1–2 sources par rôle) — il sert uniquement à valider que les 4 rôles peuvent coexister pour la migration Neo4j. Pour le pipeline réel des étudiants, ils écrivent leurs propres `INSERT` (voir corrigés Phase 1 T2).
+
+**Checkpoint 1 — validations SQL :**
+
+```sql
+-- 4 rôles présents, tous non vides
+SELECT role, count(*) FROM mission_pois GROUP BY role ORDER BY role;
+-- Attendu : 4 lignes (attaque, defense, energie, ravitaillement), toutes count > 0
+
+-- SRID = 2154 (Lambert-93)
+SELECT DISTINCT ST_SRID(geom) FROM mission_pois;
+-- Attendu : 2154
+
+-- Index GIST présent
+SELECT indexdef FROM pg_indexes WHERE tablename = 'mission_pois' AND indexdef ILIKE '%gist%';
+
+-- DBSCAN (calculé à la volée, non persisté dans la table)
+WITH c AS (
+  SELECT ST_ClusterDBSCAN(geom, eps := 2000, minpoints := 2) OVER () AS cid FROM mission_pois
+)
+SELECT count(DISTINCT cid) FROM c WHERE cid IS NOT NULL;
+-- Attendu : 2–8 sur Brest, 1–4 sur Cotentin (péninsule), 3–10 sur Grenoble
+```
+
+**Cross-rôles (T7) — sanity** : les 4 jointures spatiales du corrigé Phase 1 §T7 doivent retourner ≥ 1 ligne pour Brest et Grenoble (Cotentin peut être vide pour certaines).
+
+---
+
+### 11.3 Phase 2 — Cartographie
+
+**Étape 1 — Migration Neo4j** (après le bloc d'accumulation §11.2) :
+
+```bash
+python scripts/02_migrate_to_neo4j.py
+```
+
+**Checkpoint 2a — Neo4j browser :**
+
+```cypher
+// 4 rôles dans Neo4j (égaux au count PostGIS)
+MATCH (p:POI) RETURN p.role, count(*) ORDER BY p.role;
+
+// Hiérarchie ontologique chargée
+MATCH (d:ClasseOntologie)-[:EST_SOUS_TYPE_DE]->(o:ClasseOntologie) RETURN count(*);
+
+// Relations DISTANCE créées entre POIs
+MATCH ()-[r:DISTANCE]->() RETURN count(r);
+```
+
+**Étape 2 — Routage pgRouting (4 rôles)** :
+
+```bash
+python scripts/03_routing_pgrouting.py --role attaque
+python scripts/03_routing_pgrouting.py --role defense
+python scripts/03_routing_pgrouting.py --role ravitaillement
+python scripts/03_routing_pgrouting.py --role energie
+```
+
+Sortie attendue par rôle : `ex1_dijkstra` retourne un chemin non vide, `ex2_choke_points` calcule un delta, `ex3_constrained_routing` produit un coût différent du Dijkstra non contraint.
+
+**Checkpoint 2b — SQL :**
+
+```sql
+-- Graphe routier chargé (Brest ~37k, Cotentin ~80k, Grenoble ~100k+)
+SELECT count(*) AS edges FROM ways;
+SELECT count(*) AS vertices FROM ways_vertices_pgr;
+
+-- Accrochage POIs : p95 < 1000m
+SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY d) AS p95_snap_m
+FROM (
+  SELECT ST_Distance(p.geom, v.geom) AS d
+  FROM mission_pois p
+  CROSS JOIN LATERAL (
+    SELECT geom FROM ways_vertices_pgr ORDER BY geom <-> p.geom LIMIT 1
+  ) v
+) t;
+```
+
+**Patterns Cypher avancés (T8 / T9)** — exécuter chacun, vérifier sortie non vide :
+
+```cypher
+// POIs isolés (T8) — devrait être faible (< 10 % des POIs)
+MATCH (p:POI) WHERE NOT (p)-[:DISTANCE]-() RETURN count(p);
+
+// Pattern multi-hop attaque → énergie → défense (T9)
+MATCH path = (a:POI {role:'attaque'})-[:DISTANCE*..3]-(e:POI {role:'energie'})-[:DISTANCE*..3]-(d:POI {role:'defense'})
+RETURN length(path) ORDER BY length(path) LIMIT 5;
+```
+
+**Bonus T10 / T11** :
+
+```sql
+-- Matrice de distances pour le rôle attaque (T10)
+WITH poi_vertices AS (
+  SELECT (SELECT v.id FROM ways_vertices_pgr v ORDER BY v.geom <-> p.geom LIMIT 1) AS vid
+  FROM mission_pois p WHERE role = 'attaque'
+)
+SELECT count(*) AS pairs_calculated
+FROM pgr_dijkstraCostMatrix(
+  'SELECT id, source, target, cost, reverse_cost FROM ways',
+  (SELECT array_agg(vid) FROM poi_vertices),
+  directed := false
+);
+
+-- Isochrone 10min depuis un POI attaque (T11)
+WITH start AS (
+  SELECT v.id FROM mission_pois p, LATERAL (
+    SELECT id FROM ways_vertices_pgr ORDER BY geom <-> p.geom LIMIT 1
+  ) v WHERE p.role = 'attaque' LIMIT 1
+)
+SELECT count(*) AS sommets_atteignables_10min
+FROM pgr_drivingDistance(
+  'SELECT id, source, target, cost, reverse_cost FROM ways',
+  (SELECT id FROM start), 600, directed := false
+);
+```
+
+---
+
+### 11.4 Phase 3 — Simulation & benchmark
+
+```bash
+python scripts/04_benchmark_comparison.py --role attaque
+python scripts/04_benchmark_comparison.py --role defense
+python scripts/04_benchmark_comparison.py --role ravitaillement
+python scripts/04_benchmark_comparison.py --role energie
+
+ls -lh data/carte_situation*.png
+```
+
+**Vérifications T1 / T9 (centralité + connexité)** — Neo4j browser :
+
+```cypher
+// Betweenness centrality (T1)
+CALL gds.graph.project('test_g', 'POI', 'DISTANCE');
+CALL gds.betweenness.stream('test_g')
+YIELD nodeId, score
+RETURN gds.util.asNode(nodeId).nom, score
+ORDER BY score DESC LIMIT 5;
+CALL gds.graph.drop('test_g');
+```
+
+**Composantes connexes (T9) — SQL** :
+
+```sql
+SELECT count(DISTINCT component) AS nb_composantes
+FROM pgr_connectedComponents(
+  'SELECT id, source, target, cost, reverse_cost FROM ways'
+);
+-- Attendu : 1 sur réseau bien connecté, > 1 si fragmenté
+```
+
+**Coupe / restauration (T5) — sanity** :
+
+```sql
+CREATE TABLE IF NOT EXISTS ways_backup AS SELECT * FROM ways;
+
+-- Couper l'arête 1, mesurer, restaurer
+UPDATE ways SET cost = -1, reverse_cost = -1 WHERE id = 1;
+SELECT max(agg_cost) FROM pgr_dijkstra(
+  'SELECT id, source, target, cost, reverse_cost FROM ways',
+  (SELECT min(source) FROM ways), (SELECT max(target) FROM ways),
+  directed := false
+);
+UPDATE ways SET cost = b.cost, reverse_cost = b.reverse_cost
+FROM ways_backup b WHERE ways.id = b.id;
+```
+
+---
+
+### 11.5 Questions bonus par rôle
+
+Exécuter une question par rôle (smoke test) — corrigés complets dans [`pages/corriges/bonus.qmd`](../corriges/bonus.qmd).
+
+```sql
+-- Attaque B1 : couverture aérienne (aérodromes proches de ports)
+SELECT count(*) FROM aerodrome a
+JOIN equipement_de_transport e ON ST_DWithin(a.geometrie, e.geometrie, 5000)
+WHERE a.categorie IN ('Internationale','Nationale') AND e.nature = 'Port';
+
+-- Défense B2 : ponts critiques sur axes principaux
+SELECT count(*) FROM construction_surfacique c
+JOIN troncon_de_route r ON ST_Intersects(c.geometrie, r.geometrie)
+WHERE c.nature = 'Pont' AND CAST(r.importance AS INTEGER) <= 2;
+
+-- Ravitaillement B1 : ports ↔ zones industrielles
+SELECT count(*) FROM equipement_de_transport p
+JOIN zone_d_activite_ou_d_interet z ON ST_DWithin(p.geometrie, z.geometrie, 3000)
+WHERE p.nature = 'Port' AND z.nature IN ('Zone industrielle', 'Zone d''activités');
+
+-- Énergie B3 : rayon d'influence des centrales nucléaires (Cotentin uniquement)
+SELECT c.nom, p.role, count(*) FROM mission_custom_pois c
+JOIN mission_pois p ON ST_DWithin(c.geometrie, p.geom, 20000)
+GROUP BY c.nom, p.role;
+```
+
+> **Énergie B3 ne retourne 0 que pour les EPCIs sans centrale** (Brest, Grenoble). C'est le résultat attendu — la requête doit néanmoins s'exécuter sans erreur.
+
+---
+
+### 11.6 Rotation 3 EPCIs
+
+Exécuter §11.0 → §11.5 pour chacun :
+
+```bash
+# 1. Brest Métropole — port militaire (référence)
+python scripts/00_setup.py --epci "Brest Métropole"
+# → exécuter §11.0 à §11.5
+
+# 2. CA du Cotentin — péninsule + Flamanville (teste centrales nucléaires)
+python scripts/00_setup.py --epci "CA du Cotentin"
+# → exécuter §11.0 à §11.5
+# → vérifier en plus : SELECT count(*) FROM mission_custom_pois; -- doit être ≥ 1
+
+# 3. Grenoble-Alpes-Métropole — cuvette montagneuse (teste réseau dense)
+python scripts/00_setup.py --epci "Grenoble-Alpes-Métropole"
+# → exécuter §11.0 à §11.5
+```
+
+---
+
+### 11.7 Critères de passage
+
+| # | Vérification | Attendu |
+|---|-------------|---------|
+| 1 | Extensions PostGIS | `pgr_version()` + `vector` chargés |
+| 2 | APOC Neo4j | `count(*) > 200` procédures |
+| 3 | T0a/b/c warm-ups | Tous retournent ≥ 1 ligne |
+| 4 | `mission_pois` rôles (après accumulation §11.2) | 4 rôles distincts, tous `count > 0` |
+| 5 | `ST_SRID(geom)` | 2154 (Lambert-93) |
+| 6 | Index GIST sur `mission_pois.geom` | présent |
+| 7 | DBSCAN clusters | 1 ≤ N ≤ 10 |
+| 8 | Nœuds Neo4j `POI` | = count `mission_pois` PostGIS |
+| 9 | Relations `EST_SOUS_TYPE_DE` | > 50 |
+| 10 | Relations `DISTANCE` | > 0 |
+| 11 | `ways` count | Brest > 30k, Cotentin > 60k, Grenoble > 80k |
+| 12 | Snap p95 | < 1 000 m |
+| 13 | Dijkstra (chaque rôle) | Chemin non vide |
+| 14 | Routage contraint | Coût ≠ Dijkstra non contraint |
+| 15 | Betweenness GDS | Top 5 retournés sans erreur |
+| 16 | Composantes connexes | ≥ 1 |
+| 17 | Cut / restore arête | Distance change puis revient à la ref |
+| 18 | Cartes PNG | 4 fichiers `data/carte_situation*.png` |
+| 19 | Bonus 4 rôles | Tous s'exécutent (Énergie B3 = 0 pour Brest/Grenoble OK) |
+| 20 | Cotentin uniquement | `mission_custom_pois` ≥ 1 (Flamanville) |

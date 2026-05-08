@@ -57,24 +57,21 @@ Cela télécharge dans `data/` :
 
 ### Téléchargement manuel
 
-Si `make data-pull` ne fonctionne pas, vous pouvez télécharger les fichiers directement :
+Si `make data-pull` ne fonctionne pas, utilisez `rclone` directement :
 
 ```bash
-# Base URL public
-R2_BASE="https://pub-XXXX.r2.dev"
+# Vérifier l'accès au bucket
+rclone --config rclone.conf lsd manticore:manticore
 
 # Géométries EPCI
-curl -fSL "$R2_BASE/epci.parquet" -o data/epci.parquet
+rclone --config rclone.conf copy manticore:manticore/epci.parquet data/
 
 # Ontologie
-curl -fSL "$R2_BASE/ontologie/bdtopo_database.parquet" -o data/ontologie/bdtopo_database.parquet
-curl -fSL "$R2_BASE/ontologie/bdtopo_objects.parquet" -o data/ontologie/bdtopo_objects.parquet
-curl -fSL "$R2_BASE/ontologie/bdtopo_details.parquet" -o data/ontologie/bdtopo_details.parquet
+rclone --config rclone.conf copy manticore:manticore/ontologie/ data/ontologie/
 
 # Exemple : extraction BDTOPO pour un EPCI (code SIREN)
 EPCI=200023414
-mkdir -p "data/epci_extracts/$EPCI"
-curl -fSL "$R2_BASE/epci_extracts/$EPCI/troncon_de_route.parquet" -o "data/epci_extracts/$EPCI/troncon_de_route.parquet"
+rclone --config rclone.conf copy "manticore:manticore/epci_extracts/$EPCI/" "data/epci_extracts/$EPCI/"
 ```
 
 > **Codes SIREN des EPCIs** : `200023414` `200040715` `200046977` `200067106` `200067205` `200084952` `200093201` `242900314` `243300316` `243700754` `244400404` `245900428` `246700488`

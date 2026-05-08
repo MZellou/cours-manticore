@@ -292,9 +292,8 @@ def insert_batch(conn, table_name, table_arrow, epci_geom_prepared, cols_to_keep
 
     data = []
     for _, row in df.iterrows():
-        vals = [row[c] for c in cols]
+        vals = [None if pd.isnull(v) else v for v in (row[c] for c in cols)]
         if has_geom:
-            # On passe la géométrie en WKB binaire pour PostGIS
             vals.append(psycopg2.Binary(row["geometrie"]))
         data.append(tuple(vals))
 
