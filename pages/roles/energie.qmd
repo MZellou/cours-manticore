@@ -19,17 +19,32 @@ Localiser les infrastructures critiques de production et de transport d'énergie
 | `construction_ponctuelle` | `nature IN ('Éolienne', 'Transformateur', 'Cheminée')` | Sources d'énergie |
 | `construction_surfacique` | `nature = 'Barrage'` | Hydroélectricité |
 | `canalisation` | `nature = 'Hydrocarbures'` | Oléoducs/gazoducs |
-| `mission_custom_pois` | *(toutes)* | **Centrales nucléaires** (injectées au setup) |
+| `mission_custom_pois` | *(toutes)* | **Centrales nucléaires** (injectées au setup, **selon EPCI**) |
+
+::: {.callout-warning title="⚛️ Centrales nucléaires : présence selon l'EPCI"}
+La table `mission_custom_pois` n'est peuplée que si votre EPCI est **proche d'un site nucléaire** :
+
+| EPCI | Centrale |
+|------|----------|
+| CU de Dunkerque | Gravelines |
+| CA du Cotentin | Flamanville |
+| CC de Cattenom et Environs | Cattenom |
+| Ardenne Métropole | Chooz |
+| CU du Grand Poitiers | Civaux |
+
+Pour les **autres EPCIs** (Brest, Le Havre, Grenoble, Strasbourg, Lille, Pays Basque, Rouen, Bordeaux), `mission_custom_pois` est **vide**. Ce n'est pas un bug — la requête doit s'exécuter sans erreur et retourner `0 lignes`. Adaptez la communication de votre rapport en conséquence (« Pas de risque nucléaire direct dans l'EPCI »).
+:::
 
 ## Requête de base
 
 ```sql
--- Postes de transformation critiques
+-- Postes de transformation critiques (importance 1-3 = sites majeurs)
+-- Note : poste_de_transformation n'a PAS de colonne `nature` — on utilise `importance` comme catégorie
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
-SELECT 'energie', 'poste_ht', cleabs, nature, CAST(importance AS INTEGER)::TEXT, NULL, ST_Force2D(geometrie)
+SELECT 'energie', 'poste_ht', cleabs, importance, 'Poste de transformation', NULL, ST_Force2D(geometrie)
 FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3;
 
--- Centrales nucléaires (injectées par le setup)
+-- Centrales nucléaires (injectées par le setup, vide hors EPCIs nucléaires)
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
 SELECT 'energie', 'centrale', id::TEXT, type, puissance_mw::TEXT, nom, geometrie
 FROM mission_custom_pois;

@@ -58,6 +58,7 @@ NUCLEAR_PLANTS = [
 TARGET_TABLES = [
     "aerodrome",
     "batiment",
+    "canalisation",
     "construction_lineaire",
     "construction_ponctuelle",
     "construction_surfacique",
@@ -72,6 +73,7 @@ TARGET_TABLES = [
     "plan_d_eau",
     "poste_de_transformation",
     "pylone",
+    "reservoir",
     "surface_hydrographique",
     "troncon_de_route",
     "troncon_de_voie_ferree",
@@ -154,6 +156,22 @@ KEEP_COLS = {
         "nature",
         "nature_detaillee",
         "etat_de_l_objet",
+        "geometrie",
+        "geometrie_bbox",
+    ],
+    "reservoir": [
+        "fid",
+        "cleabs",
+        "nature",
+        "volume",
+        "geometrie",
+        "geometrie_bbox",
+    ],
+    "canalisation": [
+        "fid",
+        "cleabs",
+        "nature",
+        "position_par_rapport_au_sol",
         "geometrie",
         "geometrie_bbox",
     ],
@@ -331,16 +349,16 @@ def load_ontology(conn):
         """)
     conn.commit()
 
-    # 1. Database (Level 1)
+    # 1. Database (Level 1) — db_map keyed by sql_name (used as parent_db_name in objects parquet)
     df_db = pd.read_parquet(f"{LOCAL_DATA}/ontologie/bdtopo_database.parquet")
-    db_map = {}  # name -> id
+    db_map = {}  # sql_name -> id
     with conn.cursor() as cur:
-        for name in df_db["name"].unique():
+        for _, row in df_db.drop_duplicates("name").iterrows():
             cur.execute(
                 "INSERT INTO bdtopo_ontology (name, obj_type) VALUES (%s, 'Database') RETURNING id;",
-                (name,),
+                (row["name"],),
             )
-            db_map[name] = cur.fetchone()[0]
+            db_map[row["sql_name"]] = cur.fetchone()[0]
 
     # 2. Objects (Level 2)
     df_obj = pd.read_parquet(f"{LOCAL_DATA}/ontologie/bdtopo_objects.parquet")
@@ -379,7 +397,7 @@ def inject_custom_pois(conn, epci_geom_prepared):
                 nom TEXT,
                 type TEXT,
                 puissance_mw INTEGER,
-                geometrie GEOMETRY(Point, 4326)
+                geometrie GEOMETRY(Point, 2154)
             );
         """)
     conn.commit()
@@ -402,7 +420,7 @@ def inject_custom_pois(conn, epci_geom_prepared):
             if epci_geom_prepared.intersects(pt):
                 pt_l93 = transform(transformer, pt)
                 cur.execute(
-                    "INSERT INTO mission_custom_pois (nom, type, puissance_mw, geometrie) VALUES (%s, %s, %s, %s)",
+                    "INSERT INTO mission_custom_pois (nom, type, puissance_mw, geometrie) VALUES (%s, %s, %s, ST_SetSRID(%s::geometry, 2154))",
                     (nom, "Centrale nucléaire", puissance, pt_l93.wkb),
                 )
                 print(f"  → {nom} ({puissance} MW)")
@@ -445,7 +463,7 @@ def load_gold_dumps(siren):
         print(f"  ✗ Erreur pg_restore: {result.stderr[:500]}")
         return False
 
-    # Vérifier les comptages
+    # Vérifier les comptages + créer vues public pour les scripts de routage
     conn = get_conn()
     schema = f"pgr_{siren}"
     try:
@@ -456,6 +474,28 @@ def load_gold_dumps(siren):
                 cur.execute(f"SELECT count(*) FROM {schema}.ways_vertices_pgr")
                 n_verts = cur.fetchone()[0]
                 print(f"  ✓ Restauré: {n_ways} ways, {n_verts} vertices (schéma {schema})")
+                # Les scripts utilisent 'ways' / 'ways_vertices_pgr' sans préfixe.
+                # ways : view (pas de calcul lourd, juste alias cost_m_car → cost)
+                # ways_vertices_pgr : table matérialisée (transform 4326→2154 + GIST index)
+                # — la vue serait re-calculée à chaque KNN <-> et tuerait Dijkstra.
+                cur.execute("DROP TABLE IF EXISTS public.ways_vertices_pgr CASCADE;")
+                cur.execute("DROP VIEW IF EXISTS public.ways_vertices_pgr CASCADE;")
+                cur.execute(f"""
+                    CREATE OR REPLACE VIEW public.ways AS
+                        SELECT *, cost_m_car AS cost, reverse_cost_m_car AS reverse_cost
+                        FROM {schema}.ways;
+                    CREATE TABLE public.ways_vertices_pgr AS
+                        SELECT id, cnt, chk, ein, eout,
+                               ST_Transform(the_geom, 2154) AS geom
+                        FROM {schema}.ways_vertices_pgr;
+                    CREATE INDEX ways_vertices_pgr_geom_idx
+                        ON public.ways_vertices_pgr USING GIST (geom);
+                    CREATE UNIQUE INDEX ways_vertices_pgr_id_idx
+                        ON public.ways_vertices_pgr (id);
+                    ANALYZE public.ways_vertices_pgr;
+                """)
+                conn.commit()
+                print(f"  ✓ public.ways (vue) + public.ways_vertices_pgr (table+GIST) créés")
             except Exception as e:
                 print(f"  ⚠ Tables restaurées mais vérification impossible: {e}")
                 return True

@@ -66,3 +66,65 @@ order: 8
 | **Snap** | Associer un point à son nœud le plus proche dans le graphe |
 | **Routage contraint** | Calcul d'itinéraire avec des règles (poids, largeur, vitesse) |
 | **BBOX** | Bounding Box — rectangle englobant utilisé pour le filtrage spatial |
+
+## Tables et conventions
+
+### `ways` (VIEW publique)
+
+Le gold dump r2gg restaure les tables dans un schéma EPCI-spécifique : `pgr_242900314.ways` (Brest), `pgr_244400404.ways` (Cotentin), etc. Pour que **les mêmes requêtes étudiantes fonctionnent quel que soit l'EPCI chargé**, le setup crée des **vues** dans le schéma `public` :
+
+```sql
+CREATE VIEW public.ways AS
+    SELECT *,
+           cost_m_car AS cost,            -- alias pour les requêtes pédagogiques
+           reverse_cost_m_car AS reverse_cost
+    FROM pgr_242900314.ways;
+
+CREATE VIEW public.ways_vertices_pgr AS
+    SELECT id, cnt, chk, ein, eout,
+           ST_Transform(the_geom, 2154) AS geom   -- WGS84 → Lambert-93
+    FROM pgr_242900314.ways_vertices_pgr;
+```
+
+**Conséquences** :
+
+- Les étudiants écrivent `FROM ways` sans préfixe ni `WHERE epci=...` → c'est la vue qui résout vers le bon schéma.
+- `\d ways` montre `View`, pas `Table`. Si on veut voir les **vraies** colonnes, faire `\d pgr_<siren>.ways`.
+- **`cost`** et **`reverse_cost`** sont des **alias** sur `cost_m_car` / `reverse_cost_m_car` (coût en mètres pour véhicule particulier). r2gg génère aussi `cost_s_car` (secondes), utilisable avec un alias custom si besoin.
+
+### `cost = -1` (convention r2gg / pgRouting)
+
+Une arête avec `cost = -1` est **non traversable** dans pgRouting. r2gg utilise cette convention pour marquer :
+
+- pistes, sentiers, escaliers
+- voies privées, accès interdit
+- tarmac d'aéroport, zones militaires fermées
+- toutes les voies non carrossables en voiture particulière
+
+`pgr_dijkstra(..., directed := false)` traite l'arête comme **valide dans le sens inverse** seulement si `reverse_cost > 0`. Si **les deux** sont à -1, l'arête est totalement inutilisable.
+
+> **Sur Brest, ~28 % des arêtes du graphe `ways` ont `cost = -1` à l'origine.** Voir [Phase 2 §T2.5](../mission/phase_2.qmd#sec-reality-check) et [Phase 3 §T0](../mission/phase_3.qmd#sec-t0-etat-initial) pour les conséquences pédagogiques.
+
+### `mission_pois` (table partagée 4 rôles — pattern accumulation)
+
+`mission_pois` est la table **commune** où les 4 agents (Attaque, Défense, Ravitaillement, Énergie) déposent leurs POIs. Elle persiste entre les exécutions du script `01_explore_postgis.py`.
+
+**Schéma** :
+
+```sql
+mission_pois (
+    id SERIAL PRIMARY KEY,
+    role TEXT,           -- 'attaque' | 'defense' | 'ravitaillement' | 'energie'
+    source TEXT,         -- table BDTOPO d'origine (aerodrome, hopital, port...)
+    cleabs TEXT, categorie TEXT, nature TEXT, nom TEXT,
+    geom GEOMETRY(Geometry, 2154)
+)
+```
+
+**Pattern idempotent** : à chaque relance d'un rôle, le script fait `DELETE FROM mission_pois WHERE role = '<role>'` puis `INSERT`. Conséquence :
+
+- Lancer les 4 rôles successivement → **tous les 4** coexistent dans la table.
+- Relancer un seul rôle → **seul ce rôle** est rafraîchi, les autres restent intacts.
+- Un index GIST sur `geom` est créé automatiquement (`CREATE INDEX IF NOT EXISTS`).
+
+À utiliser comme un **lac partagé** : tous les agents requêtent dessus pour les questions cross-rôle de Phase 1 T7 et pour les benchmarks Phase 3.

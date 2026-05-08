@@ -48,6 +48,53 @@ Neo4j :                        PostGIS :
 
 ---
 
+## T0 — État initial du graphe (15 min) — *requis avant simulation* {#sec-t0-etat-initial}
+
+::: {.callout-warning title="🩺 Avant de simuler, mesurer"}
+Avant de **couper** des arêtes, il faut connaître **l'état de santé** du graphe. La simulation de destruction (Partie B) consiste à mesurer un **delta** : sans baseline, le delta n'a pas de sens.
+
+Trois métriques à relever **maintenant**, sur le graphe intact :
+:::
+
+**1. Combien d'arêtes sont déjà impassables voiture ?**
+
+```sql
+SELECT
+    count(*) FILTER (WHERE cost > 0) AS carrossables,
+    count(*) FILTER (WHERE cost = -1) AS impassables,
+    round(100.0 * count(*) FILTER (WHERE cost = -1) / count(*), 1) AS pct_impassables
+FROM ways;
+```
+
+> Sur Brest : ~28 % des arêtes ont déjà `cost = -1` (pistes, sentiers, voies privées, tarmac aéroport — convention r2gg). Vous ne partez **pas** d'un graphe parfait.
+
+**2. Combien de composantes connexes dans le graphe carrossable ?**
+
+```sql
+SELECT count(DISTINCT component) AS nb_composantes
+FROM pgr_connectedComponents(
+    'SELECT id, source, target, cost, reverse_cost FROM ways WHERE cost > 0'
+);
+```
+
+> Si > 1 : le réseau routier est **déjà fragmenté**. Certaines parties de l'EPCI ne se rejoignent pas en voiture (îles, péninsules, zones militaires fermées…).
+
+**3. Combien de POIs sont sur des sommets isolés (récap T2.5) ?**
+
+Reprenez la requête de [Phase 2 §T2.5](../mission/phase_2.qmd#sec-reality-check) — les POIs « inatteignables voiture » sont autant de **paires Dijkstra qui retourneront NULL** dans la suite.
+
+::: {.callout-tip title="🧠 Pédagogie : le delta est ce qui compte"}
+Quand vous couperez 3 arêtes en T6, vous augmenterez le `pct_impassables` de ~28 % à ~28.01 %. Ce qui compte, c'est :
+
+- de **combien** la distance moyenne entre POIs augmente
+- combien de **nouvelles** composantes connexes apparaissent
+- combien de **nouveaux** POIs deviennent isolés
+
+Un graphe déjà fragmenté est **plus fragile** : couper une arête sur un pont reliant deux composantes peut isoler 30 % de l'EPCI d'un coup. C'est exactement ce que recherche un agent **Attaque** — et ce que doit anticiper un agent **Défense**.
+:::
+
+---
+
 ## Partie A — Benchmark structuré (1h30)
 
 ### T1 — Choke Points : deux approches, deux mondes
@@ -114,6 +161,32 @@ Reproduisez ce tableau avec vos mesures (`EXPLAIN ANALYZE` pour SQL, `PROFILE` p
 **Requête 4** : spatiale — POIs à moins de 500m d'une route (ici SQL gagne)
 
 → [Corrigé](../corriges/phase_3.qmd#t3--requetes-benchmark)
+
+::: {.callout-warning title="⚖️ Sémantique du COUNT : SQL et Cypher ne comptent pas la même chose"}
+Sur la requête 1, vous obtiendrez par exemple **SQL = 11** et **Cypher = 10**. Pas un bug — une différence sémantique :
+
+```sql
+WITH RECURSIVE hierarchy AS (
+  SELECT id FROM bdtopo_ontology WHERE name = 'Tronçon de route'   -- ← inclut la racine
+  UNION ALL
+  SELECT child.id FROM bdtopo_ontology child JOIN hierarchy h ON child.parent_id = h.id
+)
+SELECT count(*) FROM hierarchy;   -- 11 = 1 racine + 10 enfants
+```
+
+```cypher
+MATCH (n)-[:EST_SOUS_TYPE_DE*1..3]->(:ClasseOntologie {name:'Tronçon de route'})
+RETURN count(n);   -- 10 = juste les descendants, la racine n'est pas un "n"
+```
+
+Le `WITH RECURSIVE` SQL **inclut** la seed row par défaut (le `WHERE name = ...` la matche). Le pattern Cypher `*1..3` exige un saut au minimum (`1..`), donc la source du `MATCH` n'est jamais elle-même.
+
+**Comment benchmarker honnêtement** ?
+- Soit on aligne : `MATCH (n)-[:EST_SOUS_TYPE_DE*0..3]->(root) RETURN count(n)` côté Cypher (inclut la racine), ou `WHERE id != root_id` côté SQL.
+- Soit on l'accepte et on **compare des ordres de grandeur**, pas des nombres exacts. Ce qui compte ici, c'est : 1 ms vs 4 ms (SQL gagne sur cette taille), pas que ce soit "11 vs 10".
+
+Annotez votre tableau benchmark pour préciser ce que chaque moteur a réellement compté.
+:::
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
@@ -229,14 +302,16 @@ Vous êtes le **rôle Attaque**. Trouvez les 5 arêtes dont la coupure **maximis
 
 > Ces tâches approfondissent l'analyse réseau. **Optionnelles** si le temps est limité — concentrez-vous sur la Partie B (simulation) et la Partie D (rapport).
 
-### T9 — Composantes connexes avant/après destruction
+### T9 — Composantes connexes : delta avant/après destruction
 
-**Objectif** : utiliser `pgr_connectedComponents` et vérifier la connexité du graphe POI.
+> Reprend la baseline de [T0](#sec-t0-etat-initial). Maintenant qu'on a coupé 5 arêtes (T8), on mesure le **delta**.
+
+**Objectif** : comparer `pgr_connectedComponents` AVANT (T0) et APRÈS (T8) — quelles arêtes ont **vraiment** fragmenté le réseau ?
 
 **Analysez** :
-1. Combien de composantes avant destruction ?
-2. Et après avoir coupé 3 arêtes ? 5 arêtes ?
-3. Y a-t-il des POIs "îles" (composante de taille 1) ?
+1. Composantes T0 (intact) → composantes T8 (5 arêtes coupées) : delta ?
+2. Y a-t-il une coupe qui a créé une **nouvelle** composante (= un pont stratégique) ? Ou des coupes "à vide" qui n'ont rien isolé ?
+3. Combien de **nouveaux** POIs sont devenus isolés ? Quel est leur rôle dominant (attaque/défense/...) ?
 
 → [Corrigé](../corriges/phase_3.qmd#t9--composantes-connexes)
 

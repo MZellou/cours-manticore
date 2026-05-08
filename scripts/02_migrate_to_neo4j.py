@@ -44,29 +44,35 @@ def clear_db(tx):
     tx.run("MATCH (n) DETACH DELETE n")
 
 def load_databases(tx, df):
+    # parent_db_name dans les niveaux Object/Detail référence le sql_name → on l'index aussi.
     tx.run("""
         UNWIND $rows AS row
-        MERGE (d:ClasseOntologie {name: row.name})
-        SET d.obj_type = 'Database', d.definition = row.definition
+        MERGE (d:ClasseOntologie {sql_name: row.sql_name})
+        SET d.name = row.name, d.obj_type = 'Database', d.definition = row.definition
     """, rows=df.to_dict('records'))
 
 def load_objects(tx, df):
+    # 50 noms d'Object sont dupliqués entre Databases (Aqueduc, Pont, …) → MERGE composite
+    # {sql_name + name} disambiguates. parent_db_name = sql_name de la Database parente.
     tx.run("""
         UNWIND $rows AS row
-        MERGE (o:ClasseOntologie {name: row.name})
-        SET o.obj_type = 'Object', o.definition = row.definition
+        MERGE (o:ClasseOntologie {sql_name: row.sql_name, name: row.name, obj_type: 'Object'})
+        SET o.definition = row.definition
         WITH o, row
-        MATCH (p:ClasseOntologie {name: row.parent_db_name})
+        MATCH (p:ClasseOntologie {sql_name: row.parent_db_name, obj_type: 'Database'})
         MERGE (o)-[:EST_SOUS_TYPE_DE]->(p)
     """, rows=df.to_dict('records'))
 
 def load_details(tx, df):
+    # Detail.parent_obj_name référence le name humain de l'Object parent.
+    # Le sql_name (table) du Detail est le même que celui de son Object parent → on
+    # restreint le MATCH par sql_name + obj_type pour éviter les ambigüités multi-Database.
     tx.run("""
         UNWIND $rows AS row
-        MERGE (d:ClasseOntologie {name: row.name})
-        SET d.obj_type = 'Detail', d.definition = row.definition
+        MERGE (d:ClasseOntologie {sql_name: row.sql_name, name: row.name, obj_type: 'Detail'})
+        SET d.definition = row.definition
         WITH d, row
-        MATCH (p:ClasseOntologie {name: row.parent_obj_name})
+        MATCH (p:ClasseOntologie {sql_name: row.sql_name, name: row.parent_obj_name, obj_type: 'Object'})
         MERGE (d)-[:EST_SOUS_TYPE_DE]->(p)
     """, rows=df.to_dict('records'))
 
@@ -174,8 +180,8 @@ if __name__ == "__main__":
             with pg_conn.cursor() as cur:
                 cur.execute("""
                     SELECT role, source, cleabs, categorie, nature, nom,
-                           ST_X(ST_Transform(geom, 4326)) AS lon,
-                           ST_Y(ST_Transform(geom, 4326)) AS lat
+                           ST_X(ST_Centroid(ST_Transform(geom, 4326))) AS lon,
+                           ST_Y(ST_Centroid(ST_Transform(geom, 4326))) AS lat
                     FROM mission_pois
                     WHERE geom IS NOT NULL
                 """)
@@ -186,7 +192,25 @@ if __name__ == "__main__":
                 session.execute_write(load_pois_from_postgis, pois)
                 print(f"  → {len(pois)} POIs chargés dans Neo4j.")
 
-            # 3. Démos APOC
+            # 3. Relations DISTANCE entre POIs proches (< 10km)
+            result = session.run("""
+                MATCH (a:POI), (b:POI)
+                WHERE elementId(a) < elementId(b)
+                  AND a.lat IS NOT NULL AND b.lat IS NOT NULL
+                WITH a, b,
+                     toInteger(point.distance(
+                         point({latitude: a.lat, longitude: a.lon}),
+                         point({latitude: b.lat, longitude: b.lon})
+                     )) AS dist_m
+                WHERE dist_m < 10000
+                MERGE (a)-[:DISTANCE {meters: dist_m}]->(b)
+                RETURN count(*) AS relations
+            """)
+            r = result.single()
+            nb_rel = r["relations"] if r else 0
+            print(f"  → {nb_rel} relations DISTANCE créées (< 10km)")
+
+            # 4. Démos APOC
             demo_apoc_queries(session)
 
         print("\n  [OK] Phase 2 — Migration terminée.")

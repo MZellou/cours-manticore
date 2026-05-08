@@ -266,6 +266,12 @@ GROUP BY c.nom, p.role
 ORDER BY c.nom, count DESC;
 ```
 
+::: {.callout-note title="⚛️ Résultat = 0 lignes ? C'est normal"}
+Cette requête ne retourne **des résultats que si votre EPCI est nucléaire** (Cotentin, Dunkerque, Cattenom, Chooz, Grand Poitiers). Pour les 8 autres EPCIs, `mission_custom_pois` est vide → le `JOIN` retourne 0 lignes. Voir [Rôle Énergie](../roles/energie.qmd) pour la liste complète.
+
+Si votre rapport doit traiter cette question, formulez : « L'EPCI ne contient pas de site nucléaire dans la base — ce vecteur de risque est absent ». C'est une **information**, pas un échec.
+:::
+
 ### B4 — Mix énergétique
 
 ```sql

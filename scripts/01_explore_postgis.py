@@ -53,7 +53,7 @@ ROLE_QUERIES = {
     """,
     "defense": """
         -- Points à protéger : hôpitaux, gendarmeries, gares, ponts, phares
-        SELECT 'hopital', cleabs, categorie, nature, toponyme,
+        SELECT 'hopital' AS source, cleabs, categorie, nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM zone_d_activite_ou_d_interet
         WHERE nature IN ('Hôpital', 'Établissement hospitalier', 'Maison de retraite')
@@ -90,7 +90,7 @@ ROLE_QUERIES = {
     """,
     "ravitaillement": """
         -- Flux logistiques : ports, gares fret, zones industrielles, réservoirs
-        SELECT 'port', cleabs, nature, nature_detaillee, toponyme,
+        SELECT 'port' AS source, cleabs, nature AS categorie, nature_detaillee AS nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM equipement_de_transport
         WHERE nature = 'Port'
@@ -119,14 +119,15 @@ ROLE_QUERIES = {
     """,
     "energie": """
         -- Réseau énergétique : postes HT, lignes THT, éoliennes, barrages, oléoducs
-        SELECT 'poste_ht', cleabs, nature, CAST(importance AS INTEGER) AS criticite, NULL,
+        SELECT 'poste_ht' AS source, cleabs, importance AS categorie,
+               'Poste de transformation' AS nature, NULL AS toponyme,
                ST_Force2D(geometrie) AS geom
         FROM poste_de_transformation
         WHERE CAST(importance AS INTEGER) <= 3
 
         UNION ALL
 
-        SELECT 'ligne_tht', cleabs, nature, voltage, NULL,
+        SELECT 'ligne_tht', cleabs, voltage, 'Ligne électrique', NULL,
                ST_Force2D(geometrie) AS geom
         FROM ligne_electrique
         WHERE voltage IN ('400 kV', '225 kV')
@@ -229,9 +230,10 @@ def ex2_poi_by_role(conn, role):
     t0 = time.time()
     try:
         with conn.cursor() as cur:
+            # Idempotent : table partagée entre les 4 rôles (pattern "fusion")
+            # Chaque relance d'un rôle écrase uniquement SES POIs.
             cur.execute(f"""
-                DROP TABLE IF EXISTS mission_pois CASCADE;
-                CREATE TABLE mission_pois (
+                CREATE TABLE IF NOT EXISTS mission_pois (
                     id SERIAL PRIMARY KEY,
                     role TEXT,
                     source TEXT,
@@ -241,20 +243,24 @@ def ex2_poi_by_role(conn, role):
                     nom TEXT,
                     geom GEOMETRY(Geometry, 2154)
                 );
+                CREATE INDEX IF NOT EXISTS mission_pois_geom_idx ON mission_pois USING GIST (geom);
+                DELETE FROM mission_pois WHERE role = '{role}';
                 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
                 SELECT '{role}', source, cleabs, categorie, nature, toponyme, geom
                 FROM ({sql}) AS poi;
-                SELECT COUNT(*) FROM mission_pois;
+                SELECT COUNT(*) FROM mission_pois WHERE role = '{role}';
             """)
             total = cur.fetchone()[0]
 
-            # Résumé par source
-            cur.execute("SELECT source, COUNT(*) FROM mission_pois GROUP BY source ORDER BY count DESC;")
+            # Résumé par source pour ce rôle
+            cur.execute("SELECT source, COUNT(*) FROM mission_pois WHERE role = %s GROUP BY source ORDER BY count DESC;", (role,))
             breakdown = cur.fetchall()
     except psycopg2.Error as e:
+        conn.rollback()
         print(f"  [ERREUR] {e}")
         return
 
+    conn.commit()
     elapsed = (time.time() - t0) * 1000
     print(f"  Total POIs identifiés : {total} ({elapsed:.1f} ms)")
     print(f"\n  {'Source':<20} | {'Count':>5}")

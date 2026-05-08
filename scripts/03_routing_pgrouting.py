@@ -38,23 +38,26 @@ def ex1_dijkstra(conn):
 
     print("  Recherche du plus court chemin entre 2 POIs de mission_pois...\n")
 
+    # On filtre les POIs sur des vertices carrossables (cf. Phase 2 §T2.5)
+    # Sinon Dijkstra retourne NULL et le TD donne une mauvaise impression.
     query = """
         WITH poi_vertices AS (
-            SELECT p.id AS poi_id, p.nom,
+            SELECT p.id AS poi_id, p.nom, p.role,
                    (SELECT v.id FROM ways_vertices_pgr v
                     ORDER BY v.geom <-> p.geom LIMIT 1) AS vertex_id
             FROM mission_pois p
             WHERE p.geom IS NOT NULL
         ),
-        start_poi AS (
-            SELECT vertex_id FROM poi_vertices WHERE vertex_id IS NOT NULL LIMIT 1
-        ),
-        end_poi AS (
-            SELECT vertex_id FROM poi_vertices WHERE vertex_id IS NOT NULL OFFSET 3 LIMIT 1
+        carrossables AS (
+            SELECT pv.* FROM poi_vertices pv
+            WHERE EXISTS (SELECT 1 FROM ways w
+                          WHERE (w.source = pv.vertex_id OR w.target = pv.vertex_id)
+                            AND w.cost > 0)
+            ORDER BY pv.poi_id
         )
         SELECT
-            (SELECT vertex_id FROM start_poi) AS source,
-            (SELECT vertex_id FROM end_poi) AS target;
+            (SELECT vertex_id FROM carrossables LIMIT 1) AS source,
+            (SELECT vertex_id FROM carrossables OFFSET 3 LIMIT 1) AS target;
     """
     try:
         with conn.cursor() as cur:
@@ -130,18 +133,25 @@ def ex2_choke_points(conn):
 
     try:
         with conn.cursor() as cur:
-            # 1. Trouver un chemin et ses arêtes
+            # 1. Trouver 2 POIs carrossables et un chemin entre eux
             cur.execute("""
-                SELECT min(vertex_id) AS src, max(vertex_id) AS tgt
-                FROM (
+                WITH carrossables AS (
                     SELECT (SELECT v.id FROM ways_vertices_pgr v
                             ORDER BY v.geom <-> p.geom LIMIT 1) AS vertex_id
-                    FROM mission_pois p WHERE p.geom IS NOT NULL LIMIT 5
-                ) AS pv
+                    FROM mission_pois p WHERE p.geom IS NOT NULL ORDER BY p.id
+                ),
+                valid AS (
+                    SELECT vertex_id FROM carrossables c
+                    WHERE EXISTS (SELECT 1 FROM ways w
+                                  WHERE (w.source = c.vertex_id OR w.target = c.vertex_id)
+                                    AND w.cost > 0)
+                    LIMIT 5
+                )
+                SELECT min(vertex_id) AS src, max(vertex_id) AS tgt FROM valid
             """)
             row = cur.fetchone()
             if not row or row[0] is None:
-                print("  [SKIP] Pas de POIs pour le calcul.")
+                print("  [SKIP] Pas de POIs carrossables pour le calcul.")
                 return
             src, tgt = row
 
@@ -193,48 +203,28 @@ def ex3_constrained_routing(conn, role):
     print_section(f"EXERCICE 3 — Routage contraint (rôle {role.upper()})")
 
     constraints = {
-        "ravitaillement": """
-            -- Exclure les routes avec restrictions de poids pour poids lourds
-            'SELECT id, source, target,
+        "ravitaillement": """SELECT id, source, target,
                     CASE WHEN restriction_de_poids_total IS NULL
-                         THEN cost
-                         ELSE -1  -- bloqué si restriction de poids
-                    END AS cost,
+                         THEN cost ELSE -1 END AS cost,
                     CASE WHEN restriction_de_poids_total IS NULL
-                         THEN reverse_cost
-                         ELSE -1
-                    END AS reverse_cost
-             FROM ways'
-        """,
-        "energie": """
-            -- Exclure les routes étroites (< 4m) pour convois exceptionnels
-            'SELECT id, source, target,
+                         THEN reverse_cost ELSE -1 END AS reverse_cost
+             FROM ways""",
+        "energie": """SELECT id, source, target,
                     CASE WHEN largeur_de_chaussee >= 4 OR largeur_de_chaussee IS NULL
                          THEN cost ELSE -1 END AS cost,
                     CASE WHEN largeur_de_chaussee >= 4 OR largeur_de_chaussee IS NULL
                          THEN reverse_cost ELSE -1 END AS reverse_cost
-             FROM ways'
-        """,
-        "attaque": """
-            -- Favoriser les routes secondaires (camouflage, évitement checkpoints)
-            'SELECT id, source, target,
+             FROM ways""",
+        "attaque": """SELECT id, source, target,
                     CASE WHEN nature IN (''Chemin'', ''Sentier'')
-                         THEN cost * 0.7  -- bonus discrétion
-                         ELSE cost * 1.3  -- pénalité grand axe
-                    END AS cost,
+                         THEN cost * 0.7 ELSE cost * 1.3 END AS cost,
                     reverse_cost * 1.1 AS reverse_cost
-             FROM ways'
-        """,
-        "defense": """
-            -- Prioriser les grands axes (rapidité de déploiement)
-            'SELECT id, source, target,
+             FROM ways""",
+        "defense": """SELECT id, source, target,
                     CASE WHEN importance >= 3 OR nature = ''Autoroute''
-                         THEN cost * 0.5
-                         ELSE cost
-                    END AS cost,
+                         THEN cost * 0.5 ELSE cost END AS cost,
                     reverse_cost AS reverse_cost
-             FROM ways'
-        """,
+             FROM ways""",
     }
 
     constraint_sql = constraints.get(role, constraints["defense"])
@@ -244,16 +234,23 @@ def ex3_constrained_routing(conn, role):
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT min(vertex_id), max(vertex_id)
-                FROM (
+                WITH carrossables AS (
                     SELECT (SELECT v.id FROM ways_vertices_pgr v
                             ORDER BY v.geom <-> p.geom LIMIT 1) AS vertex_id
-                    FROM mission_pois p WHERE p.geom IS NOT NULL LIMIT 5
-                ) AS pv
+                    FROM mission_pois p WHERE p.geom IS NOT NULL ORDER BY p.id
+                ),
+                valid AS (
+                    SELECT vertex_id FROM carrossables c
+                    WHERE EXISTS (SELECT 1 FROM ways w
+                                  WHERE (w.source = c.vertex_id OR w.target = c.vertex_id)
+                                    AND w.cost > 0)
+                    LIMIT 5
+                )
+                SELECT min(vertex_id), max(vertex_id) FROM valid
             """)
             row = cur.fetchone()
             if not row or row[0] is None:
-                print("  [SKIP] Pas de POIs.")
+                print("  [SKIP] Pas de POIs carrossables.")
                 return
             src, tgt = row
 

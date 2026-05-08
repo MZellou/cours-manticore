@@ -59,27 +59,29 @@ def benchmark_ontology(pg_conn, neo_driver):
     t0 = time.time()
     try:
         with pg_conn.cursor() as cur:
-            cur.execute(f"EXPLAIN ANALYZE {sql_query}")
-            rows = cur.fetchall()
+            cur.execute(sql_query)
+            sql_result = cur.fetchone()[0]
         sql_time = (time.time() - t0) * 1000
-        sql_result = sum(1 for r in rows if "CTE" in str(r) or "Recursive" in str(r))
     except psycopg2.Error as e:
         print(f"  [SQL ERREUR] {e}")
         sql_time, sql_result = None, None
 
     # --- Cypher ---
-    cypher_query = f"""
-        MATCH path = (d:Detail)-[:EST_SOUS_TYPE_DE*]->(o:Object {{name: $root}})
+    # Labels: :ClasseOntologie avec obj_type ∈ {Database, Object, Detail}.
+    # Tronçon de route est un Database → on remonte n'importe quel descendant
+    # (Object au-dessus, Detail au-dessus encore) jusqu'à la racine nommée.
+    cypher_query = """
+        MATCH path = (n:ClasseOntologie)-[:EST_SOUS_TYPE_DE*1..3]->
+                     (root:ClasseOntologie {name: $root})
         RETURN count(path) AS count
     """
     t0 = time.time()
     try:
         with neo_driver.session() as session:
             result = session.run(cypher_query, root=root)
-            profile_result = result.consume()
-            cypher_count = [r["count"] for r in result]
+            records = list(result)
             neo_time = (time.time() - t0) * 1000
-        neo_count = cypher_count[0] if cypher_count else 0
+        neo_count = records[0]["count"] if records else 0
     except Exception as e:
         print(f"  [CYPHER ERREUR] {e}")
         neo_time, neo_count = None, 0
@@ -88,8 +90,10 @@ def benchmark_ontology(pg_conn, neo_driver):
     print(f"\n  Requête : tous les sous-types de '{root}'")
     print(f"  {'Moteur':<15} | {'Temps (ms)':>10} | {'Résultats':>10}")
     print(f"  {'-'*42}")
-    print(f"  {'PostgreSQL':<15} | {sql_time or '---':>10} | {sql_result or 'N/A':>10}")
-    print(f"  {'Neo4j':<15} | {neo_time or '---':>10} | {neo_count:>10}")
+    sql_str = f"{sql_time:.2f}" if sql_time is not None else "---"
+    neo_str = f"{neo_time:.2f}" if neo_time is not None else "---"
+    print(f"  {'PostgreSQL':<15} | {sql_str:>10} | {sql_result if sql_result is not None else 'N/A':>10}")
+    print(f"  {'Neo4j':<15} | {neo_str:>10} | {neo_count:>10}")
 
     if sql_time and neo_time and neo_time > 0 and sql_time > 0:
         ratio = sql_time / neo_time
@@ -101,8 +105,7 @@ def benchmark_ontology(pg_conn, neo_driver):
         with pg_conn.cursor() as cur:
             cur.execute(f"EXPLAIN (ANALYZE, BUFFERS) {sql_query}")
             for row in cur.fetchall():
-                if any(kw in str(row) for kw in ["CTE Scan", "Recursive Union", "Seq Scan", "actual time"]):
-                    print(f"    {row[0] if row else ''}")
+                print(f"    {row[0]}")
     except Exception:
         pass
 
@@ -111,9 +114,15 @@ def benchmark_ontology(pg_conn, neo_driver):
     try:
         with neo_driver.session() as session:
             result = session.run(f"PROFILE {cypher_query}", root=root)
-            result.consume()
-            result_data = [r for r in result]
-        print(f"    Profile exécuté. Vérifier dans Neo4j Browser pour le plan détaillé.")
+            list(result)  # drain rows avant consume()
+            summary = result.consume()
+            plan = summary.profile
+        if plan:
+            print(f"    Operator racine : {plan.get('operatorType', 'n/a')}")
+            print(f"    DB hits totaux  : {plan.get('dbHits', 'n/a')}")
+            print(f"    Rows produites  : {plan.get('rows', 'n/a')}")
+        else:
+            print("    Profile vide (vérifier Neo4j Browser pour le plan détaillé).")
     except Exception as e:
         print(f"    [ERREUR] {e}")
 
@@ -155,10 +164,10 @@ def generate_situation_map(pg_conn, role, output_path="data/carte_situation.png"
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        # POIs
+        # POIs — ST_AsBinary pour récupérer en bytes (pas en hex string)
         with pg_conn.cursor() as cur:
             cur.execute("""
-                SELECT role, source, nature, nom, geom
+                SELECT role, source, nature, nom, ST_AsBinary(geom)
                 FROM mission_pois WHERE geom IS NOT NULL
             """)
             rows = cur.fetchall()
@@ -201,8 +210,10 @@ def generate_situation_map(pg_conn, role, output_path="data/carte_situation.png"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--role", choices=ROLES, required=True)
-    parser.add_argument("--map", default="data/carte_situation.png", help="Chemin carte PNG")
+    parser.add_argument("--map", default=None, help="Chemin carte PNG (défaut: data/carte_situation_<role>.png)")
     args = parser.parse_args()
+    if args.map is None:
+        args.map = f"data/carte_situation_{args.role}.png"
 
     print(f"""
   ============================================================

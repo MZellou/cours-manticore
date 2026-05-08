@@ -129,6 +129,66 @@ Pourquoi les POIs éloignés des routes ont-ils un `distance_snap` élevé ? Est
 - Bonus : tracer l'histogramme des distances de snap pour ton rôle.
 :::
 
+### T2.5 — Reality check : tous les POIs sont-ils carrossables ? {#sec-reality-check}
+
+Avant de lancer Dijkstra à l'aveugle, une étape de **bon sens** : un POI peut être proche d'un sommet du graphe (`dist_snap` faible) **et pourtant** être inatteignable en voiture. Comment ?
+
+::: {.callout-warning title="⚠️ Convention r2gg : `cost = -1`"}
+r2gg génère le graphe routier à partir de la BDTOPO, mais marque les arêtes **non carrossables en voiture** avec `cost = -1` (et `reverse_cost = -1`) :
+
+- pistes, sentiers, escaliers
+- voies privées, accès interdit
+- tarmac d'aéroport, voies sur ligne ferroviaire, etc.
+
+`pgr_dijkstra` **ignore** ces arêtes (même avec `directed := false` si les **deux sens** sont à -1). Si **toutes** les arêtes attachées à un sommet sont à -1, ce sommet est isolé du réseau routier carrossable.
+
+Sur Brest, **~28 % des arêtes** ont `cost = -1`. L'aéroport (vertex 90) en est un cas d'école : son vertex est attaché à 4 arêtes... toutes impassables voiture.
+:::
+
+**Objectif** : trouver les POIs qui sont snappés à un sommet **isolé** (pas d'arête carrossable).
+
+**Indice** :
+
+```sql
+-- Squelette : POI → vertex le plus proche → arêtes attachées
+SELECT p.nom, p.role,
+       count(w.id) FILTER (WHERE w.cost > 0) AS edges_carrossables
+FROM mission_pois p
+CROSS JOIN LATERAL (
+    SELECT id FROM ways_vertices_pgr ORDER BY geom <-> p.geom LIMIT 1
+) v
+LEFT JOIN ways w ON w.source = v.id OR w.target = v.id
+GROUP BY p.id, p.nom, p.role
+HAVING count(w.id) FILTER (WHERE w.cost > 0) = 0;
+```
+
+::: {.callout-tip title="🧠 Que faire des POIs isolés ?"}
+Trois stratégies, à choisir selon votre rôle :
+
+1. **Filtrer** : on les exclut du routage (`WHERE p.id NOT IN (isolated)`). Pragmatique mais perd de l'information.
+2. **Re-snapper plus loin** : chercher le 2ᵉ ou 3ᵉ vertex le plus proche, en privilégiant ceux qui ont une arête `cost > 0`. Plus robuste, mais introduit un biais (le POI "vrai" peut être à 500 m du vertex de calcul).
+3. **Documenter** : garder le POI dans le rapport final mais marquer "**inatteignable voiture**". Honnêteté intellectuelle.
+
+Discutez en groupe : un aéroport isolé du graphe routier, c'est un bug ou une feature ? Pour un agent **Attaque**, le POI compte. Pour un agent **Ravitaillement**, peut-être moins.
+:::
+
+→ Cette section anticipe les surprises de **T3** (Dijkstra retourne NULL) et de **Phase 3** (composantes connexes du graphe).
+
+::: {.callout-note title="🔧 Pourquoi `ways_vertices_pgr` est une **TABLE** matérialisée et pas une vue"}
+Les Gold Dumps r2gg arrivent en EPSG:4326 (`the_geom`). Les requêtes du TD attendent du Lambert-93 (`geom`, EPSG:2154). Tentation : créer une **vue** `public.ways_vertices_pgr` qui projette à la volée :
+
+```sql
+CREATE VIEW public.ways_vertices_pgr AS
+  SELECT id, ST_Transform(the_geom, 2154) AS geom FROM pgr_<siren>.ways_vertices_pgr;
+```
+
+C'est correct fonctionnellement, mais **catastrophique en perfo** : l'opérateur KNN `geom <-> p.geom` du snap (T2) ne peut pas utiliser l'index GIST de la table sous-jacente — l'index est sur `the_geom` (4326), pas sur la projection 2154 calculée à la volée. Résultat : Seq Scan sur 28k+ sommets pour chaque POI, et la requête T2.5 ci-dessus passe de **~50 ms à plusieurs minutes** (testé sur Brest pendant la prépa du TD : Dijkstra hangait sur le carrossables filter).
+
+C'est pourquoi `00_setup.py` matérialise `ways_vertices_pgr` en **TABLE** (`CREATE TABLE … AS SELECT …`) puis crée explicitement un `CREATE INDEX … USING GIST (geom)` sur la projection. Coût marginal au setup (~1 s pour 28k sommets), gain massif au runtime.
+
+**Leçon transférable** : une vue qui transforme la géométrie tue les index spatiaux. Pour du KNN à grande échelle, matérialiser + indexer sur la projection cible.
+:::
+
 ### T3 — Calculer des itinéraires (Dijkstra)
 
 Maintenant que le graphe existe, calculez le plus court chemin entre 2 POIs.
@@ -185,6 +245,49 @@ python scripts/02_migrate_to_neo4j.py
 3. Calculer un plus court chemin entre POIs (`apoc.algo.dijkstra` — cf. [APOC essentiels](../theorie/outils/apoc_basics.qmd))
 
 → [Corrigé](../corriges/phase_2.qmd#t5--migrer-dans-neo4j)
+
+::: {.callout-warning title="⚠️ MERGE et collisions de clés naturelles"}
+Vérifiez immédiatement après `02_migrate_to_neo4j.py` :
+
+```sql
+SELECT count(*) FROM mission_pois;        -- côté PostGIS
+```
+
+```cypher
+MATCH (p:POI) RETURN count(p);            -- côté Neo4j
+```
+
+Sur Brest : **296 POIs côté PostGIS** mais **214 côté Neo4j**. Pourquoi ?
+
+Le script fait `MERGE (p:POI {cleabs: $cleabs})`. Or **certains `cleabs` sont partagés** entre rôles : un réservoir industriel apparaît à la fois dans `mission_pois` pour `ravitaillement` (capacité de stockage) **et** pour `energie` (cuve de fioul). Une gendarmerie idem entre `defense` et `attaque`. `MERGE` matche le nœud existant et **écrase la propriété `role`** au lieu de créer un doublon — donc le dernier rôle migré "gagne".
+
+C'est un piège classique de modélisation graphe : la **clé naturelle** (`cleabs` BDTOPO) ne reflète pas l'**identité métier** ici (un POI = (objet réel, rôle de mission)).
+
+Trois fixes possibles, à discuter en groupe :
+1. **Clé composite** : `MERGE (p:POI {cleabs: $cleabs, role: $role})` → 2 nœuds distincts pour le réservoir, un par rôle. Simple, mais duplique la géométrie.
+2. **Multi-label** : un seul nœud, on `SET p:Ravitaillement, p:Energie` ou on stocke `roles: [...]` en liste. Plus propre, mais les requêtes `MATCH (p:POI {role: 'energie'})` doivent devenir `WHERE 'energie' IN p.roles`.
+3. **Modélisation explicite** : `(:Asset {cleabs})-[:JOUE_ROLE]->(:RoleMission {name})`. Plus normalisé, plus de jointures.
+
+Quel choix selon votre rôle ? Pas de bonne réponse — défendez votre choix dans le rapport.
+:::
+
+::: {.callout-note title="🔧 Ontologie : pourquoi MERGE composite `{sql_name, name, obj_type}` ?"}
+50 noms d'**Object** sont dupliqués entre Databases dans `bdtopo_objects.parquet` : *Pont*, *Aqueduc*, *Canal*, *Barrage*, *Ruines*… Pourquoi ? Parce qu'un *Pont* peut être une `construction_lineaire`, une `construction_surfacique`, ou un `equipement_de_transport` selon comment il est saisi.
+
+Si on faisait `MERGE (o:ClasseOntologie {name: row.name})`, on collapserait les 2 *Pont* en un seul nœud — perdant le rattachement à leur table parente. Pire, le `MATCH (p:ClasseOntologie {sql_name: row.parent_db_name})` ramènerait à la fois la Database *et* tous les Objects qui partagent ce `sql_name` (ils héritent du même par construction), créant **16 000+ relations parasites Object→Object sibling**.
+
+`02_migrate_to_neo4j.py` fait donc :
+
+```cypher
+MERGE (o:ClasseOntologie {sql_name: 'construction_lineaire',
+                          name: 'Pont',
+                          obj_type: 'Object'})
+```
+
+…et restreint le `MATCH` parent par `obj_type: 'Database'`. Résultat propre : 2 nœuds *Pont* distincts, un par table parente, ~1 000 relations EST_SOUS_TYPE_DE bien dirigées.
+
+**Leçon** : quand un attribut "naturel" n'est pas unique (BDTOPO le réutilise), il faut une **clé composite** côté graphe. Idem côté SQL avec `bdtopo_ontology` qui s'appuie sur `parent_id` (FK auto-incrémentée) pour la même raison.
+:::
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
