@@ -4,6 +4,8 @@ order: 1
 ---
 # Corrigé Phase 1 — Reconnaissance
 
+> **Sommaire** : [T0a — DuckDB](#t0a--explorer-les-données-sources-avec-duckdb) · [T0b — Jointures spatiales](#t0b--sql--jointures-spatiales) · [T0c — Cypher](#t0c--cypher--premiers-pas) · [T1 — Ontologie](#t1--explorer-lontologie-bdtopo) · [T2 — POIs rôle](#t2--sélectionner-les-pois-de-votre-rôle) · [T3 — Criticité](#t3--ajouter-des-critères-de-criticité) · [T4 — DBSCAN](#t4--clusteriser-les-pois-st_clusterdbscan) · [T5 — Partage](#t5--partager-vos-pois) · [T6 — Bonus](#t6--questions-bonus-par-rôle) · [T7 — Cross-rôle](#t7--cross-rôle)
+
 > Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
 ---
@@ -32,6 +34,18 @@ GROUP BY nature
 ORDER BY nb DESC;
 ```
 
+**Explication des concepts** :
+- `DESCRIBE table` (non utilisé ici mais faisable) : commande DuckDB/PostgreSQL qui liste les colonnes d'une table, leur type et leurs contraintes. C'est le premier réflexe face à une table inconnue.
+- `GROUP BY categorie` : agrège les lignes par valeur unique de `categorie`. `count(*)` compte le nombre de lignes dans chaque groupe. Résultat : une ligne par catégorie avec son effectif.
+- **Lecture Parquet** (implicite via DuckDB) : les fichiers `.parquet` sont lus directement sans passer par une base de données. Le format Parquet est **columnar** (stockage par colonne) : les requêtes qui ne lisent que quelques colonnes sont très rapides car le disque ne charge que les colonnes utiles.
+- **Pourquoi DuckDB** : avant d'importer dans PostGIS, on explore les données brutes de la BDTOPO. DuckDB lit les Parquet sans schéma fixe, sans serveur, et offre des performances bien supérieures à pandas sur des fichiers de plusieurs Go.
+
+**Interprétation des résultats** :
+- La première requête montre la répartition des POIs par `categorie` : « Santé », « Administratif ou militaire », « Transport », « Industriel »… Chaque catégorie se subdivise en plusieurs `nature` plus fines.
+- La deuxième (`HAVING count(*) > 10000`) isole les catégories les plus massives — celles qui auront le plus d'impact sur les performances des futures jointures spatiales.
+- La troisième explore une catégorie en particulier : « Santé » contient hôpitaux, cliniques, maisons médicales… C'est la granularité qui servira à filtrer les POIs par rôle.
+- On comprend que la BDTOPO est riche mais hétérogène : certaines catégories ont des millions d'entrées, d'autres quelques centaines. Le choix du bon niveau de filtrage (`categorie` puis `nature`) est crucial pour la performance.
+
 ### Exercice : ciberies et casernes
 
 ```sql
@@ -41,6 +55,8 @@ WHERE categorie = 'Administratif ou militaire'
   AND nature IN ('Gendarmerie', 'Caserne', 'Camp militaire non clos')
 GROUP BY nature;
 ```
+
+**Réponse** : Les résultats donnent le nombre de gendarmeries, casernes et camps militaires dans l'EPCI. Ces POIs seront utiles aux rôles Défense (protection) et Attaque (cibles).
 
 ---
 
@@ -55,6 +71,17 @@ WHERE z.nature = 'Zone industrielle'
 LIMIT 20;
 ```
 
+**Explication des concepts** (définitions des fonctions spatiales — première occurrence) :
+- `ST_Intersects(g1, g2)` : fonction PostGIS qui retourne `TRUE` si deux géométries partagent une partie de leur espace (se touchent, se chevauchent ou se croisent). C'est une jointure spatiale d'**intersection exacte** — elle utilise l'index GIST pour être rapide sur de grandes tables.
+- `ST_DWithin(g1, g2, d)` : retourne `TRUE` si la distance entre `g1` et `g2` est **inférieure ou égale** à `d` mètres. Contrairement à `ST_Distance(...) <= d`, `ST_DWithin` exploite l'**index GIST** (via un élargissement de la bounding box) et passe à l'échelle sur des millions de lignes. C'est la fonction à privilégier pour les filtres de distance.
+- `ST_Distance(g1, g2)` : calcule la **distance exacte** entre deux géométries (en mètres pour un SRID projeté comme Lambert-93). Elle **n'utilise pas l'index** — elle force un calcul géométrique complet. À réserver pour l'affichage (colonne `SELECT`) ou les vérifications ponctuelles, jamais pour filtrer de grandes tables.
+- **2000 mètres** : distance typique d'intervention d'un hélicoptère médical (rayon de couverture aérienne rapide). D'autres distances seront utilisées selon le contexte : 500 m (piéton), 1 km (logistique), 10 km (secours routier).
+- `DISTINCT` : un même équipement de transport peut intersecter plusieurs zones industrielles. `DISTINCT` élimine les doublons de paires.
+
+**Interprétation des résultats** :
+- La jointure croise deux tables BDTOPO via leurs géométries. Chaque ligne = un équipement de transport situé **dans** une zone industrielle.
+- Les premières lignes montrent quels types d'équipements (gares, ports, aires…) sont implantés dans des zones industrielles : ce sont des **couplages logistiques** naturels.
+
 ### Exercice : aérodromes et hôpitaux
 
 ```sql
@@ -65,6 +92,8 @@ JOIN zone_d_activite_ou_d_interet z
   ON ST_DWithin(a.geometrie, z.geometrie, 2000)
 WHERE z.nature IN ('Hôpital', 'Établissement hospitalier');
 ```
+
+**Réponse** : On combine un filtre spatial (`ST_DWithin`) avec un calcul d'affichage (`ST_Distance`). `ST_DWithin` sélectionne les paires aérodrome-hôpital à ≤ 2 km (rapide grâce à l'index). `ST_Distance` calcule la distance exacte pour l'affichage (sans index, mais sur un sous-ensemble déjà filtré → performant). Résultat : la liste des hôpitaux accessibles rapidement depuis un aérodrome — utiles pour l'évacuation sanitaire.
 
 ---
 
@@ -82,6 +111,17 @@ RETURN d.obj_type, d.name;
 MATCH (n) RETURN labels(n)[0] AS label, count(*) ORDER BY count DESC;
 ```
 
+**Explication des concepts** :
+- `MATCH (n:ClasseOntologie)` : trouve tous les nœuds ayant le label `ClasseOntologie`. `MATCH` est l'équivalent Cypher de `FROM` en SQL — il décrit un **pattern** à chercher dans le graphe.
+- `(d)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Tronçon de route'})` : pattern à deux nœuds reliés par une relation orientée. `(d)` = descendant, `(o)` = parent filtré par `name`. La flèche `-->` indique le sens.
+- `labels(n)[0]` : un nœud peut avoir plusieurs labels. `labels(n)` retourne un tableau ; `[0]` prend le premier. Utile pour découvrir la structure du graphe.
+- `RETURN` : projette les colonnes voulues (équivalent de `SELECT`).
+
+**Interprétation des résultats** :
+- La première requête montre les 3 niveaux de l'ontologie BDTOPO : `Database`, `Object`, `Detail` — stockés sous le label `ClasseOntologie`.
+- La deuxième suit la relation `EST_SOUS_TYPE_DE` depuis « Tronçon de route » vers ses sous-types.
+- La troisième donne un aperçu de la composition du graphe : combien de nœuds portent chaque label. Permet de vérifier que l'import Neo4j s'est bien déroulé.
+
 ### Exercice : sous-types de "Construction ponctuelle"
 
 ```sql
@@ -91,6 +131,8 @@ RETURN d.obj_type, d.name;
 MATCH (d:Detail)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Construction ponctuelle'})
 RETURN count(d) AS nb_sous_types;
 ```
+
+**Réponse** : La première requête liste tous les sous-types de « Construction ponctuelle » dans l'ontologie (pylônes, bornes, monuments…). La seconde les compte : `count(d)` compte les nœuds `d` qui satisfont le pattern sans les retourner individuellement.
 
 ---
 
@@ -107,7 +149,19 @@ WITH RECURSIVE hierarchy AS (
 SELECT depth, obj_type, name FROM hierarchy ORDER BY depth;
 ```
 
----
+**Explication des concepts** :
+- **WITH RECURSIVE** : définit une **CTE récursive** (Common Table Expression). C'est l'outil SQL pour parcourir des arbres ou graphes quand on ne connaît pas la profondeur à l'avance.
+- **Anatomie** : une CTE récursive a toujours deux parties unies par `UNION ALL` :
+  1. **Seed (membre initial)** : `SELECT ... WHERE name = 'Tronçon de route'` — le point de départ. `depth = 0` initialise le compteur de profondeur.
+  2. **Membre récursif** : `SELECT child.* JOIN hierarchy h ON child.parent_id = h.id` — à chaque itération, on joint les enfants des nœuds trouvés à l'étape précédente. `h.depth + 1` incrémente la profondeur.
+- `parent_id` : clé étrangère auto-référencée (FK pointant vers `id` dans la même table). C'est ce qui crée la structure d'arbre : chaque nœud pointe vers son parent.
+- `UNION ALL` : on conserve tous les résultats (pas de dédoublonnage). Plus rapide que `UNION` mais nécessite de s'assurer qu'il n'y a pas de cycles (ici l'arbre est strict).
+- **Arrêt** : PostgreSQL arrête la récursion quand le membre récursif ne produit plus de lignes (plus d'enfants à joindre).
+
+**Interprétation des résultats** :
+- Chaque ligne = un niveau dans l'arbre BDTOPO, depuis la racine (« Tronçon de route », profondeur 0) jusqu'aux feuilles les plus fines.
+- `depth` indique la distance au point de départ : 0 = racine, 1 = enfants directs, 2 = petits-enfants, etc.
+- Le résultat montre que la classification BDTOPO descend sur plusieurs niveaux : c'est une ontologie riche avec des spécialisations multiples.
 
 ## T2 — Sélectionner les POIs de votre rôle
 
@@ -144,7 +198,16 @@ GROUP BY role, source, categorie
 ORDER BY role, source;
 ```
 
----
+**Explication des concepts** :
+- `CAST(nature AS INTEGER)` : la colonne `importance` (ou `nature` utilisée comme telle) est stockée en `TEXT` dans la BDTOPO. On la convertit en entier pour une comparaison numérique correcte.
+- **Piège : comparaison alphabétique** : sans `CAST`, PostgreSQL compare des chaînes. `'10' < '2'` est **vrai** en alphabétique (car '1' < '2'). Avec `CAST`, `10 < 2` est **faux** (numérique). C'est un bug classique avec les données BDTOPO — toujours caster les colonnes numériques stockées en texte.
+- **Risque d'échec** : si une valeur n'est pas un nombre (ex: `NULL`, `'N/A'`), `CAST(... AS INTEGER)` lève une erreur. Solution : filtrer avec `WHERE nature ~ '^\d+$'` ou utiliser un `TRY_CAST`.
+- `UPDATE … SET categorie = 'critique'` : modifie la colonne `categorie` de `mission_pois` pour marquer certains POIs comme prioritaires. Cette distinction alimente les Phase 2 et 3.
+
+**Interprétation des résultats** :
+- La vérification montre combien de POIs chaque rôle a marqués 'critique' vs les autres.
+- Si le rôle Énergie a peu de POIs critiques : peu de postes haute tension dans l'EPCI, ou leur importance est > 3 (postes secondaires).
+- La colonne `categorie` sert ensuite dans les analyses de vulnérabilité et de priorisation.
 
 ## T4 — Clusteriser les POIs (ST_ClusterDBSCAN)
 
@@ -155,6 +218,20 @@ WITH clustered AS (
 )
 SELECT cid, COUNT(*) FROM clustered WHERE cid IS NOT NULL GROUP BY cid ORDER BY count DESC;
 ```
+
+**Explication des concepts** :
+- **DBSCAN** (Density-Based Spatial Clustering of Applications with Noise) : algorithme de clustering qui groupe des points proches les uns des autres sans présupposer un nombre de clusters ni une forme. Il distingue trois types de points :
+  - **Cœur (core)** : point ayant au moins `minpoints` voisins dans un rayon `eps` → forme un cluster.
+  - **Bordière (border)** : point à moins de `eps` d'un cœur mais avec moins de `minpoints` voisins → rattaché au cluster.
+  - **Bruit (noise)** : point isolé, sans voisin à ≤ `eps` → `cid IS NULL`.
+- `eps := 2000` : rayon en mètres. Doit être cohérent avec le SRID : en Lambert-93 (2154), l'unité est le mètre.
+- `minpoints := 2` : seuil minimum pour former un cluster. 2 = au moins une paire de points.
+- `OVER ()` : fonction de fenêtrage (window function). `ST_ClusterDBSCAN` s'exécute sur toutes les lignes et attribue un `cid` à chaque point (ou `NULL` pour le bruit).
+- `WHERE cid IS NOT NULL` : on exclut les points isolés (bruit) du résultat.
+
+**Interprétation des résultats** :
+- Chaque `cid` ≠ NULL = un groupe de POIs suffisamment proches pour former une **zone d'intérêt** (ex: hôpital + 2 casernes à ≤ 2 km = cluster de vulnérabilité).
+- `count` = nombre de POIs dans le cluster. Les plus grands clusters sont les zones les plus denses en infrastructures critiques.
 
 **Variante eps** :
 
@@ -172,6 +249,8 @@ SELECT 5000, count(DISTINCT cid)
 FROM (SELECT *, ST_ClusterDBSCAN(geom, eps := 5000, minpoints := 2) OVER () AS cid FROM mission_pois) t
 WHERE cid IS NOT NULL;
 ```
+
+**Interprétation** : Plus `eps` est grand, plus les clusters sont gros et moins il y a de points de bruit. Le nombre de clusters diminue quand `eps` augmente : les petits clusters fusionnent. À vous de choisir le seuil pertinent selon votre EPCI et vos objectifs stratégiques.
 
 ---
 
@@ -205,6 +284,8 @@ WHERE CAST(pt.importance AS INTEGER) <= 3
   AND h.nature IN ('Hôpital', 'Établissement hospitalier');
 ```
 
+**Explication** (cf. T0b pour `ST_DWithin`, cf. T3 pour `CAST`) : Un poste HT critique à ≤ 1 km d'un hôpital = vulnérabilité croisée Défense ↔ Énergie. Si le poste tombe (sabotage, panne), l'hôpital perd sa source d'alimentation prioritaire. Les hôpitaux sont des POI Défense, les postes HT des POI Énergie — la jointure spatiale révèle les dépendances inter-rôles.
+
 **Attaque → Ravitaillement** : ports proches de casernes
 
 ```sql
@@ -218,6 +299,8 @@ WHERE p.nature = 'Port'
 ORDER BY dist_m;
 ```
 
+**Explication** (cf. T0b pour `ST_DWithin`) : 5000 m = distance de projection terrestre d'un commando débarqué depuis un port. Une caserne à ≤ 5 km d'un port = cible prioritaire pour l'Attaque (neutraliser les forces de l'ordre avant un débarquement). `ORDER BY dist_m` classe du plus proche au plus éloigné.
+
 **Énergie → Défense** : ponts croisant des lignes THT
 
 ```sql
@@ -230,6 +313,8 @@ WHERE l.voltage IN ('400 kV', '225 kV')
 GROUP BY l.voltage;
 ```
 
+**Explication** (cf. T0b pour `ST_Intersects`) : On cherche les ponts (`construction_surfacique`) qui portent des lignes THT (400 kV ou 225 kV). Un pont détruit = une ligne THT coupée = blackout régional. `GROUP BY voltage` distingue l'impact : 400 kV est plus critique que 225 kV.
+
 **Ravitaillement → Attaque** : zones industrielles proches d'aérodromes
 
 ```sql
@@ -241,4 +326,9 @@ JOIN aerodrome a
 WHERE z.nature IN ('Zone industrielle', 'Zone d''activités')
   AND a.categorie IN ('Internationale', 'Nationale')
 ORDER BY dist_m;
+```
+
+**Explication** (cf. T0b pour `ST_DWithin`) : 3000 m = distance de transbordement aérien tactique. Une zone industrielle près d'un aérodrome international = hub logistique potentiel pour le Ravitaillement, mais aussi une cible prioritaire pour l'Attaque.
+
+**Interprétation globale T7** : Les 4 requêtes révèlent les **intersections spatiales entre les domaines des rôles**. Un résultat vide n'est pas un bug — il signifie simplement qu'aucune vulnérabilité croisée n'existe dans votre EPCI pour ce couple. Ces dépendances seront critiques en Phase 3 (simulation) : si un acteur neutralise un POI, quels autres rôles sont impactés en cascade ?
 ```

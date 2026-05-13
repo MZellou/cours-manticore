@@ -6,9 +6,24 @@ order: 2
 
 > Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
+## Sommaire
+
+- [T1 — Explorer le graphe r2gg](#t1)
+- [T2 — Associer les POIs aux sommets](#t2)
+- [T3 — Calculer des itinéraires (Dijkstra)](#t3)
+- [T4 — Routage contraint par rôle](#t4)
+- [T5 — Migrer dans Neo4j](#t5)
+- [T7 — Créer des nœuds personnalisés](#t7)
+- [T8 — OPTIONAL MATCH et UNWIND](#t8)
+- [T9 — Pattern matching avancé](#t9)
+- [T10 — Matrice de distances](#t10)
+- [T11 — Isochrones](#t11)
+
 ---
 
-## T1 — Explorer le graphe r2gg
+## T1 — Explorer le graphe r2gg {#t1}
+
+**Objectif** : comprendre la structure du graphe routier généré par r2gg — comment les tronçons BDTOPO ont été transformés en un graphe orienté (sommets + arêtes) utilisable par pgRouting, et quel est le schéma des tables `ways` et `ways_vertices_pgr`.
 
 ```sql
 -- Les arêtes
@@ -25,11 +40,28 @@ SELECT
     (SELECT count(*) FROM ways_vertices_pgr) AS nb_noeuds;
 ```
 
+**Explication des concepts** :
+- **Schéma `ways`** : chaque ligne est une **arête** du graphe. Colonnes clés :
+  - `id` : identifiant unique de l'arête
+  - `source`, `target` : références vers `ways_vertices_pgr.id` — le sommet de départ et d'arrivée de cette arête. C'est la convention pgRouting : `source` et `target` sont des clés étrangères logiques vers la table des sommets.
+  - `cost`, `reverse_cost` : coût de traversée en **secondes** (convention r2gg = temps de parcours estimé d'après la vitesse moyenne). `cost` = sens direct (source → target), `reverse_cost` = sens inverse.
+  - `length_m` : longueur en mètres.
+- **Schéma `ways_vertices_pgr`** : chaque ligne est un **sommet** (intersection ou extrémité de route). `id` est référencé par `ways.source` et `ways.target`. `cnt` = nombre d'arêtes incidentes (degré du nœud). `chk` = indicateur interne r2gg.
+- **r2gg** : outil qui transforme les tronçons BDTOPO en graphe pgRouting. Il **découpe** chaque tronçon à chaque intersection rencontrée. Un tronçon long traversé par 3 routes devient 4 arêtes distinctes — c'est pourquoi le nombre d'arêtes (`ways`) diffère du nombre de tronçons BDTOPO d'origine.
+
+**Interprétation des résultats** :
+- Les premières lignes de `ways` montrent la structure du graphe : chaque arête relie deux sommets identifiés par `source` et `target`.
+- `ST_X(geom)` / `ST_Y(geom)` extraient les coordonnées WGS84 (longitude, latitude) des sommets.
+- La différence entre `nb_arretes` et `nb_noeuds` est attendue : un réseau routier a toujours plus de tronçons que d'intersections.
+
 **Pourquoi les counts diffèrent** : r2gg découpe les tronçons aux intersections → un tronçon long entre 2 intersections peut devenir N arêtes si d'autres routes le croisent.
+**Réponse** : dans la BDTOPO, un tronçon de route est un segment entre deux points quelconques (pas forcément des intersections). r2gg transforme cela en un vrai **graphe** : si une route secondaire croise une route principale, le tronçon principal est coupé en deux au niveau du croisement pour créer un nœud d'intersection. Plus le réseau est dense, plus le nombre d'arêtes post-r2gg est élevé par rapport au nombre de tronçons d'origine.
 
 ---
 
-## T2 — Associer les POIs aux sommets
+## T2 — Associer les POIs aux sommets {#t2}
+
+**Objectif** : "snapper" chaque POI sur le **nœud du graphe** le plus proche. Le routage pgRouting se fait de sommet à sommet, pas de POI à POI. Avant de pouvoir calculer des itinéraires, il faut donc trouver à quel nœud du réseau routier chaque POI est rattaché.
 
 ```sql
 SELECT p.nom, p.role,
@@ -43,11 +75,24 @@ CROSS JOIN LATERAL (
 ORDER BY distance_snap DESC LIMIT 10;
 ```
 
+**Explication des concepts** :
+- **`CROSS JOIN LATERAL`** : pour **chaque ligne** de `mission_pois` (la table de gauche), on exécute la sous-requête (la table de droite). C'est comme une boucle SQL : pour chaque POI, on cherche son plus proche sommet. Sans `LATERAL`, la sous-requête ne pourrait pas référencer `p.geom` de la requête principale (corrélation interdite dans une simple sous-requête).
+- **`ORDER BY geom <-> p.geom LIMIT 1`** : l'opérateur `<->` est le **KNN** (K-Nearest Neighbor) de PostGIS. Il utilise l'index GIST pour trouver les plus proches voisins sans scanner toute la table. C'est beaucoup plus rapide que `ORDER BY ST_Distance(geom, p.geom)` qui ferait un full scan. `LIMIT 1` ne garde que le plus proche.
+- **`ST_Distance`** (cf. Phase 1 T0b) : calcule la distance euclidienne entre deux géométries.
+
+**Interprétation des résultats** :
+- `distance_snap` = distance en mètres entre le POI et le sommet le plus proche du réseau routier.
+- Plus la distance est faible, mieux le POI est connecté au graphe (idéalement < 50 m).
+- Les POIs avec `distance_snap > 500` m sont **hors réseau** : ils ne sont pas reliés au graphe routier. Leur routage sera imprécis car le point de départ sur le graphe sera loin de leur position réelle.
+
 **POIs éloignés** : si `distance_snap` > 500m, le POI est hors du réseau routier (en mer, en montagne sans route). Le routage depuis ce POI sera imprécis.
+**Réponse** : les POIs éloignés sont dans des zones non couvertes par la BDTOPO routière (estran, plans d'eau, zones blanches). Leur snapping sur un sommet distant introduit un biais : la distance réelle est sous-estimée du montant du snap. Ces POIs devront être traités avec des algorithmes spécifiques (vol d'oiseau + jonction) plutôt que du routage pur.
 
 ---
 
-## T3 — Calculer des itinéraires (Dijkstra)
+## T3 — Calculer des itinéraires (Dijkstra) {#t3}
+
+**Objectif** : calculer le plus court chemin entre deux POIs (Attaque → Défense) avec l'algorithme de Dijkstra implémenté par pgRouting. C'est le cœur du routage réseau : comprendre les paramètres pour pouvoir les modifier ensuite (T4).
 
 ```sql
 SELECT seq, node, edge, cost, agg_cost
@@ -63,9 +108,25 @@ FROM pgr_dijkstra(
 );
 ```
 
+**Explication des concepts** :
+- **`pgr_dijkstra(sql, source, target, directed, has_rcost)`** — signature complète à comprendre absolument :
+  - `sql` : une sous-requête SQL (en texte) qui retourne les arêtes avec les colonnes `id, source, target, cost` (et optionnellement `reverse_cost`). C'est le point d'entrée pour **personnaliser** les coûts (cf. T4).
+  - `source` / `target` : ID des sommets de départ et d'arrivée (ce sont des `bigint` faisant référence à `ways_vertices_pgr.id`). On peut passer des sous-requêtes entre parenthèses.
+  - `directed := false` : graphe **non orienté**. Avec `true`, seules les arêtes dans le sens source→target sont empruntables. Avec `false`, on peut les parcourir dans les deux sens (réseau routier standard).
+  - `has_rcost := false` par défaut. Si `true`, le `reverse_cost` est utilisé pour le sens inverse quand `directed = true`. Ici on ne le passe pas → pgRouting déduit de la présence de `reverse_cost` dans la sous-requête.
+  - Retourne : `seq` (numéro d'étape, 1-indexé), `node` (sommet traversé), `edge` (arête empruntée, -1 pour la dernière), `cost` (coût de cette étape), `agg_cost` (coût total accumulé depuis le départ).
+- **Snapping inline** : on utilise `CROSS JOIN LATERAL` + `<->` (cf. T2) directement dans les paramètres source/target. `LIMIT 1` garantit qu'on prend le premier POI de chaque rôle (ordre d'insertion). En pratique, il faudrait choisir les POIs par nom ou par critère.
+
+**Interprétation des résultats** :
+- La dernière ligne donne le coût total (`agg_cost`) en secondes — c'est la durée estimée du trajet dans la réalité.
+- Chaque ligne intermédiaire est une étape du chemin : un sommet traversé, et l'arête empruntée pour y arriver.
+- Si la requête ne retourne **aucune ligne** : les deux sommets ne sont pas connectés dans le graphe (réseau déconnecté, ou l'un des POIs est hors réseau avec un snap trop lointain).
+
 ---
 
-## T4 — Routage contraint par rôle
+## T4 — Routage contraint par rôle {#t4}
+
+**Objectif** : adapter l'algorithme de Dijkstra aux contraintes physiques et stratégiques de chaque rôle : interdire certaines routes (poids, largeur), en favoriser d'autres (chemins discrets, axes rapides). On modifie la **sous-requête SQL** passée à `pgr_dijkstra` pour changer le `cost` par arête.
 
 **Ravitaillement** (poids lourds) :
 
@@ -100,9 +161,22 @@ CASE WHEN nature IN ('Chemin','Sentier') THEN cost*0.7 ELSE cost*1.3 END
 CASE WHEN importance >= 3 THEN cost*0.5 ELSE cost END
 ```
 
+**Explication des concepts** :
+- **`CASE WHEN ... THEN -1 ELSE cost END`** : dans la sous-requête SQL, on modifie le coût de chaque arête. La convention pgRouting est : `cost = -1` signifie **arête bloquée** (coût infini, l'algorithme ne l'empruntera jamais). Il faut bloquer à la fois `cost` et `reverse_cost` pour une interdiction totale (sinon l'arête reste praticable dans un sens).
+- **Coefficients multiplicateurs** : `cost * 0.7` rend une arête 30 % plus attractive qu'une arête à coût normal. L'algorithme de Dijkstra choisit toujours le chemin de **coût total minimal** : il favorisera naturellement les arêtes dont le coût a été réduit, et évitera celles dont le coût a été augmenté.
+- **Comparaison des résultats** : pour mesurer l'impact des contraintes, exécutez la même requête **sans** les `CASE WHEN`, puis **avec**. La différence de `agg_cost` (en pourcentage) est le surcoût imposé par les contraintes.
+
+**Interprétation des résultats** :
+- **Ravitaillement** : les routes avec restriction de poids sont bloquées (`-1`). Le détour peut être long si peu d'alternatives existent → surcoût potentiel de 50 % ou plus.
+- **Énergie** : les routes de largeur < 4 m sont infranchissables pour les convois exceptionnels. Même logique : ces arêtes disparaissent du graphe.
+- **Attaque** : les chemins sont favorisés (coût * 0.7), les axes principaux pénalisés (coût * 1.3). L'itinéraire privilégie la **discrétion** au détriment de la vitesse.
+- **Défense** : les routes d'importance ≥ 3 (nationales, départementales) sont fortement favorisées (coût * 0.5) pour une **intervention rapide**, quitte à longer des zones habitées.
+
 ---
 
-## T5 — Migrer dans Neo4j
+## T5 — Migrer dans Neo4j {#t5}
+
+**Objectif** : migrer l'ontologie BDTOPO et les POIs dans Neo4j pour bénéficier du modèle graphe : relations ontologiques (`EST_SOUS_TYPE_DE`), traversées hiérarchiques, et algorithmes de cheminement (APOC Dijkstra) sans avoir à snapper sur un graphe routier.
 
 ```bash
 python scripts/02_migrate_to_neo4j.py
@@ -124,9 +198,22 @@ RETURN a.nom, b.nom, weight AS distance_m
 ORDER BY weight DESC LIMIT 10
 ```
 
+**Explication des concepts** (concepts Cypher de base déjà vus en Phase 1 T0c) :
+- **Migration automatisée** : le script `02_migrate_to_neo4j.py` charge l'ontologie (nœuds `:ClasseOntologie`, relations `:EST_SOUS_TYPE_DE`) et les POIs (nœuds `:POI` avec `role`, `source`, `lat`, `lon`). Les POIs sont connectés entre eux par des relations `[:DISTANCE {meters: ...}]` quand ils sont à moins d'un seuil.
+- **Requête 1** : `MATCH (p:POI) RETURN p.role, count(*)` — comptage par rôle, pour vérifier que tous les agents ont migré leurs POIs (cf. Phase 1 T5 pour le partage cross-rôle).
+- **Requête 2** : `MATCH path = (d)-[:EST_SOUS_TYPE_DE*]->(o)` — traverse la hiérarchie ontologique depuis les Détails jusqu'à l'Object parent. `[:EST_SOUS_TYPE_DE*]` signifie "un nombre quelconque de relations" (chemin de longueur variable). `nodes(path)` donne la liste des nœuds, transformée en liste de noms par la compréhension `[n IN nodes(path) | n.name]`.
+- **Requête 3** : `apoc.algo.dijkstra(a, b, 'DISTANCE', 'meters')` — version Neo4j du plus court chemin, utilisant APOC. Les paramètres : nœud de départ, nœud d'arrivée, type de relation (`'DISTANCE'`), propriété de coût sur la relation (`'meters'`). `YIELD path, weight` récupère le chemin et le poids total.
+
+**Interprétation des résultats** :
+- La première requête confirme que chaque rôle a bien ses POIs dans le graphe.
+- La deuxième montre la hiérarchie ontologique : par ex. `"Tronçon de route à 2 chaussées" → "Tronçon de route"` — utile pour comprendre quels sous-types peuvent être routés.
+- La troisième donne les distances entre POIs (dans Neo4j, directement basées sur les relations `:DISTANCE`). Ces distances sont approximatives (en vol d'oiseau si calculées depuis les coordonnées, ou via le réseau routier si le script a snapé).
+
 ---
 
-## T7 — Créer des nœuds personnalisés (CREATE / MERGE)
+## T7 — Créer des nœuds personnalisés (CREATE / MERGE) {#t7}
+
+**Objectif** : créer des nœuds personnalisés dans Neo4j (bases avancées, points d'observation) avec `CREATE`, puis les connecter aux POIs existants via des relations `:DISTANCE` avec `MERGE`. Ces nouveaux nœuds serviront de points de départ pour la Phase 3 (simulation).
 
 ```sql
 // Créer une base avancée
@@ -158,9 +245,25 @@ MERGE (b)-[r:DISTANCE {meters: toInteger(dist)}]->(p)
 RETURN count(r) AS relations_creees;
 ```
 
+**Explication des concepts** :
+- **`(b:Base {nom: '...', type: '...'})`** : syntaxe Cypher pour créer un nœud. `Base` est un **label** (comme une table — regroupe les nœuds de même type). Les propriétés sont des paires clé-valeur entre accolades.
+- **`CREATE` vs `MERGE`** :
+  - `CREATE` : ajoute **toujours** un nouveau nœud ou une nouvelle relation, même si un élément identique existe déjà. Peut créer des doublons si exécuté plusieurs fois.
+  - `MERGE` : vérifie d'abord si un nœud/relation existe avec ces propriétés. Si oui, il le réutilise. Si non, il le crée. `MERGE` est idempotent — exécutable plusieurs fois sans risque de duplication.
+- **`point({latitude: ..., longitude: ...})`** : fonction Cypher qui crée un point spatial. La distance entre deux points est calculée avec `distance(p1, p2)` qui utilise l'approximation haversine (grand cercle) et retourne des mètres.
+- **`toFloat()`, `split()`** : `split(b.coords, ', ')` découpe la chaîne `'48.390, -4.486'` en `['48.390', '-4.486']`. `toFloat()` convertit chaque élément en nombre flottant. C'est la façon Cypher de parser une chaîne de coordonnées.
+- **`MERGE (b)-[r:DISTANCE {meters: toInteger(dist)}]->(p)`** : crée une relation typée `DISTANCE` de la base vers le POI, avec une propriété `meters` contenant la distance entière. Le sens de la relation est important (dirigée de la base vers le POI).
+
+**Interprétation des résultats** :
+- Les deux premiers `CREATE` produisent deux nouveaux nœuds `:Base` dans le graphe, avec leurs propriétés respectives.
+- La troisième requête connecte `Point de ralliement Alpha` à tous les POIs distants de moins de 10 km. Le résultat (`relations_creees`) indique combien de POIs sont à portée de la base.
+- Si `relations_creees = 0` : soit la zone autour de la base est vide de POIs, soit les POIs sont tous à plus de 10 km. Dans ce cas, augmentez le seuil ou vérifiez les coordonnées.
+
 ---
 
-## T8 — OPTIONAL MATCH et UNWIND
+## T8 — OPTIONAL MATCH et UNWIND {#t8}
+
+**Objectif** : utiliser `OPTIONAL MATCH` pour identifier les POIs isolés (sans aucune relation `:DISTANCE`), et `UNWIND` pour transformer des listes agrégées en lignes individuelles — deux techniques essentielles pour analyser la connectivité du graphe Neo4j.
 
 ```sql
 -- POIs sans connexion (isolés)
@@ -181,11 +284,24 @@ UNWIND noms AS nom
 RETURN role, nom ORDER BY role, nom;
 ```
 
+**Explication des concepts** :
+- **`OPTIONAL MATCH`** : équivalent du `LEFT JOIN` en SQL. Il tente de matcher le pattern. Si aucun match n'est trouvé, les variables (`p`, `r`, `neighbor`) sont mises à `NULL` — mais **le nœud de départ (`p`) reste dans les résultats**. Sans `OPTIONAL`, un `MATCH` qui échoue supprime la ligne entière.
+- **`WHERE NOT (p)-[:DISTANCE]-()`** : pattern négatif. `(p)-[:DISTANCE]-()` existe si `p` a **au moins une** relation `:DISTANCE` avec quiconque. `NOT` inverse : on garde les POIs qui n'ont aucune relation.
+- **`UNWIND`** : inverse de `collect()`. `collect(p.nom)` agrège les noms en une liste par rôle ; `UNWIND noms AS nom` transforme **chaque élément** de la liste en une ligne séparée. C'est l'équivalent de `unnest()` en PostgreSQL. Permet de "déplier" une agrégation.
+
+**Interprétation des résultats** :
+- **Première requête** : affiche les POIs isolés — ceux trop éloignés des routes pour avoir été connectés par le script de migration. Ce sont des **outliers spatiaux** (en mer, en montagne).
+- **Deuxième requête** : pour chaque POI, donne son nombre de voisins directs. Les POIs avec `nb_voisins = 0` sont les isolés ; ceux avec `nb_voisins ≫ 0` sont des hubs (bien connectés).
+- **Troisième requête** : liste tous les POIs par rôle, un par ligne. Utile pour vérifier la couverture et repérer les doublons de noms.
+
 **POIs isolés** : les POIs trop éloignés des routes n'ont pas été connectés par le script de migration. Ce sont des outliers spatiaux.
+**Réponse** : les isolés sont typiquement des POIs maritimes (ports, balises), des sommets montagneux sans accès routier, ou des POIs dans des zones non couvertes par la BDTOPO. Pour les intégrer, il faudrait soit augmenter le seuil de snapping du script de migration, soit ajouter manuellement des relations virtuelles (ex : distance à vol d'oiseau).
 
 ---
 
-## T9 — Pattern matching avancé
+## T9 — Pattern matching avancé {#t9}
+
+**Objectif** : exploiter le pattern matching de Cypher sur des **chemins de longueur variable** pour trouver des routes complexes : transit par des POIs Énergie, cycles triangulaires, ou chemins qui évitent certains types de POIs. Ces motifs sont impossibles à exprimer simplement en SQL.
 
 **Chemins via énergie uniquement** :
 
@@ -216,9 +332,24 @@ RETURN [n IN nodes(path) | n.nom] AS etapes,
 ORDER BY distance_m LIMIT 5;
 ```
 
+**Explication des concepts** :
+- **`MATCH path = (...)-[:DISTANCE*]-...`** : la variable `path` capture le **chemin complet** (tous les nœuds et relations traversés). `[:DISTANCE*]` signifie "une ou plusieurs relations `:DISTANCE`" (longueur variable). Sans l'étoile, on ne matcherait que les voisins directs.
+- **`nodes(path)`** : retourne la liste des nœuds du chemin. `[n IN nodes(path) | n.nom]` est une **compréhension de liste** Cypher (comme une list comprehension Python) : elle crée une nouvelle liste contenant seulement les `nom` de chaque nœud.
+- **`relationships(path)`** : retourne la liste des relations du chemin, utilisée par `reduce()`.
+- **`reduce(total = 0, r IN relationships(path) | total + r.meters)`** : fonction d'accumulation. Elle initialise `total` à 0, puis pour chaque relation `r` du chemin, ajoute `r.meters` à `total`. Résultat : la somme des distances de toutes les relations. Équivalent à `sum()` en SQL ou `functools.reduce()` en Python.
+- **`WHERE ALL(n IN nodes(path) WHERE n.role IS NULL OR n.role <> 'energie')`** : `ALL()` est un prédicat qui retourne `true` si la condition est vraie pour **tous** les éléments de la liste. Ici : aucun nœud du chemin (sauf le départ/arrivée) ne doit avoir `role = 'energie'`.
+- **Triangles** : `id(a) < id(b) < id(c)` évite les permutations redondantes du même cycle (a→b→c→a est le même triangle que b→c→a→b sans ce filtre).
+
+**Interprétation des résultats** :
+- **Chemins via énergie** : les itinéraires Attaque → Énergie → Défense, triés par distance. Montre comment les POIs Énergie servent d'intermédiaires dans le réseau. Plus la distance est faible, plus le chemin est direct.
+- **Triangles** : trois POIs connectés en cycle complet. Un triangle = **redondance** dans le réseau : si une liaison est coupée, les deux autres maintiennent la connexion entre les trois POIs. Plus il y a de triangles, plus le réseau est résilient.
+- **Défi — sans énergie** : chemins qui évitent tous les POIs Énergie. Comparez les distances avec la version "via énergie" : si les distances sans énergie sont beaucoup plus longues, c'est que le réseau Énergie est un hub critique. Si elles sont équivalentes, le réseau offre des alternatives.
+
 ---
 
-## T10 — Matrice de distances
+## T10 — Matrice de distances {#t10}
+
+**Objectif** : calculer une matrice N×N des distances **tous vers tous** entre les POIs Attaque avec pgRouting. Utile pour analyser la structure du réseau (diamètre, POIs isolés, clusters) et servir d'entrée à des algorithmes de benchmark (Phase 3).
 
 ```sql
 WITH poi_vertices AS (
@@ -236,9 +367,21 @@ FROM pgr_dijkstraCostMatrix(
 ORDER BY agg_cost DESC LIMIT 20;
 ```
 
+**Explication des concepts** :
+- **`pgr_dijkstraCostMatrix(sql, ids, directed)`** : variante de `pgr_dijkstra` qui calcule **toutes les paires** de distances entre les sommets passés dans le tableau `ids`. Retourne `source`, `target`, `agg_cost` pour chaque paire (sans la séquence des étapes intermédiaires). C'est un N×N : si 10 sommets en entrée, on obtient 90 paires (10 × 9 — chaque paire une fois, sans auto-paire).
+- **`array_agg(vid)`** : collecte les ID des sommets (un par POI Attaque) dans un tableau PostgreSQL. `pgr_dijkstraCostMatrix` accepte ce tableau directement — c'est bien plus efficace que N² appels individuels à `pgr_dijkstra`.
+- **Utilité d'une matrice de distances** : elle permet de calculer le **diamètre** du réseau (plus longue distance entre deux POIs), d'identifier les POIs les plus centraux (plus petite somme des distances aux autres), et de détecter des clusters (groupes de POIs proches les uns des autres).
+
+**Interprétation des résultats** :
+- Chaque ligne = une paire (source, target) avec la distance en mètres.
+- Les paires avec `agg_cost` le plus élevé sont les POIs les plus éloignés dans le réseau routier — potentiellement dans des zones opposées de l'EPCI.
+- Si une paire est absente des résultats, les deux sommets ne sont pas connectés (graphe déconnecté : îlot routier sans lien avec le reste).
+
 ---
 
-## T11 — Isochrones
+## T11 — Isochrones {#t11}
+
+**Objectif** : calculer une **isochrone** — la zone accessible en ≤ 10 minutes de route depuis un POI Attaque. Contrairement à un simple cercle (distance à vol d'oiseau), l'isochrone suit le réseau routier et donne une vision réaliste du périmètre d'action immédiat.
 
 ```sql
 WITH start_vertex AS (
@@ -269,3 +412,16 @@ SELECT ST_ConvexHull(ST_Collect(v.geom)) AS isochrone_10min
 FROM reachable r
 JOIN ways_vertices_pgr v ON v.id = r.node;
 ```
+
+**Explication des concepts** :
+- **`pgr_dijkstra(source, target := array_agg(ids))`** : quand on passe un **tableau** de sommets en paramètre `target`, pgRouting calcule le plus court chemin du sommet source vers **tous** ces sommets en un seul appel. C'est bien plus efficace que de faire N appels séparés (l'algorithme de Dijkstra calcule naturellement les distances vers tous les nœuds du graphe en une seule exécution).
+- **`WHERE agg_cost <= 600`** : on filtre les sommets atteignables en ≤ 600 secondes = **10 minutes**. Le `cost` dans les arêtes `ways` est en secondes (convention r2gg : temps de parcours estimé = `length_m / vitesse_moyenne`).
+- **`ST_ConvexHull(ST_Collect(v.geom))`** :
+  - `ST_Collect` agrège les géométries des sommets atteignables en un seul objet MultiPoint.
+  - `ST_ConvexHull` calcule l'**enveloppe convexe** : le plus petit polygone convexe contenant tous ces points. C'est une approximation de la zone accessible.
+- **Pourquoi un polygone et pas un cercle** : un cercle de 10 min à vol d'oiseau serait trop optimiste (ligne droite). L'isochrone routière est une forme irrégulière qui épouse la topologie du réseau : étirée le long des axes rapides, crevassée dans les zones sans routes.
+
+**Interprétation des résultats** :
+- `sommets_atteignables` : nombre de nœuds du réseau accessibles en ≤ 10 min. Plus ce nombre est élevé, plus le réseau est dense autour du point de départ.
+- `min_sec` / `max_sec` : l'éventail des temps d'accès. Le plus proche sommet (souvent le point de départ lui-même, coût proche de 0) et le plus éloigné dans le périmètre des 10 min.
+- Le polygone `ST_ConvexHull` visualise la zone de couverture : une forme ronde indique un réseau bien maillé (on peut aller dans toutes les directions) ; une forme étirée indique un réseau contraint (vallée, littoral) ; des "trous" dans le polygone seraient visibles avec un `ST_ConcaveHull` plus précis.

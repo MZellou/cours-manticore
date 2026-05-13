@@ -6,9 +6,24 @@ order: 3
 
 > Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
+**Mini-sommaire** :
+- [T1 — Choke Points](#t1--choke-points)
+- [T2a — Tous les chemins entre deux rôles](#t2a--tous-les-chemins-entre-deux-rles)
+- [T2b — Plus court chemin avec nœud intermédiaire](#t2b--plus-court-chemin-avec-nud-intermdiaire)
+- [T2c — Sous-graphe accessible depuis un POI](#t2c--sous-graphe-accessible-depuis-un-poi)
+- [T3 — Requêtes benchmark](#t3--requetes-benchmark)
+- [T5 — Couper 1 arête](#t5--couper-1-arte)
+- [T6 — Couper 3 arêtes](#t6--couper-3-artes)
+- [T7 — Stratégie défensive](#t7--stratgie-dfensive)
+- [T8 — Stratégie offensive](#t8--stratgie-offensive)
+- [T9 — Composantes connexes](#t9--composantes-connexes)
+- [T10 — Centralité de degré](#t10--centralit-de-degr)
+
 ---
 
 ## T1 — Choke Points
+
+**Objectif** : identifier les nœuds (POI) dont la suppression maximiserait la perturbation du réseau — les points de fragilité stratégiques.
 
 **Approche SQL (pgRouting)** :
 
@@ -46,9 +61,23 @@ CALL gds.graph.drop('myGraph');
 
 Une seule requête — pas besoin de boucle Python.
 
+**Explication des concepts** :
+- **Betweenness centrality** : fraction des plus courts chemins entre toutes les paires de nœuds qui passent par un nœud donné. Formellement : $C_B(v) = \sum_{s \neq v \neq t} \frac{\sigma_{st}(v)}{\sigma_{st}}$ où $\sigma_{st}(v)$ est le nombre de plus courts chemins de $s$ à $t$ passant par $v$. Un nœud avec une betweenness élevée est un passage obligé — le couper force tous les chemins à faire un détour.
+- **Pourquoi un score de 0 ne veut pas dire "inutile"** : un nœud feuille (degré 1) a une betweenness de 0 car aucun plus court chemin ne passe *par* lui (il est au bout, pas au milieu). Pourtant, couper son unique accès l'isole complètement — impact local maximal. Betweenness mesure la centralité de *flot*, pas l'isolement.
+- **`gds.graph.project('myGraph', 'POI', 'DISTANCE')`** : projette le sous-graphe Neo4j des nœuds étiquetés `:POI` reliés par des relations `:DISTANCE` en mémoire dans le catalogue GDS (Graph Data Science). C'est une copie optimisée pour les calculs d'algorithmes — elle ne modifie pas la base.
+- **`gds.betweenness.stream`** : version *stream* qui retourne les résultats ligne par ligne (contrairement à `write` qui les écrit dans la base ou `stats` qui agrège). Utile pour l'exploration.
+- **Pourquoi Neo4j gagne** : l'approche SQL nécessite une boucle Python — pour chaque arête, bloquer, recalculer Dijkstra, comparer, restaurer. Soit $O(E \times (V \log V))$. Neo4j GDS calcule la betweenness en $O(VE)$ en mémoire, sans boucle itérative.
+
+**Interprétation des résultats** :
+- Le top 10 des POIs par betweenness sont les **choke points** du réseau : les couper maximiserait l'impact sur les distances entre tous les autres POIs.
+- Si le POI #1 a un score très supérieur au #2 : le réseau a un goulot d'étranglement dominant (pont unique, col de montagne). S'ils sont proches : le réseau est plutôt maillé avec dégradation progressive.
+- Ces résultats alimentent directement la simulation (T5-T8) : les choke points sont les premières cibles à tester.
+
 ---
 
 ## T2a — Tous les chemins entre deux rôles
+
+**Objectif** : lister tous les chemins possibles entre un POI Attaque et un POI Défense (Hôpital), avec la distance cumulée. Utile pour qu'un agent Attaque identifie toutes les voies d'accès à une cible — pas seulement la plus courte.
 
 ```sql
 MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*]-(d:POI {role: 'defense', nature: 'Hôpital'})
@@ -79,9 +108,22 @@ ORDER BY cost LIMIT 5;
 
 → **Cypher gagne clairement** : 8 lignes vs 30+, et le SQL reste incomplet (pas de gestion propre des cycles).
 
+**Explication des concepts** :
+- **Tous les chemins vs plus court chemin** : un agent Attaque ne veut pas seulement connaître la route la plus rapide — il veut toutes les options. Si le chemin principal est bloqué (T5-T8), quelles sont les alternatives ? Vue stratégique vs vue tactique.
+- **`reduce(total = 0, r IN relationships(path) | total + r.meters)`** : cf. Phase 2 T9. Accumule la somme des `meters` de toutes les relations `DISTANCE` du chemin. Syntaxe Cypher pour un pli (fold).
+- **`[:DISTANCE*]`** : cf. Phase 2 T9. Pattern matching de longueur variable — zéro ou plus de relations `DISTANCE`. Neo4j explore tous les chemins possibles sans limite de profondeur (attention : explosion combinatoire sur un grand graphe).
+- **Pourquoi Cypher gagne** : le SQL nécessite un `WITH RECURSIVE` qui doit gérer manuellement l'accumulation de chemin, la détection de cycles et la condition d'arrêt. Neo4j fait tout cela nativement dans son moteur de pattern matching — 8 lignes vs 30+, et le SQL présenté ici reste incomplet (cycles mal gérés).
+
+**Interprétation des résultats** :
+- La ligne #1 = le chemin le plus court (via `ORDER BY distance_m LIMIT 5`). Les suivantes = alternatives plus longues mais utilisables.
+- Peu de résultats (< 3) : le réseau entre les deux rôles est peu maillé — peu d'itinéraires alternatifs, donc plus vulnérable aux coupes.
+- Beaucoup de résultats : réseau bien connecté, résilient.
+
 ---
 
 ## T2b — Plus court chemin avec nœud intermédiaire
+
+**Objectif** : trouver le plus court chemin qui passe par un nœud obligatoire — ici, Attaque → Ravitaillement → Énergie. Scénario : convoi qui doit se réapprovisionner avant d'atteindre sa cible.
 
 ```sql
 MATCH (a:POI {role: 'attaque'})
@@ -97,9 +139,21 @@ RETURN
 ORDER BY total_m LIMIT 1;
 ```
 
+**Explication des concepts** :
+- **`shortestPath()`** : fonction Cypher native qui calcule le plus court chemin entre deux nœuds en utilisant un BFS (Breadth-First Search) — **non pondéré**. Elle trouve le chemin avec le **moins de sauts**, PAS le moins de mètres. C'est différent de `apoc.algo.dijkstra` (cf. Phase 2 T5) qui tient compte du poids `meters`. Ici, le résultat est ensuite pondéré manuellement pour le classement final.
+- **Deux legs séparés** : le chemin total est la concaténation de deux plus courts chemins (attaque → ravitaillement, puis ravitaillement → énergie) qui partagent le nœud `r` comme point de jonction.
+- **`LIMIT 1`** : on ne garde que la meilleure combinaison (triée par `total_m`). La requête teste toutes les combinaisons de POIs (tous les a, r, e) avant de choisir le meilleur total.
+
+**Interprétation des résultats** :
+- `leg1` = chemin du POI Attaque au POI Ravitaillement le plus proche. `leg2` = du même POI Ravitaillement au POI Énergie le plus proche.
+- Ce type de requête est utile pour planifier des **itinéraires contraints** : le convoi ne peut se ravitailler qu'à certains points de passage.
+- Comparez avec la requête T9 de la Phase 2 (une seule ligne `MATCH` avec deux `*` consécutifs) — le résultat diffère car `shortestPath` n'optimise pas globalement.
+
 ---
 
 ## T2c — Sous-graphe accessible depuis un POI
+
+**Objectif** : lister tous les POIs accessibles depuis un aérodrome en 2 sauts ou moins. Cela correspond au rayon d'action court d'un drone ou d'une opération héliportée.
 
 ```sql
 MATCH (aero:POI {source: 'aerodrome'})
@@ -113,9 +167,23 @@ RETURN DISTINCT n.role, n.nom, n.source
 ORDER BY n.role;
 ```
 
+**Explication des concepts** :
+- **`apoc.path.subgraphAll(startNode, config)`** : procédure APOC qui explore le graphe à partir d'un nœud de départ et retourne tous les nœuds et relations atteignables selon les contraintes fournies. Contrairement à `MATCH ...-[:DISTANCE*..2]-()`, elle retourne explicitement les listes `nodes` et `relationships` en plus.
+- **`maxLevel: 2`** : limite de profondeur — ne pas dépasser 2 sauts. Sans cette limite, l'exploration exploserait sur un graphe très connecté (le nombre de chemins croît exponentiellement avec la profondeur).
+- **`relationshipFilter: 'DISTANCE'`** : ne suivre que les relations de type `DISTANCE`. Ignore les autres (ontologiques, personnalisées créées en Phase 2 T7).
+- **`labelFilter: 'POI'`** : ne retourner que les nœuds étiquetés `:POI`. Les nœuds de type `:ClasseOntologie` ou `:Base` servent de transit mais ne sont pas inclus dans le résultat.
+- **`UNWIND nodes AS n`** : transforme la liste `nodes` en lignes individuelles. Chaque ligne `n` = un nœud du sous-graphe accessible.
+
+**Interprétation des résultats** :
+- La requête retourne tous les POI (tous rôles confondus) à ≤ 2 sauts d'un aérodrome.
+- Peu de résultats = l'aérodrome est isolé (peu de connexions directes).
+- Variante : changez `maxLevel` à 3 ou 4 pour voir comment le rayon d'action s'élargit — et combien de nouveaux POIs deviennent accessibles à chaque saut supplémentaire.
+
 ---
 
 ## T3 — Requêtes benchmark
+
+**Objectif** : comparer objectivement les performances SQL (PostGIS) et Cypher (Neo4j) sur 5 types de requêtes, en mesurant temps d'exécution, lignes de code et plan d'exécution.
 
 ### Requête 1 — Traversée ontologique
 
@@ -139,6 +207,11 @@ SELECT count(*) FROM h;
 PROFILE MATCH path = (d:Detail)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
 RETURN count(path);
 ```
+
+**Explication des concepts** :
+- **`EXPLAIN (ANALYZE)`** (SQL) : exécute la requête ET affiche le plan d'exécution réel. Colonnes clés : `Execution Time` (temps réel), `rows` (lignes lues), `loops` (passes). Un `Seq Scan` = lecture séquentielle de toute la table (lent si grande table). Un `Index Scan` = lecture via index (rapide).
+- **`PROFILE`** (Cypher) : équivalent de `EXPLAIN ANALYZE` dans Neo4j. Affiche les `db hits` (opérations élémentaires sur le stockage). `AllNodesScan` = parcourir tous les nœuds (pire cas). `NodeByLabelScan` + traversale = mieux. `NodeIndexSeek` = meilleur (utilisation d'un index).
+- **Requête 1 — qui gagne ?** : les deux sont rapides sur un petit volume. Cypher traverse une hiérarchie nativement sans jointure — complexité $O(d \times b)$ où $d$ = profondeur et $b$ = facteur de branchement. SQL doit joindre récursivement sur `parent_id = child.id`, ce qui est moins naturel pour une hiérarchie.
 
 ### Requête 4 — Spatial (SQL gagne)
 
@@ -165,9 +238,29 @@ RETURN count(p);
 
 → **SQL gagne clairement** sur les opérations spatiales.
 
+**Explication des concepts** :
+- **Pourquoi SQL gagne** : PostGIS dispose d'un **index GIST** (R-tree) sur les colonnes `geometrie`. `ST_DWithin` utilise cet index pour éliminer les paires distantes sans les calculer — temps quasi constant.
+- **Pourquoi Cypher perd** : Neo4j n'a pas d'index spatial natif sur les propriétés des relations. Pour répondre à "POIs à moins de 500m d'une route", il faudrait calculer la distance pour chaque paire — $O(N^2)$ — pas scalable. L'approximation via `EXISTS { ...-[:DISTANCE*]-() }` ne filtre pas sur 500m réels, elle vérifie juste la connexité.
+- **Lecture du plan SQL** : cherchez un `Index Scan` sur l'index GIST de `troncon_de_route.geometrie`. Si vous voyez un `Seq Scan`, l'index n'est pas créé ou pas utilisé.
+
+**Interprétation des résultats** :
+- Complétez le tableau benchmark avec vos mesures :
+
+| # | Requête | SQL (ms) | Cypher (ms) | LOC SQL | LOC Cypher | Gagnant |
+|---|---------|----------|-------------|---------|------------|---------|
+| 1 | Sous-types de "Tronçon de route" | | | | | Cypher (hiérarchie) |
+| 2 | Tous les chemins attaque → défense | | | | | Cypher (graphe) |
+| 3 | Betweenness centrality | | | | | Cypher (GDS) |
+| 4 | POIs à < 500m d'une route | | | | | SQL (spatial) |
+| 5 | Plus court chemin avec intermédiaire | | | | | Cypher (pattern) |
+
+- **Règle générale** : SQL gagne sur le spatial (index GIST) et les agrégats ; Cypher gagne sur les traversées de graphe, hiérarchies et chemins. Aucun des deux n'est "meilleur" — chaque outil a son domaine de prédilection.
+
 ---
 
 ## T5 — Couper 1 arête
+
+**Objectif** : simuler la destruction d'une arête identifiée comme choke point (T1), mesurer l'impact sur la distance entre deux POIs, et comparer le temps de calcul SQL vs Cypher.
 
 ```sql
 -- Sauvegarder
@@ -195,9 +288,22 @@ MATCH (a:POI {role: 'attaque'})-[:DISTANCE*]-(b:POI {role: 'defense'})
 RETURN EXISTS { (a)-[:DISTANCE*]-(b) } AS encore_connectes;
 ```
 
+**Explication des concepts** :
+- **Convention `cost = -1` AND `reverse_cost = -1`** : dans pgRouting, `cost = -1` signifie "arête infranchissable". On bloque les DEUX sens, même si l'arête est physiquement à sens unique (`reverse_cost = -1` initialement), pour simuler une destruction physique (pont effondré bloque la route dans les deux directions). Voir Phase 2 T4 pour la convention générale.
+- **Pourquoi sauvegarder** : la modification est destructive. Sans `ways_backup`, il faudrait recharger tout le dump gold ou refaire tourner r2gg — soit plusieurs minutes. Alternative : une transaction SQL (`BEGIN`/`ROLLBACK`), mais la sauvegarde facilite les allers-retours entre scénarios.
+- **`pgr_dijkstra` après coupure** : cf. Phase 2 T3. Si la requête retourne vide (pas de chemin), les deux POIs sont déconnectés — impact maximal.
+- **Cypher `EXISTS { ... }`** : vérification booléenne de connectivité — retourne `true`/`false`. Plus rapide que Dijkstra complet si on veut juste savoir si la coupure a isolé la cible.
+
+**Interprétation des résultats** :
+- Calculez le détour : `(nouvelle_distance - distance_initiale) / distance_initiale × 100` = pourcentage d'allongement.
+- Si `pgr_dijkstra` échoue (pas de chemin) : cette arête est un **pont** — son unique connexion reliait deux parties du réseau. C'est le cas le plus critique.
+- Si l'augmentation est < 5 % : le réseau est redondant à cet endroit — d'autres routes absorbent le trafic.
+
 ---
 
 ## T6 — Couper 3 arêtes
+
+**Objectif** : mesurer l'effet cumulatif de coupures multiples. Une arête seule peut sembler anodine, mais la troisième peut fragmenter le réseau — c'est ce seuil qu'il faut détecter.
 
 ```sql
 UPDATE ways SET cost = -1, reverse_cost = -1
@@ -220,9 +326,29 @@ FROM pgr_connectedComponents(
 );
 ```
 
+**Explication des concepts** :
+- **`pgr_connectedComponents`** : fonction pgRouting qui identifie les **composantes connexes** d'un graphe non orienté. Chaque sommet reçoit un `component` : deux sommets avec le même ID sont connectés (il existe un chemin entre eux). Une seule composante = graphe entièrement connecté. Deux ou plus = fragmentation.
+- **Effet de seuil / non-linéarité** : la première coupure peut n'avoir aucun effet visible (une autre route fait la même jonction). La deuxième réduit les alternatives. La troisième peut fragmenter le réseau si elle coupe le dernier lien entre deux sous-graphes. C'est la différence entre dégradation **linéaire** (distance augmente régulièrement) et **exponentielle** (le réseau se disloque soudainement).
+- **Documentation par étape** : exécutez les requêtes APRÈS chaque coupure, pas seulement à la fin. Cela donne une courbe de dégradation.
+
+**Interprétation des résultats** :
+- Tableau à remplir :
+
+| Arête coupée | Distance A→B | POIs isolés | Composantes connexes |
+|-------------|-------------|-------------|---------------------|
+| Aucune (réf.) | | | 1 (ou N si déjà fragmenté) |
+| Edge 1 seul | | | |
+| Edge 1 + 2 | | | |
+| Edge 1 + 2 + 3 | | | |
+
+- **Question : la dégradation est-elle linéaire ou exponentielle ?** Réponse : **ça dépend du choix des arêtes**. Si les 3 sont sur des chemins redondants (même pont), la dégradation est exponentielle : les deux premières n'ont presque pas d'effet, la troisième fragmente tout. Si les arêtes sont sur des branches disjointes, la dégradation est additive (linéaire). L'exercice consiste à déterminer dans quel cas on se trouve.
+- Si `composantes` passe de 1 à 2 : vous avez trouvé un **pont stratégique** — une arête dont la seule coupure divise le réseau.
+
 ---
 
 ## T7 — Stratégie défensive
+
+**Objectif** : en tant que rôle Défense, choisir 5 arêtes à protéger pour minimiser l'impact de l'attaque adverse. Jeu à deux agents : l'attaquant choisit ses cibles, le défenseur ses protections, les conflits sont résolus en faveur du défenseur.
 
 ```sql
 -- Restaurer tout
@@ -239,9 +365,23 @@ UPDATE ways SET cost = -1, reverse_cost = -1
 WHERE id IN (<attaquées>) AND id NOT IN (<protégées>);
 ```
 
+**Explication des concepts** :
+- **Jeu à somme nulle** : l'attaquant maximise les dégâts, le défenseur les minimise. Chaque arête est dans un état : intacte, protégée, ou coupée. La protection prime sur l'attaque.
+- **Deux stratégies défensives** :
+  1. **Protéger les hubs** (T10) : les nœuds à haut degré. Si un hub tombe, beaucoup de connexions sont perdues.
+  2. **Protéger les accès uniques** : les arêtes qui, si coupées, isolent une partie du réseau (ponts, cols). Identifiables via la betweenness (T1) ou les composantes connexes (T9).
+- **Contrainte** : 5 arêtes seulement. Le défenseur doit prioriser — il ne peut pas tout protéger.
+
+**Interprétation des résultats** :
+- Mesurez le nombre de POIs Défense encore connectés après l'attaque, sachant que les arêtes protégées ont tenu.
+- Comparez avec le scénario "sans défense" (T8) : combien de POIs supplémentaires sont sauvés ?
+- **Réflexion** : si l'attaquant frappe des arêtes très différentes des vôtres, la protection était mal ciblée. Si vous vous êtes concentrés sur les mêmes arêtes, votre stratégie était bonne.
+
 ---
 
 ## T8 — Stratégie offensive
+
+**Objectif** : en tant que rôle Attaque, trouver les 5 arêtes dont la coupure maximise la perturbation du réseau. Approche par force brute : tester chaque arête candidate, mesurer l'impact, garder les meilleures.
 
 ```sql
 -- Pour chaque arête "importante" du chemin principal :
@@ -274,9 +414,34 @@ for edge_id in chemin_principal:
     cur.execute("UPDATE ways SET cost=ways_backup.cost FROM ways_backup WHERE ways.id=%s", (edge_id,))
 ```
 
+**Explication des concepts** :
+- **Approche force brute** : on teste chaque arête candidate une par une : couper → mesurer → restaurer → suivante. L'impact est mesuré par `avg(agg_cost)` — la distance moyenne entre toutes les paires de POIs.
+- **`pgr_dijkstraCostMatrix`** (cf. Phase 2 T10) : calcule la matrice des distances entre tous les POIs en un seul appel, bien plus efficace que N appels individuels à `pgr_dijkstra`. Utilisez-la pour la référence avant coupure :
+  ```sql
+  SELECT avg(agg_cost) FROM pgr_dijkstraCostMatrix(
+      'SELECT id, source, target, cost, reverse_cost FROM ways',
+      (SELECT array_agg(v.id) FROM mission_pois p, LATERAL (
+          SELECT id FROM ways_vertices_pgr ORDER BY geom <-> p.geom LIMIT 1
+      ) v),
+      directed := false
+  );
+  ```
+- **Métrique d'impact** : `avg_distance_after - avg_distance_before` = augmentation moyenne de la distance. On peut aussi compter les paires devenues inatteignables (résultat NULL). Les deux sont complémentaires.
+- **Pourquoi top-5 par betweenness (T1) est une bonne heuristique** : les nœuds à forte betweenness se trouvent sur un grand nombre de plus courts chemins. Les couper a un impact direct sur les distances moyennes — plus efficace que de tester toutes les arêtes (force brute complète = $O(E \times N^2 \log V)$, trop coûteux).
+
+**Interprétation des résultats** :
+- Les 5 arêtes retenues sont vos **meilleures cibles**. Documentez :
+  - Nombre de POIs devenus inatteignables
+  - Augmentation moyenne de distance entre POIs
+  - Nouvelles composantes connexes créées
+- Comparez avec un autre groupe : qui a causé le plus de dégâts ?
+- **Réflexion** : si vos 5 arêtes sont toutes sur le même axe (même pont), une seule protection adverse (T7) peut toutes les neutraliser. Diversifiez les cibles.
+
 ---
 
 ## T9 — Composantes connexes
+
+**Objectif** : comparer les composantes connexes AVANT (T0) et APRÈS (T8) les coupures. Mesurer le delta — combien de nouvelles fragmentations l'attaque a créées.
 
 ```sql
 SELECT component, count(*) AS nb_sommets
@@ -294,9 +459,23 @@ RETURN EXISTS { (a)-[:DISTANCE*]-(b) } AS connectes,
        count(*) AS paires_testees;
 ```
 
+**Explication des concepts** :
+- **`pgr_connectedComponents`** : cf. T6. Identifie les îlots de connectivité. Une seule composante = le graphe est un bloc unique. Plusieurs = le réseau est fragmenté.
+- **Requête Cypher de vérification** : `MATCH (a:POI), (b:POI) WHERE id(a) < id(b)` génère toutes les paires de POIs sans doublon. `EXISTS { (a)-[:DISTANCE*]-(b) }` teste la connexité entre chaque paire. Le `count(*)` avec `connectes` = true/false donne le nombre de paires encore connectées vs déconnectées.
+- **Pourquoi le delta est important** : le nombre absolu de composantes n'a pas de sens sans référence. Si le graphe avait déjà 3 composantes avant (île, péninsule), en avoir 4 après n'est pas une catastrophe. Passer de 1 à 2 est un événement majeur.
+
+**Interprétation des résultats** :
+- **Questions à analyser** :
+  1. Delta T0 → T8 : combien de nouvelles composantes sont apparues ?
+  2. Y a-t-il une coupure qui a créé une **nouvelle** composante (= pont stratégique) ? Ou des coupes "à vide" sans effet ?
+  3. Combien de nouveaux POIs sont devenus isolés ? Quel est leur rôle dominant (attaque/défense/ravitaillement/énergie) ?
+- Si une seule coupure crée une composante : cette arête est un **pont critique**. Si plusieurs coupures sont nécessaires : le réseau avait de la redondance.
+
 ---
 
 ## T10 — Centralité de degré
+
+**Objectif** : calculer le degré (nombre de voisins directs) de chaque POI pour identifier les **hubs** — les nœuds les mieux connectés du réseau. Contrairement à la betweenness (T1) qui mesure le *flot*, le degré mesure la *connectivité locale*.
 
 ```sql
 -- Degré de chaque POI
@@ -315,4 +494,23 @@ WITH p, count(n) AS degre, avg(count(n)) OVER () AS degre_moyen
 WHERE degre > 2 * degre_moyen
 RETURN p.nom, p.role, degre, degre_moyen
 ORDER BY degre DESC;
+```
+
+**Explication des concepts** :
+- **Degré** : nombre de relations `DISTANCE` qu'un nœud possède. Mesure **locale** : elle ne regarde que le voisinage immédiat. Un nœud avec degré 10 a 10 voisins directs.
+- **Betweenness vs degré** : deux mesures complémentaires.
+  - Betweenness (T1) = mesure **globale** : fraction des plus courts chemins passant par ce nœud.
+  - Degré = mesure **locale** : nombre de voisins directs.
+  - **Pourquoi hub ≠ choke point** : un nœud central dans un quartier très connecté a un degré élevé mais une betweenness faible si tous les chemins inter-quartiers passent ailleurs. Inversement, un pont unique a degré 2 (deux voisins) mais une betweenness maximale. Les deux mesures sont donc orthogonales.
+- **Seuil 2× la moyenne** : heuristique de détection d'outliers. Si le degré moyen est 3, les nœuds avec degré > 6 sont statistiquement exceptionnels. Ajustez le seuil (1.5×, 3×) selon la dispersion.
+- **`avg(count(n)) OVER ()`** : fonction fenêtre qui calcule la moyenne du degré sur TOUS les POIs. `OVER ()` vide = fenêtre globale. Cela permet de comparer chaque degré à la moyenne sans sous-requête.
+
+**Interprétation des résultats** :
+- **1ʳᵉ requête** : top 10 des hubs. Si le #1 domine largement, c'est un hub central (grand carrefour).
+- **2ᵉ requête** : quel rôle a le plus de connexions ? Si Attaque a beaucoup plus de voisins que Défense, le réseau est déséquilibré.
+- **3ᵉ requête** : hubs "anormaux" (degré > 2× moyenne). Ce sont les nœuds à protéger en priorité (T7).
+- **Correspondance avec T1** : comparez top 10 degré vs top 10 betweenness. Sont-ils les mêmes ?
+  - **Réponse** : non, pas forcément (cf. exemple du pont à degré 2 mais betweenness maximale). C'est pourquoi les deux mesures sont nécessaires pour une analyse complète.
+  - Si les listes se recouvrent beaucoup : votre réseau a des nœuds qui sont à la fois hubs locaux ET passages obligés globaux — les couper serait doublement catastrophique.
+  - Si elles sont disjointes : vous avez deux types de vulnérabilité distincts.
 ```
