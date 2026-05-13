@@ -31,18 +31,9 @@
 - **r2gg absent** : Gold Dumps doivent être pré-générés par l'instructeur
 - **importance colonne** : VARCHAR dans BDTOPO, caster en INTEGER pour les filtres numériques
 
-## 4. Centrales nucléaires (custom POIs)
+## 4. Centrales électriques
 
-Injectées automatiquement par `00_setup.py` depuis les coords approximatives :
-
-| Centrale | Coords | EPCI concerné |
-|----------|--------|---------------|
-| Gravelines | (2.14, 51.0) | CU de Dunkerque |
-| Flamanville | (-1.85, 49.55) | CA du Cotentin |
-| Cattenom | (6.25, 49.42) | CA du Pays Basque (proche) |
-| Civaux | (0.65, 46.45) | Bordeaux Métropole (proche) |
-
-Table : `mission_custom_pois` (id, nom, type, puissance_mw, geometrie)
+Présentes dans BDTOPO via `zone_d_activite_ou_d_interet` WHERE `nature = 'Centrale électrique'`. Chargées automatiquement avec les autres tables BDTOPO par `00_setup.py`.
 
 ## 5. Solutions des exercices
 

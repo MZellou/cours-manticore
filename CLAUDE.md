@@ -40,13 +40,13 @@ make publish       # Build + push to gh-pages (via GitHub Actions)
 - Neo4j: `7474` (browser) + `7687` (bolt) + APOC
 - **Data:** Public Cloudflare R2 bucket (`pub-XXXX.r2.dev`) + local `data/epci.parquet` for EPCI geometries.
 - **Gold Dumps:** Pre-computed road topology (`data/gold_dumps/`).
-- **Custom POIs:** Nuclear plants injected at setup (`mission_custom_pois` table).
+- **Nuclear plants:** In BDTOPO as `zone_d_activite_ou_d_interet` WHERE `nature = 'Centrale électrique'`.
 
 ## Architecture
 
 ```
 scripts/
-  00_setup.py              # Load EPCI + Ontology + inject nuclear plants
+  00_setup.py              # Load EPCI + Ontology + BDTOPO tables
   01_explore_postgis.py    # Phase 1: Role-based POI queries + ST_ClusterDBSCAN
   02_migrate_to_neo4j.py   # Phase 2: Migrate ontology + POIs → Neo4j (APOC)
   03_routing_pgrouting.py  # Phase 2+3: Dijkstra + constrained routing + choke points
@@ -84,7 +84,7 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 - **DuckDB > shapely** for bulk EPCI filtering (~25s for 13 EPCIs vs row-by-row); BBOX pre-extract is enough — exact filtering happens in PostGIS at query time.
 - **Canonical EPCI key:** `code_siren` (9-char string). Never `nom_officiel` (accents/spaces are fragile).
 - **Performance:** Gold Dumps for road topology, avoid live r2gg in TD.
-- **Nuclear plants:** Not in BDTOPO — injected as custom POIs at setup.
+- **Nuclear plants:** In BDTOPO as `zone_d_activite_ou_d_interet` WHERE `nature = 'Centrale électrique'`.
 - **Role queries:** Each role has specific table+filter combos (see `reference/glossaire.qmd`).
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).
 - **Site:** Quarto website deployed to GitHub Pages via `.github/workflows/quarto.yml`. Source files at root (`*.qmd`), built to `_site/`. Theory pages under `theorie/`, mission pages under `mission/`, roles under `roles/`, corrigés under `corriges/`. Slides in `slides/` use `{{< include >}}` to reuse theory content.

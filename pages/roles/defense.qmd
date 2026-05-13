@@ -19,15 +19,30 @@ Localiser les infrastructures vitales dont la perte affecterait la population.
 | `equipement_de_transport` | `nature ILIKE 'Gare%'` | Évacuation |
 | `construction_surfacique` | `nature = 'Pont'` | Infrastructures clés |
 | `construction_ponctuelle` | `nature = 'Phare' OR (nature = 'Autre construction élevée' AND nature_detaillee = 'Tour de guet')` | Observation |
+| `zone_d_activite_ou_d_interet` | `nature IN ('Caserne de pompiers', 'Police', 'Préfecture')` | Secours et décision |
+| `zone_d_activite_ou_d_interet` | `nature IN ('Station d'épuration', 'Usine de production d'eau potable')` | Eau potable |
+| `equipement_de_transport` | `nature IN ('Gare routière', 'Station de métro', 'Station de tramway', 'Gare maritime')` | Transports publics |
+| `construction_lineaire` | `nature = 'Tunnel'` | Points d'étranglement |
+| `construction_ponctuelle` | `nature = 'Antenne'` | Communications d'urgence |
 
 ## Requête de base
 
 ```sql
+-- Insertion combinée des points à protéger
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+-- Hôpitaux et établissements de santé
 SELECT 'defense', 'hopital', cleabs, categorie, nature, toponyme, ST_Force2D(geometrie)
 FROM zone_d_activite_ou_d_interet
-WHERE nature IN ('Hôpital', 'Établissement hospitalier', 'Maison de retraite');
+WHERE nature IN ('Hôpital', 'Établissement hospitalier', 'Maison de retraite')
+
+UNION ALL
+-- Casernes de pompiers et centres de décision
+SELECT 'defense', 'secours_decision', cleabs, categorie, nature, toponyme, ST_Force2D(geometrie)
+FROM zone_d_activite_ou_d_interet
+WHERE nature IN ('Caserne de pompiers', 'Police', 'Préfecture');
 ```
+
+> 💡 **Astuce** : utilisez `UNION ALL` pour agréger toutes les sources. Chaque bloc SELECT correspond à une ligne du tableau ci-dessus.
 
 ## Contrainte routage (Phase 2)
 
@@ -67,6 +82,18 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 
 *Indice : comptez les gendarmeries + casernes, divisez par `ST_Area` du polygone EPCI.*
 
+### B5 — Casernes de pompiers : maillage du territoire
+
+> Quel est le rayon de couverture moyen des casernes de pompiers ? Y a-t-il des zones non couvertes (plus de 10 min à 60 km/h) ?
+
+*Indice : `ST_DWithin` avec un buffer de 10 km (10 min × 60 km/h de rayon). Utilisez `NOT EXISTS` pour les zones non couvertes.*
+
+### B6 — Réseau d'évacuation souterrain
+
+> Quels hôpitaux sont connectés à une station de métro/tram à moins de 500 m ?
+
+*Indice : joignez `mission_pois` (source='hopital') avec `equipement_de_transport` filtré `nature IN ('Station de métro', 'Station de tramway')` via `ST_DWithin`.*
+
 → [Corrigé](../corriges/bonus.qmd#-dfense)
 
 ---
@@ -74,7 +101,7 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 ## Indice Codestral
 
 ```
-"Trouve tous les hôpitaux, casernes de gendarmerie, gares et ponts
-dans l'EPCI. Combine plusieurs tables avec UNION ALL et filtre
-par jointure spatiale avec le polygone EPCI."
+"Trouve tous les hôpitaux, casernes de gendarmerie, gares, ponts,
+tunnels, casernes de pompiers, préfectures, stations de métro/tram
+et antennes dans l'EPCI. Combine avec UNION ALL."
 ```

@@ -18,14 +18,29 @@ Localiser les infrastructures dont la destruction maximiserait l'impact sur l'EP
 | `equipement_de_transport` | `nature = 'Port' AND nature_detaillee = 'Port de commerce'` | Ports commerciaux |
 | `zone_d_activite_ou_d_interet` | `categorie = 'Administratif ou militaire' AND nature IN ('Gendarmerie', 'Caserne', 'Camp militaire non clos')` | Forces armées |
 | `equipement_de_transport` | `nature = 'Tour de contrôle aérien'` | Tours de contrôle |
+| `construction_lineaire` | `nature IN ('Pont', 'Tunnel')` | Points de fragilité du réseau |
+| `zone_d_activite_ou_d_interet` | `nature IN ('Préfecture', 'Police', 'Etablissement pénitentiaire', 'Administration centrale')` | Cibles symboliques |
+| `zone_d_activite_ou_d_interet` | `nature IN ('Station d'épuration', 'Usine de production d'eau potable')` | Infrastructures critiques |
+| `equipement_de_transport` | `nature IN ('Gare voyageurs uniquement', 'Aire de repos ou de service', 'Péage')` | Nœuds de transport |
+| `construction_ponctuelle` | `nature = 'Antenne'` | Communications |
+| `surface_hydrographique` | `nature IN ('Retenue', 'Retenue-barrage', 'Lac')` | Risque inondation |
 
 ## Requête de base
 
 ```sql
+-- Insertion combinée de toutes les cibles stratégiques
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+-- Aérodromes majeurs
 SELECT 'attaque', 'aerodrome', cleabs, categorie, nature, toponyme, ST_Force2D(geometrie)
-FROM aerodrome WHERE categorie IN ('Internationale', 'Nationale');
+FROM aerodrome WHERE categorie IN ('Internationale', 'Nationale')
+
+UNION ALL
+-- Ponts et tunnels (fragilités réseau)
+SELECT 'attaque', 'fragilite', cleabs, nature, nature_detaillee, NULL, ST_Force2D(geometrie)
+FROM construction_lineaire WHERE nature IN ('Pont', 'Tunnel');
 ```
+
+> 💡 **Astuce** : utilisez `UNION ALL` pour combiner toutes les sources en une seule insertion. Ajoutez chaque source avec son propre `SELECT` et son tag `source` pour retracer l'origine.
 
 ## Contrainte routage (Phase 2)
 
@@ -65,6 +80,24 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 
 *Indice : joignez `mission_pois` (role='attaque') avec `troncon_de_route` via `ST_DWithin` et faites `avg(vitesse_moyenne_vl)`.*
 
+### B5 — Ponts et tunnels : choke points du réseau
+
+> Combien de ponts et tunnels traversent des routes d'importance ≤ 2 (nationales) ?
+
+*Indice : joignez `construction_lineaire` avec `troncon_de_route` via `ST_Intersects`, filtrez `nature IN ('Pont', 'Tunnel')` et `CAST(importance AS INTEGER) <= 2`.*
+
+### B6 — Antennes relais : couverture communication
+
+> Y a-t-il des zones de l'EPCI sans antenne à moins de 3 km ? (zones blanches)
+
+*Indice : utilisez `ST_ClusterDBSCAN` sur les antennes, ou `NOT EXISTS` avec un buffer de 3 km.*
+
+### B7 — Risque inondation
+
+> Quelles cibles (aérodromes, casernes, préfectures) sont à moins de 500 m d'une retenue d'eau ?
+
+*Indice : joignez `mission_pois` (role='attaque') avec `surface_hydrographique` filtré `nature IN ('Retenue', 'Retenue-barrage', 'Lac')` via `ST_DWithin`.*
+
 → [Corrigé](../corriges/bonus.qmd#-attaque)
 
 ---
@@ -72,7 +105,8 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 ## Indice Codestral
 
 ```
-"Trouve tous les aérodromes internationaux et nationaux dans l'EPCI,
-ainsi que les ports de commerce et les casernes militaires.
-Utilise des UNION ALL pour combiner les sources."
+"Trouve tous les aérodromes internationaux/nationaux, ports de commerce,
+casernes, ponts, tunnels, antennes, préfectures, prisons, gares,
+stations d'épuration et retenues d'eau dans l'EPCI.
+Utilise UNION ALL pour combiner toutes les sources."
 ```

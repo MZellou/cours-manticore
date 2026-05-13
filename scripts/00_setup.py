@@ -26,7 +26,7 @@ import pyarrow.compute as pc
 import pyarrow.parquet as pq
 from psycopg2.extras import execute_values
 from shapely import prepared, wkb
-from shapely.geometry import Point, box
+from shapely.geometry import box
 
 # =============================================================================
 # CONFIG
@@ -34,26 +34,6 @@ from shapely.geometry import Point, box
 
 DEFAULT_SOURCE = "data/poi_source"
 LOCAL_DATA = "data"
-
-# Centrales nucléaires absentes de BDTOPO — injectées comme POIs custom
-# (lon, lat, nom, puissance_MW)
-NUCLEAR_PLANTS = [
-    (2.14, 51.0, "Centrale nucléaire de Gravelines", 5460),
-    (-1.85, 49.55, "Centrale nucléaire de Flamanville", 2660),
-    (6.25, 49.42, "Centrale nucléaire de Cattenom", 5200),
-    (4.82, 50.08, "Centrale nucléaire de Chooz", 3010),
-    (0.65, 46.45, "Centrale nucléaire de Civaux", 3618),
-    (4.65, 44.60, "Centrale nucléaire de Cruas-Meysse", 3600),
-    (1.22, 49.97, "Centrale nucléaire de Penly", 4400),
-    (4.75, 44.35, "Centrale nucléaire du Tricastin", 3640),
-    (0.87, 47.06, "Centrale nucléaire de Chinon", 3620),
-    (-0.78, 46.72, "Centrale nucléaire de Saint-Laurent", 1840),
-    (0.95, 48.45, "Centrale nucléaire de Nogent", 2660),
-    (3.12, 46.73, "Centrale nucléaire de Dampierre", 2160),
-    (-1.20, 47.36, "Centrale nucléaire de Belleville", 2620),
-    (4.93, 49.84, "Centrale nucléaire de Chooz-B", 3010),
-    (5.37, 43.38, "Centrale nucléaire de Golfech", 2620),
-]
 
 TARGET_TABLES = [
     "aerodrome",
@@ -75,6 +55,7 @@ TARGET_TABLES = [
     "pylone",
     "reservoir",
     "surface_hydrographique",
+    "terrain_de_sport",
     "troncon_de_route",
     "troncon_de_voie_ferree",
     "zone_d_activite_ou_d_interet",
@@ -172,6 +153,14 @@ KEEP_COLS = {
         "cleabs",
         "nature",
         "position_par_rapport_au_sol",
+        "geometrie",
+        "geometrie_bbox",
+    ],
+    "terrain_de_sport": [
+        "fid",
+        "cleabs",
+        "nature",
+        "nature_detaillee",
         "geometrie",
         "geometrie_bbox",
     ],
@@ -386,49 +375,6 @@ def load_ontology(conn):
     print("  [OK] Ontologie chargée.")
 
 
-def inject_custom_pois(conn, epci_geom_prepared):
-    """Injecte les centrales nucléaires qui tombent dans l'EPCI comme POIs custom."""
-    print("\n[CUSTOM POIS] Injection des centrales nucléaires...")
-    with conn.cursor() as cur:
-        cur.execute("DROP TABLE IF EXISTS mission_custom_pois CASCADE;")
-        cur.execute("""
-            CREATE TABLE mission_custom_pois (
-                id SERIAL PRIMARY KEY,
-                nom TEXT,
-                type TEXT,
-                puissance_mw INTEGER,
-                geometrie GEOMETRY(Point, 2154)
-            );
-        """)
-    conn.commit()
-
-    from shapely.ops import transform
-
-    # WGS84 -> Lambert-93
-    proj_wgs84 = "EPSG:4326"
-    proj_l93 = "EPSG:2154"
-    import pyproj
-
-    transformer = pyproj.Transformer.from_crs(
-        proj_wgs84, proj_l93, always_xy=True
-    ).transform
-
-    count = 0
-    with conn.cursor() as cur:
-        for lon, lat, nom, puissance in NUCLEAR_PLANTS:
-            pt = Point(lon, lat)
-            if epci_geom_prepared.intersects(pt):
-                pt_l93 = transform(transformer, pt)
-                cur.execute(
-                    "INSERT INTO mission_custom_pois (nom, type, puissance_mw, geometrie) VALUES (%s, %s, %s, ST_SetSRID(%s::geometry, 2154))",
-                    (nom, "Centrale nucléaire", puissance, pt_l93.wkb),
-                )
-                print(f"  → {nom} ({puissance} MW)")
-                count += 1
-    conn.commit()
-    print(f"  [OK] {count} centrale(s) injectée(s) dans l'EPCI.")
-
-
 def load_gold_dumps(siren):
     """Charge les Gold Dumps pgRouting pré-calculés dans PostGIS.
 
@@ -548,9 +494,6 @@ def main():
 
     # 1.5 Ontologie
     load_ontology(conn)
-
-    # 1.6 Custom POIs (centrales nucléaires)
-    inject_custom_pois(conn, prep_geom)
 
     # 2. Boucle sur les tables
     total = 0

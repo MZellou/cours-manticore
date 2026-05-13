@@ -14,41 +14,35 @@ Localiser les infrastructures critiques de production et de transport d'énergie
 
 | Table | Filtre | Type de POI |
 |-------|--------|-------------|
-| `poste_de_transformation` | `CAST(importance AS INTEGER) <= 3` | Postes critiques |
+| `poste_de_transformation` | `CAST(importance AS INTEGER) <= 3` | Postes haute tension |
 | `ligne_electrique` | `voltage IN ('400 kV', '225 kV')` | Lignes THT |
-| `construction_ponctuelle` | `nature IN ('Éolienne', 'Transformateur', 'Cheminée')` | Sources d'énergie |
-| `construction_surfacique` | `nature = 'Barrage'` | Hydroélectricité |
-| `canalisation` | `nature = 'Hydrocarbures'` | Oléoducs/gazoducs |
-| `mission_custom_pois` | *(toutes)* | **Centrales nucléaires** (injectées au setup, **selon EPCI**) |
-
-::: {.callout-warning title="⚛️ Centrales nucléaires : présence selon l'EPCI"}
-La table `mission_custom_pois` n'est peuplée que si votre EPCI est **proche d'un site nucléaire** :
-
-| EPCI | Centrale |
-|------|----------|
-| CU de Dunkerque | Gravelines |
-| CA du Cotentin | Flamanville |
-| CC de Cattenom et Environs | Cattenom |
-| Ardenne Métropole | Chooz |
-| CU du Grand Poitiers | Civaux |
-
-Pour les **autres EPCIs** (Brest, Le Havre, Grenoble, Strasbourg, Lille, Pays Basque, Rouen, Bordeaux), `mission_custom_pois` est **vide**. Ce n'est pas un bug — la requête doit s'exécuter sans erreur et retourner `0 lignes`. Adaptez la communication de votre rapport en conséquence (« Pas de risque nucléaire direct dans l'EPCI »).
-:::
+| `construction_ponctuelle` | `nature IN ('Éolienne', 'Transformateur', 'Cheminée')` | Sources |
+| `construction_surfacique` | `nature = 'Barrage'` | Barrages |
+| `canalisation` | `nature = 'Hydrocarbures'` | Oléoducs |
+| `reservoir` | `nature = 'Réservoir industriel'` | Stockage |
+| `zone_d_activite_ou_d_interet` | `nature = 'Centrale électrique'` | Centrales |
+| `pylone` | (tous) | Pylônes électriques |
+| `construction_ponctuelle` | `nature IN ('Puits d''hydrocarbures', 'Torchère')` | Sources hydrocarbures |
+| `canalisation` | `nature = 'Autres matières premières'` | Pipelines divers |
+| `surface_hydrographique` | `nature = 'Retenue-barrage'` | Retenues hydroélectriques |
+| `construction_surfacique` | `nature = 'Ecluse'` | Écluses |
 
 ## Requête de base
 
 ```sql
--- Postes de transformation critiques (importance 1-3 = sites majeurs)
--- Note : poste_de_transformation n'a PAS de colonne `nature` — on utilise `importance` comme catégorie
+-- Insertion combinée du réseau énergétique
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+-- Postes haute tension
 SELECT 'energie', 'poste_ht', cleabs, importance, 'Poste de transformation', NULL, ST_Force2D(geometrie)
-FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3;
+FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3
 
--- Centrales nucléaires (injectées par le setup, vide hors EPCIs nucléaires)
-INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
-SELECT 'energie', 'centrale', id::TEXT, type, puissance_mw::TEXT, nom, geometrie
-FROM mission_custom_pois;
+UNION ALL
+-- Pylônes (maille fine du réseau)
+SELECT 'energie', 'pylone', cleabs, NULL, NULL, NULL, ST_Force2D(geometrie)
+FROM pylone;
 ```
+
+> 💡 **Astuce** : combinez sources ponctuelles (postes, pylônes, centrales) avec linéaires (lignes, canalisations) via `UNION ALL`. Les pylônes complètent la topologie du réseau là où les lignes ne sont pas visibles.
 
 ## Contrainte routage (Phase 2)
 
@@ -82,13 +76,31 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 
 > Dans un rayon de 20 km autour de chaque centrale, combien de POIs de chaque rôle ?
 
-*Indice : joignez `mission_custom_pois` et `mission_pois` avec `ST_DWithin`, rayon 20000m.*
+*Indice : joignez `zone_d_activite_ou_d_interet` (filtré `nature = 'Centrale électrique'`) et `mission_pois` avec `ST_DWithin`, rayon 20000m.*
 
 ### B4 — Mix énergétique de l'EPCI
 
 > Comptez les éoliennes, barrages, transformateurs et centrales. Quelle est la répartition ?
 
-*Indice : 4 `SELECT ... UNION ALL` — un par source (`construction_ponctuelle`, `construction_surfacique`, `poste_de_transformation`, `mission_custom_pois`).*
+*Indice : 4 `SELECT ... UNION ALL` — un par source (`construction_ponctuelle`, `construction_surfacique`, `poste_de_transformation`, `zone_d_activite_ou_d_interet`).*
+
+### B5 — Pylônes et postes : complétude du réseau
+
+> Quel est le ratio pylônes / postes haute tension dans votre EPCI ? Observez-vous des disparités territoriales ?
+
+*Indice : comptez `pylone` vs `poste_ht` dans `mission_pois`. Regroupez par secteur (grille 5 km × 5 km avec `ST_SnapToGrid`).*
+
+### B6 — Risque cascade
+
+> Quels postes HT sont dans un rayon de 1 km d'un cours d'eau permanent (risque inondation) ?
+
+*Indice : joignez `mission_pois` (source='poste_ht') avec `cours_d_eau` (caractere_permanent) via `ST_DWithin`.*
+
+### B7 — Interdépendances : barrages et écluses
+
+> Quels barrages ont une écluse à moins de 1 km ? Ces ouvrages mixtes sont des points de vulnérabilité critiques.
+
+*Indice : jointure spatiale entre `construction_surfacique` (nature='Barrage') et `construction_surfacique` (nature='Ecluse').*
 
 → [Corrigé](../corriges/bonus.qmd#-nergie)
 
@@ -97,7 +109,8 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 ## Indice Codestral
 
 ```
-"Trouve les postes de transformation critiques (importance <= 3),
-les lignes THT (400kV, 225kV), les éoliennes, barrages et oléoducs.
-Inclus aussi les centrales nucléaires de la table mission_custom_pois."
+"Trouve les postes haute tension (importance <= 3), lignes THT
+(400/225kV), éoliennes, barrages, oléoducs, réservoirs, centrales
+électriques, pylônes, puits d'hydrocarbures, retenues-barrage et
+écluses dans l'EPCI."
 ```

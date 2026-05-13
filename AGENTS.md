@@ -40,13 +40,13 @@ make publish       # Build + push to gh-pages (via GitHub Actions)
 - Neo4j: `7474` (browser) + `7687` (bolt) + APOC
 - **Data:** Public Cloudflare R2 bucket (`pub-XXXX.r2.dev`) + local `data/epci.parquet` for EPCI geometries.
 - **Gold Dumps:** Pre-computed road topology (`data/gold_dumps/`).
-- **Custom POIs:** Nuclear plants injected at setup (`mission_custom_pois` table).
+- **Nuclear plants:** In BDTOPO as `zone_d_activite_ou_d_interet` WHERE `nature = 'Centrale électrique'`.
 
 ## Architecture
 
 ```
 scripts/
-  00_setup.py              # Load EPCI + Ontology + inject nuclear plants
+  00_setup.py              # Load EPCI + Ontology + BDTOPO tables
   01_explore_postgis.py    # Phase 1: Role-based POI queries + ST_ClusterDBSCAN
   02_migrate_to_neo4j.py   # Phase 2: Migrate ontology + POIs → Neo4j (APOC)
   03_routing_pgrouting.py  # Phase 2+3: Dijkstra + constrained routing + choke points

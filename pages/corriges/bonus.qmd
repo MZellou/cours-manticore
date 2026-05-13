@@ -258,19 +258,14 @@ GROUP BY l.voltage;
 ### B3 — Centrales nucléaires : rayon d'influence
 
 ```sql
-SELECT 'Centrale ' || c.nom AS centrale, p.role, count(*) AS pois
-FROM mission_custom_pois c
+SELECT 'Centrale ' || c.toponyme AS centrale, p.role, count(*) AS pois
+FROM zone_d_activite_ou_d_interet c
 JOIN mission_pois p
   ON ST_DWithin(c.geometrie, p.geom, 20000)
-GROUP BY c.nom, p.role
-ORDER BY c.nom, pois DESC;
+WHERE c.nature = 'Centrale électrique'
+GROUP BY c.toponyme, p.role
+ORDER BY c.toponyme, pois DESC;
 ```
-
-::: {.callout-note title="⚛️ Résultat = 0 lignes ? C'est normal"}
-Cette requête ne retourne **des résultats que si votre EPCI est nucléaire** (Cotentin, Dunkerque, Cattenom, Chooz, Grand Poitiers). Pour les 8 autres EPCIs, `mission_custom_pois` est vide → le `JOIN` retourne 0 lignes. Voir [Rôle Énergie](../roles/energie.qmd) pour la liste complète.
-
-Si votre rapport doit traiter cette question, formulez : « L'EPCI ne contient pas de site nucléaire dans la base — ce vecteur de risque est absent ». C'est une **information**, pas un échec.
-:::
 
 ### B4 — Mix énergétique
 
@@ -281,5 +276,5 @@ SELECT 'Barrage', count(*) FROM construction_surfacique WHERE nature = 'Barrage'
 UNION ALL
 SELECT 'Poste HT critique', count(*) FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3
 UNION ALL
-SELECT 'Centrale nucléaire', count(*) FROM mission_custom_pois;
+SELECT 'Centrale électrique', count(*) FROM zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique';
 ```

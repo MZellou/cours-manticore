@@ -56,24 +56,9 @@ Chaque groupe de 4 étudiants : 1 Attaque, 1 Défense, 1 Ravitaillement, 1 Éner
 | **`importance` VARCHAR** | Toujours `CAST(importance AS INTEGER)` pour les filtres |
 | **Cypher lent** | Créer les index avant migration : `CREATE INDEX FOR (p:POI) ON (p.role)` |
 | **EPCI trop grand** | Grand Paris = timeout pgRouting. Sweet spot : 30k-140k routes |
-| **Centrales nucléaires** | Injectées par `00_setup.py` → table `mission_custom_pois` |
 | **r2gg non installé** | Utiliser les Gold Dumps pré-générés |
 
-## 5. Centrales nucléaires (custom POIs)
-
-Injectées automatiquement par `00_setup.py` pour les EPCIs proches :
-
-| Centrale | Coords approx. | EPCI concerné |
-|----------|----------------|---------------|
-| Gravelines | (2.14, 51.0) | CU de Dunkerque |
-| Flamanville | (-1.85, 49.55) | CA du Cotentin |
-| Cattenom | (6.25, 49.42) | CC de Cattenom et Environs |
-| Chooz | (4.82, 50.08) | Ardenne Métropole |
-| Civaux | (0.65, 46.45) | CU du Grand Poitiers |
-
-Table : `mission_custom_pois` (id, nom, type, puissance_mw, geometrie).
-
-## 6. Corrigés
+## 5. Corrigés
 
 Les scripts `01_explore_postgis.py` à `04_benchmark_comparison.py` contiennent les **corrigés complets**.
 
@@ -364,7 +349,6 @@ docker compose exec postgis psql -U postgres -d bdtopo_manticore -c "
   SELECT pgr_version();
   SELECT extversion FROM pg_extension WHERE extname='vector';
   SELECT 'ontology' AS t, count(*) FROM bdtopo_ontology
-    UNION ALL SELECT 'custom_pois', count(*) FROM mission_custom_pois
     UNION ALL SELECT 'troncon_route', count(*) FROM troncon_de_route
     UNION ALL SELECT 'ways', count(*) FROM ways
     UNION ALL SELECT 'vertices', count(*) FROM ways_vertices_pgr;
@@ -452,14 +436,14 @@ INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
 SELECT 'ravitaillement', 'port', cleabs, nature, nature_detaillee, toponyme, ST_Force2D(geometrie)
 FROM equipement_de_transport WHERE nature = 'Port';
 
--- Énergie (poste HT + custom centrales)
+-- Énergie (poste HT + centrales électriques BDTOPO)
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
 SELECT 'energie', 'poste_ht', cleabs, nature, CAST(importance AS INTEGER)::TEXT, NULL, ST_Force2D(geometrie)
 FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3;
 
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
-SELECT 'energie', 'centrale', id::TEXT, type, puissance_mw::TEXT, nom, geometrie
-FROM mission_custom_pois;
+SELECT 'energie', 'centrale', cleabs, 'Centrale électrique', nature, toponyme, ST_Force2D(geometrie)
+FROM zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique';
 
 CREATE INDEX ON mission_pois USING GIST (geom);
 ```
@@ -654,13 +638,14 @@ SELECT count(*) FROM equipement_de_transport p
 JOIN zone_d_activite_ou_d_interet z ON ST_DWithin(p.geometrie, z.geometrie, 3000)
 WHERE p.nature = 'Port' AND z.nature IN ('Zone industrielle', 'Zone d''activités');
 
--- Énergie B3 : rayon d'influence des centrales nucléaires (Cotentin uniquement)
-SELECT c.nom, p.role, count(*) FROM mission_custom_pois c
+-- Énergie B3 : rayon d'influence des centrales électriques
+SELECT c.toponyme, p.role, count(*) FROM zone_d_activite_ou_d_interet c
 JOIN mission_pois p ON ST_DWithin(c.geometrie, p.geom, 20000)
-GROUP BY c.nom, p.role;
+WHERE c.nature = 'Centrale électrique'
+GROUP BY c.toponyme, p.role;
 ```
 
-> **Énergie B3 ne retourne 0 que pour les EPCIs sans centrale** (Brest, Grenoble). C'est le résultat attendu — la requête doit néanmoins s'exécuter sans erreur.
+> **Énergie B3 ne retourne 0 que pour les EPCIs sans centrale électrique dans la BBOX** (Brest, Grenoble). C'est le résultat attendu — la requête doit néanmoins s'exécuter sans erreur.
 
 ---
 
@@ -671,25 +656,22 @@ Pièges identifiés en validant les 3 EPCIs avant la session — utile pour anti
 **A. Convention `cost = -1` r2gg (~28 % des arêtes Brest non-carrossables voiture).**
 Les Gold Dumps héritent de la convention pgRouting : `cost = -1` signifie "arête présente mais interdite à la voiture" (chemins, escaliers, pistes cyclables). `pgr_dijkstra` filtre nativement ces arêtes, donc un POI snapé sur un sommet entouré uniquement de `cost=-1` est **inatteignable**. Cas observé : aérodrome de Brest = vertex isolé. → `03_routing_pgrouting.py` filtre les POIs sur sommets ayant ≥ 1 arête `cost > 0` (CTE `carrossables`) avant d'appeler Dijkstra.
 
-**B. SRID des `mission_custom_pois` (Flamanville).**
-Le script `00_setup.py` projette les centrales nucléaires en EPSG:2154 avant insertion, et la colonne `mission_custom_pois.geometrie` est désormais déclarée `GEOMETRY(Point, 2154)` cohérente. Si vous voyez `transform: latitude or longitude exceeded limits` lors du chargement Phase 1 Énergie sur Cotentin, c'est qu'une ancienne version (colonne tagguée 4326 sur des coordonnées L93) traîne encore : `DROP TABLE mission_custom_pois CASCADE; python scripts/00_setup.py --epci "<EPCI>"` corrige.
-
-**C. Cypher `*1..3` exclut la racine, SQL `WITH RECURSIVE` l'inclut.**
+**B. Cypher `*1..3` exclut la racine, SQL `WITH RECURSIVE` l'inclut.**
 La même requête "tous les sous-types de Tronçon de route" retourne **11** en SQL et **10** en Cypher — pas un bug. SQL ajoute la racine via le `UNION ALL` initial ; le pattern Cypher `(n)-[:EST_SOUS_TYPE_DE*1..3]->(root)` exige au moins 1 hop, donc la racine elle-même n'est pas un chemin. Pour matcher SQL : `*0..3`. À mentionner pendant le benchmark Phase 3.
 
-**D. `MERGE :POI {cleabs}` collapse les doublons inter-rôles.**
+**C. `MERGE :POI {cleabs}` collapse les doublons inter-rôles.**
 Sur Cotentin, 314 POIs PostGIS → 255 nœuds Neo4j (59 collisions). Les ponts apparaissent à la fois en `defense` et `attaque`, les ports en `attaque` et `ravitaillement`. `MERGE (poi:POI {cleabs: …}) SET poi.role = …` écrase la dernière `role` rencontrée. Trois fixes possibles (cf. callout Phase 2) : clé composite `{cleabs, role}`, multi-label, ou modélisation `(:POI)-[:JOUE_ROLE]->(:Role)`.
 
-**E. `ways_vertices_pgr` doit être une TABLE matérialisée.**
+**D. `ways_vertices_pgr` doit être une TABLE matérialisée.**
 La tentation pédagogique (créer une vue `ways_vertices_pgr` qui projette `ST_Transform(the_geom, 2154)` à la volée) tue l'index GIST : KNN `<->` devient un Seq Scan O(n) sur 28k+ sommets, et la CTE `carrossables` (Phase 2) hange plusieurs minutes. `00_setup.py` matérialise la table + crée l'index GIST après chaque restauration de Gold Dump.
 
-**F. Pass criteria observés.**
+**E. Pass criteria observés.**
 
-| EPCI | Routes | POIs (4 rôles) | Custom | Ways | Particularité Phase 3 |
-|------|--------|---------------:|-------:|-----:|----------------------|
-| Brest Métropole | 31 k | 296 | 0 | 37 974 | aéroport vertex isolé (cost=-1 partout) |
-| CA du Cotentin | 56 941 | 314 | 1 (Flamanville) | 65 774 | Bonus B3 → 4 rôles × 20 km |
-| Grenoble-Alpes-Métropole | 48 436 | 848 | 0 | 69 692 | Énergie sans chemin contraint (vallées); choke point alpin Δ=+12.8 % |
+| EPCI | Routes | POIs (4 rôles) | Ways | Particularité Phase 3 |
+|------|--------|---------------:|-----:|----------------------|
+| Brest Métropole | 31 k | 296 | 37 974 | aéroport vertex isolé (cost=-1 partout) |
+| CA du Cotentin | 56 941 | 314 | 65 774 | Bonus B3 → 4 rôles × 20 km (Flamanville) |
+| Grenoble-Alpes-Métropole | 48 436 | 848 | 69 692 | Énergie sans chemin contraint (vallées); choke point alpin Δ=+12.8 % |
 
 ---
 
@@ -702,10 +684,10 @@ Exécuter §11.0 → §11.5 pour chacun :
 python scripts/00_setup.py --epci "Brest Métropole"
 # → exécuter §11.0 à §11.5
 
-# 2. CA du Cotentin — péninsule + Flamanville (teste centrales nucléaires)
+# 2. CA du Cotentin — péninsule + Flamanville (teste centrales électriques)
 python scripts/00_setup.py --epci "CA du Cotentin"
 # → exécuter §11.0 à §11.5
-# → vérifier en plus : SELECT count(*) FROM mission_custom_pois; -- doit être ≥ 1
+# → vérifier en plus : SELECT count(*) FROM zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique'; -- doit être ≥ 1
 
 # 3. Grenoble-Alpes-Métropole — cuvette montagneuse (teste réseau dense)
 python scripts/00_setup.py --epci "Grenoble-Alpes-Métropole"
@@ -737,4 +719,4 @@ python scripts/00_setup.py --epci "Grenoble-Alpes-Métropole"
 | 17 | Cut / restore arête | Distance change puis revient à la ref |
 | 18 | Cartes PNG | 4 fichiers `data/carte_situation*.png` |
 | 19 | Bonus 4 rôles | Tous s'exécutent (Énergie B3 : 0 lignes pour Brest/Grenoble, 4 rôles × N pour Cotentin) |
-| 20 | Cotentin uniquement | `mission_custom_pois` ≥ 1 (Flamanville) |
+| 20 | Cotentin uniquement | `zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique'` ≥ 1 (Flamanville) |

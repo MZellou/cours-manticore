@@ -35,8 +35,7 @@ python scripts/00_setup.py --epci 242900314
 **Ce qu'il fait** :
 1. Charge le polygone EPCI depuis `data/epci.parquet`
 2. Crée la table `bdtopo_ontology` (hiérarchie 3 niveaux)
-3. Injecte les centrales nucléaires proches (`mission_custom_pois`)
-4. Filtre spatialement et charge les 22 tables BDTOPO (BBOX pushdown + shapely intersection)
+3. Filtre spatialement et charge les 22 tables BDTOPO (BBOX pushdown + shapely intersection)
 
 ---
 

@@ -129,16 +129,9 @@ Résultat : tables `ways` (arêtes) et `ways_vertices_pgr` (sommets).
 
 ---
 
-## Centrales nucléaires
+## Centrales électriques
 
-Les centrales ne sont **pas** dans la BDTOPO. Elles sont injectées comme POIs custom lors du setup :
-
-```bash
-python scripts/00_setup.py --epci "CU de Dunkerque"
-# → injecte Gravelines automatiquement
-```
-
-Table : `mission_custom_pois` (id, nom, type, puissance_mw, geometrie).
+Les centrales électriques (dont nucléaires) sont présentes dans BDTOPO via la table `zone_d_activite_ou_d_interet` avec `nature = 'Centrale électrique'`. Elles sont chargées automatiquement lors du setup avec les autres tables BDTOPO.
 
 ---
 

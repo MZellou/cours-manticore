@@ -23,7 +23,7 @@ ROLES = ["attaque", "defense", "ravitaillement", "energie"]
 
 ROLE_QUERIES = {
     "attaque": """
-        -- Cibles stratégiques : aérodromes, ports commerce, casernes, tours de contrôle
+        -- Cibles stratégiques : aérodromes, ports, militaires, infrastructures critiques
         SELECT 'aerodrome' AS source, cleabs, categorie, nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM aerodrome
@@ -31,7 +31,7 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        SELECT 'equipement', cleabs, nature, nature_detaillee, toponyme,
+        SELECT 'port_commerce', cleabs, nature, nature_detaillee, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM equipement_de_transport
         WHERE nature = 'Port' AND nature_detaillee = 'Port de commerce'
@@ -50,9 +50,59 @@ ROLE_QUERIES = {
                ST_Force2D(geometrie) AS geom
         FROM equipement_de_transport
         WHERE nature = 'Tour de contrôle aérien'
+
+        UNION ALL
+
+        -- Points de fragilité du réseau (ponts, tunnels)
+        SELECT 'fragilite', cleabs, nature, nature_detaillee, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM construction_lineaire
+        WHERE nature IN ('Pont', 'Tunnel')
+
+        UNION ALL
+
+        -- Cibles symboliques / décisionnelles
+        SELECT 'cible_symbolique', cleabs, categorie, nature, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM zone_d_activite_ou_d_interet
+        WHERE nature IN ('Préfecture', 'Police', 'Etablissement pénitentiaire',
+                         'Administration centrale de l''Etat', 'Hôtel de département',
+                         'Hôtel de région', 'Mairie')
+
+        UNION ALL
+
+        -- Infrastructures critiques civiles (eau)
+        SELECT 'infra_critique', cleabs, categorie, nature, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM zone_d_activite_ou_d_interet
+        WHERE nature IN ('Station d''épuration', 'Usine de production d''eau potable')
+
+        UNION ALL
+
+        -- Nœuds de transport / logistique
+        SELECT 'noeud_transport', cleabs, nature, nature_detaillee, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM equipement_de_transport
+        WHERE nature IN ('Gare voyageurs uniquement', 'Aire de repos ou de service', 'Péage')
+
+        UNION ALL
+
+        -- Communications (antennes)
+        SELECT 'communication', cleabs, nature, nature_detaillee, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM construction_ponctuelle
+        WHERE nature = 'Antenne'
+
+        UNION ALL
+
+        -- Risque inondation (retenues d'eau)
+        SELECT 'retenue_eau', cleabs, nature, NULL, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM surface_hydrographique
+        WHERE nature IN ('Retenue', 'Retenue-barrage', 'Lac')
     """,
     "defense": """
-        -- Points à protéger : hôpitaux, gendarmeries, gares, ponts, phares
+        -- Points à protéger : santé, sécurité, transports, infrastructures critiques
         SELECT 'hopital' AS source, cleabs, categorie, nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM zone_d_activite_ou_d_interet
@@ -60,7 +110,7 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        SELECT 'gendarmerie', cleabs, categorie, nature, toponyme,
+        SELECT 'securite', cleabs, categorie, nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM zone_d_activite_ou_d_interet
         WHERE categorie = 'Administratif ou militaire'
@@ -87,9 +137,51 @@ ROLE_QUERIES = {
         FROM construction_ponctuelle
         WHERE nature = 'Phare'
            OR (nature = 'Autre construction élevée' AND nature_detaillee = 'Tour de guet')
+
+        UNION ALL
+
+        -- Services de secours et décision
+        SELECT 'secours_decision', cleabs, categorie, nature, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM zone_d_activite_ou_d_interet
+        WHERE nature IN ('Caserne de pompiers', 'Police', 'Préfecture',
+                         'Sous-préfecture', 'Administration centrale de l''Etat')
+
+        UNION ALL
+
+        -- Eau potable
+        SELECT 'eau_potable', cleabs, categorie, nature, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM zone_d_activite_ou_d_interet
+        WHERE nature IN ('Station d''épuration', 'Usine de production d''eau potable')
+
+        UNION ALL
+
+        -- Transports publics / évacuation
+        SELECT 'transport_public', cleabs, nature, nature_detaillee, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM equipement_de_transport
+        WHERE nature IN ('Gare routière', 'Station de métro', 'Station de tramway',
+                         'Gare maritime')
+
+        UNION ALL
+
+        -- Points d'étranglement à sécuriser (tunnels)
+        SELECT 'etranglement', cleabs, nature, nature_detaillee, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM construction_lineaire
+        WHERE nature = 'Tunnel'
+
+        UNION ALL
+
+        -- Communications d'urgence
+        SELECT 'communication', cleabs, nature, nature_detaillee, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM construction_ponctuelle
+        WHERE nature = 'Antenne'
     """,
     "ravitaillement": """
-        -- Flux logistiques : ports, gares fret, zones industrielles, réservoirs
+        -- Flux logistiques : ports, gares fret, zones industrielles, stockage, fluvial
         SELECT 'port' AS source, cleabs, nature AS categorie, nature_detaillee AS nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM equipement_de_transport
@@ -112,13 +204,62 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        SELECT 'reservoir', cleabs, nature, NULL, NULL,
+        SELECT 'reservoir_industriel', cleabs, nature, NULL, NULL,
                ST_Force2D(geometrie) AS geom
         FROM reservoir
         WHERE nature = 'Réservoir industriel'
+
+        UNION ALL
+
+        -- Hubs logistiques terrestres
+        SELECT 'hub_logistique', cleabs, nature, nature_detaillee, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM equipement_de_transport
+        WHERE nature IN ('Gare routière', 'Aire de repos ou de service', 'Parking')
+
+        UNION ALL
+
+        -- Ressources / matériaux
+        SELECT 'ressource', cleabs, categorie, nature, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM zone_d_activite_ou_d_interet
+        WHERE nature IN ('Divers commercial', 'Carrière', 'Déchèterie')
+
+        UNION ALL
+
+        -- Fret ferroviaire
+        SELECT 'voie_ferree_fret', cleabs, usage, nature, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM troncon_de_voie_ferree
+        WHERE usage IN ('Fret', 'Voyageur et fret')
+          AND nature IN ('Voie ferrée principale', 'LGV')
+
+        UNION ALL
+
+        -- Transport fluvial (cours d'eau permanents)
+        SELECT 'voie_fluviale', cleabs, NULL, NULL, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM cours_d_eau
+        WHERE caractere_permanent = TRUE
+
+        UNION ALL
+
+        -- Canaux de navigation
+        SELECT 'canal', cleabs, nature, NULL, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM surface_hydrographique
+        WHERE nature = 'Canal'
+
+        UNION ALL
+
+        -- Stockage eau
+        SELECT 'stockage_eau', cleabs, nature, NULL, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM reservoir
+        WHERE nature IN ('Réservoir d''eau ou château d''eau au sol', 'Château d''eau')
     """,
     "energie": """
-        -- Réseau énergétique : postes HT, lignes THT, éoliennes, barrages, oléoducs
+        -- Réseau énergétique : production, transport, stockage
         SELECT 'poste_ht' AS source, cleabs, importance AS categorie,
                'Poste de transformation' AS nature, NULL AS toponyme,
                ST_Force2D(geometrie) AS geom
@@ -148,7 +289,7 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        SELECT 'oléoduc', cleabs, nature, NULL, NULL,
+        SELECT 'oleoduc', cleabs, nature, NULL, NULL,
                ST_Force2D(geometrie) AS geom
         FROM canalisation
         WHERE nature = 'Hydrocarbures'
@@ -162,9 +303,49 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        SELECT 'centrale', id::TEXT, type, puissance_mw::TEXT, nom,
-               geometrie AS geom
-        FROM mission_custom_pois
+        SELECT 'centrale', cleabs, 'Centrale électrique', nature, toponyme,
+               ST_Force2D(geometrie) AS geom
+        FROM zone_d_activite_ou_d_interet
+        WHERE nature = 'Centrale électrique'
+
+        UNION ALL
+
+        -- Pylônes (complète la carte du réseau électrique)
+        SELECT 'pylone', cleabs, NULL, NULL, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM pylone
+
+        UNION ALL
+
+        -- Autres sources / consommation d'énergie
+        SELECT 'source_hydrocarbure', cleabs, nature, nature_detaillee, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM construction_ponctuelle
+        WHERE nature IN ('Puits d''hydrocarbures', 'Torchère', 'Antenne')
+
+        UNION ALL
+
+        -- Autres pipelines (gaz, chimique)
+        SELECT 'autre_pipeline', cleabs, nature, NULL, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM canalisation
+        WHERE nature = 'Autres matières premières'
+
+        UNION ALL
+
+        -- Retenues hydroélectriques
+        SELECT 'retenue_hydro', cleabs, nature, NULL, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM surface_hydrographique
+        WHERE nature = 'Retenue-barrage'
+
+        UNION ALL
+
+        -- Écluses (consommatrices / points de vulnérabilité)
+        SELECT 'ecluse', cleabs, nature, nature_detaillee, NULL,
+               ST_Force2D(geometrie) AS geom
+        FROM construction_surfacique
+        WHERE nature = 'Ecluse'
     """,
 }
 
