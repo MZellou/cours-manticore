@@ -15,42 +15,46 @@ order: 1
 ```sql
 -- Combien d'entrées par catégorie ?
 SELECT categorie, count(*) AS nb
-FROM zone_d_activite_ou_d_interet
+FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet')
 GROUP BY categorie
 ORDER BY nb DESC;
 
 -- Quelles catégories ont plus de 10 000 entrées ?
 SELECT categorie, count(*) AS nb
-FROM zone_d_activite_ou_d_interet
+FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet')
 GROUP BY categorie
 HAVING count(*) > 10000
 ORDER BY nb DESC;
 
 -- Quelles natures dans la catégorie 'Santé' ?
 SELECT nature, count(*) AS nb
-FROM zone_d_activite_ou_d_interet
+FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet')
 WHERE categorie = 'Santé'
 GROUP BY nature
 ORDER BY nb DESC;
 ```
 
+> **Note** : ces requêtes s'exécutent avec `duckdb -c "..."` en CLI. Les mêmes requêtes fonctionnent aussi directement dans PostGIS (en remplaçant `read_parquet(...)` par le nom de la table `zone_d_activite_ou_d_interet`).
+
 **Explication des concepts** :
+
 - `DESCRIBE table` (non utilisé ici mais faisable) : commande DuckDB/PostgreSQL qui liste les colonnes d'une table, leur type et leurs contraintes. C'est le premier réflexe face à une table inconnue.
 - `GROUP BY categorie` : agrège les lignes par valeur unique de `categorie`. `count(*)` compte le nombre de lignes dans chaque groupe. Résultat : une ligne par catégorie avec son effectif.
 - **Lecture Parquet** (implicite via DuckDB) : les fichiers `.parquet` sont lus directement sans passer par une base de données. Le format Parquet est **columnar** (stockage par colonne) : les requêtes qui ne lisent que quelques colonnes sont très rapides car le disque ne charge que les colonnes utiles.
 - **Pourquoi DuckDB** : avant d'importer dans PostGIS, on explore les données brutes de la BDTOPO. DuckDB lit les Parquet sans schéma fixe, sans serveur, et offre des performances bien supérieures à pandas sur des fichiers de plusieurs Go.
 
 **Interprétation des résultats** :
+
 - La première requête montre la répartition des POIs par `categorie` : « Santé », « Administratif ou militaire », « Transport », « Industriel »… Chaque catégorie se subdivise en plusieurs `nature` plus fines.
 - La deuxième (`HAVING count(*) > 10000`) isole les catégories les plus massives — celles qui auront le plus d'impact sur les performances des futures jointures spatiales.
 - La troisième explore une catégorie en particulier : « Santé » contient hôpitaux, cliniques, maisons médicales… C'est la granularité qui servira à filtrer les POIs par rôle.
 - On comprend que la BDTOPO est riche mais hétérogène : certaines catégories ont des millions d'entrées, d'autres quelques centaines. Le choix du bon niveau de filtrage (`categorie` puis `nature`) est crucial pour la performance.
 
-### Exercice : ciberies et casernes
+### Exercice : gendarmeries et casernes
 
 ```sql
 SELECT nature, count(*) AS nb
-FROM zone_d_activite_ou_d_interet
+FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet')
 WHERE categorie = 'Administratif ou militaire'
   AND nature IN ('Gendarmerie', 'Caserne', 'Camp militaire non clos')
 GROUP BY nature;
@@ -72,6 +76,7 @@ LIMIT 20;
 ```
 
 **Explication des concepts** (définitions des fonctions spatiales — première occurrence) :
+
 - `ST_Intersects(g1, g2)` : fonction PostGIS qui retourne `TRUE` si deux géométries partagent une partie de leur espace (se touchent, se chevauchent ou se croisent). C'est une jointure spatiale d'**intersection exacte** — elle utilise l'index GIST pour être rapide sur de grandes tables.
 - `ST_DWithin(g1, g2, d)` : retourne `TRUE` si la distance entre `g1` et `g2` est **inférieure ou égale** à `d` mètres. Contrairement à `ST_Distance(...) <= d`, `ST_DWithin` exploite l'**index GIST** (via un élargissement de la bounding box) et passe à l'échelle sur des millions de lignes. C'est la fonction à privilégier pour les filtres de distance.
 - `ST_Distance(g1, g2)` : calcule la **distance exacte** entre deux géométries (en mètres pour un SRID projeté comme Lambert-93). Elle **n'utilise pas l'index** — elle force un calcul géométrique complet. À réserver pour l'affichage (colonne `SELECT`) ou les vérifications ponctuelles, jamais pour filtrer de grandes tables.
@@ -79,6 +84,7 @@ LIMIT 20;
 - `DISTINCT` : un même équipement de transport peut intersecter plusieurs zones industrielles. `DISTINCT` élimine les doublons de paires.
 
 **Interprétation des résultats** :
+
 - La jointure croise deux tables BDTOPO via leurs géométries. Chaque ligne = un équipement de transport situé **dans** une zone industrielle.
 - Les premières lignes montrent quels types d'équipements (gares, ports, aires…) sont implantés dans des zones industrielles : ce sont des **couplages logistiques** naturels.
 
@@ -104,7 +110,7 @@ WHERE z.nature IN ('Hôpital', 'Établissement hospitalier');
 MATCH (n:ClasseOntologie) RETURN n.obj_type, n.name LIMIT 20;
 
 // Trouver les enfants directs de "Tronçon de route"
-MATCH (d)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Tronçon de route'})
+MATCH (d)-[:EST_SOUS_TYPE_DE]->(:ClasseOntologie {name: 'Tronçon de route', obj_type: 'Database'})
 RETURN d.obj_type, d.name;
 
 // Compter les nœuds par label
@@ -112,12 +118,14 @@ MATCH (n) RETURN labels(n)[0] AS label, count(*) ORDER BY count DESC;
 ```
 
 **Explication des concepts** :
+
 - `MATCH (n:ClasseOntologie)` : trouve tous les nœuds ayant le label `ClasseOntologie`. `MATCH` est l'équivalent Cypher de `FROM` en SQL — il décrit un **pattern** à chercher dans le graphe.
-- `(d)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Tronçon de route'})` : pattern à deux nœuds reliés par une relation orientée. `(d)` = descendant, `(o)` = parent filtré par `name`. La flèche `-->` indique le sens.
+- `(d)-[:EST_SOUS_TYPE_DE]->(:ClasseOntologie {name: 'Tronçon de route', obj_type: 'Database'})` : pattern à deux nœuds reliés par une relation orientée. `(d)` = descendant (Object ou Detail), le parent est un Database filtré par `name` + `obj_type`. La flèche `-->` indique le sens.
 - `labels(n)[0]` : un nœud peut avoir plusieurs labels. `labels(n)` retourne un tableau ; `[0]` prend le premier. Utile pour découvrir la structure du graphe.
 - `RETURN` : projette les colonnes voulues (équivalent de `SELECT`).
 
 **Interprétation des résultats** :
+
 - La première requête montre les 3 niveaux de l'ontologie BDTOPO : `Database`, `Object`, `Detail` — stockés sous le label `ClasseOntologie`.
 - La deuxième suit la relation `EST_SOUS_TYPE_DE` depuis « Tronçon de route » vers ses sous-types.
 - La troisième donne un aperçu de la composition du graphe : combien de nœuds portent chaque label. Permet de vérifier que l'import Neo4j s'est bien déroulé.
@@ -125,10 +133,10 @@ MATCH (n) RETURN labels(n)[0] AS label, count(*) ORDER BY count DESC;
 ### Exercice : sous-types de "Construction ponctuelle"
 
 ```sql
-MATCH (d:Detail)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Construction ponctuelle'})
+MATCH (d)-[:EST_SOUS_TYPE_DE]->(:ClasseOntologie {name: 'Construction ponctuelle', obj_type: 'Database'})
 RETURN d.obj_type, d.name;
 // Compter :
-MATCH (d:Detail)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Construction ponctuelle'})
+MATCH (d)-[:EST_SOUS_TYPE_DE]->(:ClasseOntologie {name: 'Construction ponctuelle', obj_type: 'Database'})
 RETURN count(d) AS nb_sous_types;
 ```
 
@@ -150,6 +158,7 @@ SELECT depth, obj_type, name FROM hierarchy ORDER BY depth;
 ```
 
 **Explication des concepts** :
+
 - **WITH RECURSIVE** : définit une **CTE récursive** (Common Table Expression). C'est l'outil SQL pour parcourir des arbres ou graphes quand on ne connaît pas la profondeur à l'avance.
 - **Anatomie** : une CTE récursive a toujours deux parties unies par `UNION ALL` :
   1. **Seed (membre initial)** : `SELECT ... WHERE name = 'Tronçon de route'` — le point de départ. `depth = 0` initialise le compteur de profondeur.
@@ -159,6 +168,7 @@ SELECT depth, obj_type, name FROM hierarchy ORDER BY depth;
 - **Arrêt** : PostgreSQL arrête la récursion quand le membre récursif ne produit plus de lignes (plus d'enfants à joindre).
 
 **Interprétation des résultats** :
+
 - Chaque ligne = un niveau dans l'arbre BDTOPO, depuis la racine (« Tronçon de route », profondeur 0) jusqu'aux feuilles les plus fines.
 - `depth` indique la distance au point de départ : 0 = racine, 1 = enfants directs, 2 = petits-enfants, etc.
 - Le résultat montre que la classification BDTOPO descend sur plusieurs niveaux : c'est une ontologie riche avec des spécialisations multiples.
@@ -171,6 +181,23 @@ SELECT 'votre_role', 'source_table', cleabs, categorie, nature, toponyme, ST_For
 FROM votre_table
 WHERE vos_filtres;
 ```
+
+::: {.callout-warning title="⚠️ Colonnes absentes de certaines tables"}
+Certaines tables BDTOPO n'ont pas toutes les colonnes du schéma ci-dessus :
+
+| Table | Colonne manquante | Remplacement |
+|-------|-------------------|-------------|
+| `construction_ponctuelle` | `categorie` | `NULL::text` |
+| `surface_hydrographique` | `toponyme` | `NULL` |
+| `construction_lineaire` | `categorie` | `NULL::text` |
+| `pylone` | `categorie`, `nature`, `toponyme` | `NULL::text`, `NULL::text`, `NULL` |
+
+Exemple pour les antennes :
+```sql
+SELECT 'attaque', 'communication', cleabs, NULL::text, nature, toponyme, ST_Force2D(geometrie)
+FROM construction_ponctuelle WHERE nature = 'Antenne'
+```
+:::
 
 Consultez votre page rôle pour les tables et filtres spécifiques :
 [Attaque](../roles/attaque.qmd),
@@ -199,12 +226,14 @@ ORDER BY role, source;
 ```
 
 **Explication des concepts** :
+
 - `CAST(nature AS INTEGER)` : la colonne `importance` (ou `nature` utilisée comme telle) est stockée en `TEXT` dans la BDTOPO. On la convertit en entier pour une comparaison numérique correcte.
 - **Piège : comparaison alphabétique** : sans `CAST`, PostgreSQL compare des chaînes. `'10' < '2'` est **vrai** en alphabétique (car '1' < '2'). Avec `CAST`, `10 < 2` est **faux** (numérique). C'est un bug classique avec les données BDTOPO — toujours caster les colonnes numériques stockées en texte.
 - **Risque d'échec** : si une valeur n'est pas un nombre (ex: `NULL`, `'N/A'`), `CAST(... AS INTEGER)` lève une erreur. Solution : filtrer avec `WHERE nature ~ '^\d+$'` ou utiliser un `TRY_CAST`.
 - `UPDATE … SET categorie = 'critique'` : modifie la colonne `categorie` de `mission_pois` pour marquer certains POIs comme prioritaires. Cette distinction alimente les Phase 2 et 3.
 
 **Interprétation des résultats** :
+
 - La vérification montre combien de POIs chaque rôle a marqués 'critique' vs les autres.
 - Si le rôle Énergie a peu de POIs critiques : peu de postes haute tension dans l'EPCI, ou leur importance est > 3 (postes secondaires).
 - La colonne `categorie` sert ensuite dans les analyses de vulnérabilité et de priorisation.
@@ -220,6 +249,7 @@ SELECT cid, COUNT(*) FROM clustered WHERE cid IS NOT NULL GROUP BY cid ORDER BY 
 ```
 
 **Explication des concepts** :
+
 - **DBSCAN** (Density-Based Spatial Clustering of Applications with Noise) : algorithme de clustering qui groupe des points proches les uns des autres sans présupposer un nombre de clusters ni une forme. Il distingue trois types de points :
   - **Cœur (core)** : point ayant au moins `minpoints` voisins dans un rayon `eps` → forme un cluster.
   - **Bordière (border)** : point à moins de `eps` d'un cœur mais avec moins de `minpoints` voisins → rattaché au cluster.
@@ -230,6 +260,7 @@ SELECT cid, COUNT(*) FROM clustered WHERE cid IS NOT NULL GROUP BY cid ORDER BY 
 - `WHERE cid IS NOT NULL` : on exclut les points isolés (bruit) du résultat.
 
 **Interprétation des résultats** :
+
 - Chaque `cid` ≠ NULL = un groupe de POIs suffisamment proches pour former une **zone d'intérêt** (ex: hôpital + 2 casernes à ≤ 2 km = cluster de vulnérabilité).
 - `count` = nombre de POIs dans le cluster. Les plus grands clusters sont les zones les plus denses en infrastructures critiques.
 
@@ -256,11 +287,44 @@ WHERE cid IS NOT NULL;
 
 ## T5 — Partager vos POIs
 
+> **Problème** : chaque étudiant a son propre PostGIS Docker (`localhost:5432`) → sa table `mission_pois` ne contient que SON rôle. Pourtant la Phase 2 a besoin des 4 rôles fusionnés. Pas de réseau entre les containers. Solution : CSV.
+
+### 1. Export — chaque rôle, sur son PC
+
+```bash
+# Remplacez 'attaque' par votre rôle
+psql -h localhost -U postgres -d bdtopo_manticore \
+  -c "\copy (SELECT role, source, cleabs, categorie, nature, nom, geom FROM mission_pois WHERE role='attaque') TO 'pois_attaque.csv' WITH (FORMAT CSV, HEADER)"
+```
+
+Le fichier fait quelques kilo-octets (la géométrie est encodée en hex WKB — lisible par PostGIS).
+
+### 2. Partage
+
+Transférez les 4 CSV vers la machine d'un même étudiant : clé USB, dossier partagé, `scp` dans le LAN de la salle.
+
+### 3. Fusion — un étudiant désigné
+
+```bash
+# Copier les 4 CSV dans le même dossier, puis :
+psql -h localhost -U postgres -d bdtopo_manticore <<'EOF'
+TRUNCATE mission_pois RESTART IDENTITY;
+\copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_attaque.csv' CSV HEADER;
+\copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_defense.csv' CSV HEADER;
+\copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_ravitaillement.csv' CSV HEADER;
+\copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_energie.csv' CSV HEADER;
+EOF
+```
+
+`TRUNCATE RESTART IDENTITY` vide la table et remet à zéro le compteur `id`.
+
+### 4. Vérification
+
 ```sql
 SELECT role, source, count(*) FROM mission_pois GROUP BY role, source ORDER BY role, count DESC;
 ```
 
-Chaque rôle doit apparaître avec au moins 1 source. Si un rôle est manquant → l'agent concerné n'a pas encore inséré ses POIs.
+**Attendu** : 4 rôles, chacun avec ≥ 1 source. Si un rôle manque → l'agent concerné n'a pas partagé son CSV.
 
 ---
 

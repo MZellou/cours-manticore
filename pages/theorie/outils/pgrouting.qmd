@@ -74,6 +74,7 @@ Une arête routière peut avoir des coûts **asymétriques** :
 > ⚠️ Convention pgRouting : **`-1` = interdit** (pas zéro, pas `NULL`).
 
 Le coût peut être :
+
 - la **longueur** (plus court chemin géométrique)
 - le **temps** (longueur / vitesse)
 - une **fonction métier** (poids véhicule, restrictions, discrétion…)

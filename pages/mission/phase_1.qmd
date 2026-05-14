@@ -97,6 +97,7 @@ Croisez deux tables avec une jointure spatiale (`ST_Intersects`, `ST_DWithin`).
 Ouvrez [http://localhost:7474](http://localhost:7474). L'ontologie est déjà chargée (si ce n'est pas le cas, les POIs seront migrés dans la Phase 2).
 
 **Objectifs** :
+
 1. Lister les nœuds de l'ontologie (`MATCH`)
 2. Trouver les enfants de "Tronçon de route"
 3. Compter les nœuds par label
@@ -122,15 +123,18 @@ L'ontologie a 3 niveaux hiérarchiques : Database → Object → Detail.
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
+
 - Pourquoi `WITH RECURSIVE` est-il *plus verbeux* que `(d)-[:EST_SOUS_TYPE_DE*]->(o)` en Cypher ? (cf. [SQL — limites](../theorie/outils/sql_recursion.qmd))
 - Que se passe-t-il si l'ontologie a 7 niveaux au lieu de 3 ? Et 15 ?
 - À quel moment l'arbre devient-il un **graphe** (avec cycles) ? Le `WITH RECURSIVE` tient-il le coup ?
 
 **Prompts LLM suggérés**
+
 - *"Explique-moi le cas de base et le cas récursif d'une CTE PostgreSQL avec un schéma `id, parent_id`. Donne un exemple complet."*
 - *"Compare la complexité d'un `WITH RECURSIVE` à profondeur 5 vs un `MATCH (a)-[:R*]->(b)` Cypher. Pourquoi Neo4j est en O(1) par saut ?"*
 
 **Mini-défi**
+
 - Modifie ta requête pour afficher la **profondeur** de chaque détail. Quelle est la profondeur max dans BDTOPO ?
 - Bonus : retourne le **chemin** complet (chaîne `Database → Object → Detail`) avec `STRING_AGG`.
 :::
@@ -138,9 +142,11 @@ L'ontologie a 3 niveaux hiérarchiques : Database → Object → Detail.
 ### T2 — Sélectionner les POIs de votre rôle
 
 Consultez votre briefing rôle (`roles/<votre_role>.qmd`) pour connaître :
+
 - Les tables BDTOPO à interroger
 - Les filtres (nature, catégorie, importance)
 - Les jointures spatiales à effectuer
+
 
 **Objectif** : écrire vos requêtes et insérer les résultats dans `mission_pois`.
 *Indice : `INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom) SELECT ...`*
@@ -150,6 +156,7 @@ Consultez votre briefing rôle (`roles/<votre_role>.qmd`) pour connaître :
 ### T3 — Ajouter des critères de criticité
 
 Enrichissez vos POIs avec des critères d'importance :
+
 - Postes électriques : `CAST(importance AS INTEGER) <= 3`
 - Aérodromes : `categorie IN ('Internationale', 'Nationale')`
 - Zones militaires : `categorie = 'Administratif ou militaire'`
@@ -169,26 +176,32 @@ Interprétez : où sont les zones de concentration stratégique ?
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
+
 - Pourquoi `eps = 2000` (mètres) et pas un autre nombre ? À quoi correspond cette échelle pour votre EPCI ?
 - Que se passe-t-il avec `eps = 500` ? Et `eps = 10000` ? Quelle valeur **distingue le mieux** vos zones tactiques ?
 - Pourquoi `minpoints = 2` minimum ? Que signifie `cluster_id = NULL` dans le résultat (= "bruit") ?
 - DBSCAN ne demande **pas** le nombre de clusters à l'avance — quel autre algo (k-means) le demande ? Quand préférer l'un ou l'autre ?
 
 **Prompts LLM suggérés**
+
 - *"Explique l'algorithme DBSCAN avec un schéma simple : eps, minpoints, points core/border/noise. Donne un exemple à 6 points."*
 - *"Pourquoi `ST_ClusterDBSCAN` doit absolument utiliser un SRID **projeté** (Lambert-93) et pas WGS84 (degrés) ?"*
 
 **Mini-défi**
+
 - Lance la requête avec `eps = 500, 2000, 5000` et compte les clusters non-NULL pour chaque. Trace l'évolution dans le rapport.
 - Bonus : pour chaque cluster, calcule son **enveloppe convexe** (`ST_ConvexHull(ST_Collect(geom))`) et la surface en km².
 :::
 
 ### T5 — Partager vos POIs avec votre groupe
 
-En fin de phase 1, les 4 agents fusionnent leurs POIs dans `mission_pois` (table partagée).
+Chacun a ses POIs dans SA base Docker. Le groupe doit fusionner dans UNE base.
 
-**Vérifiez** : chaque rôle doit apparaître avec au moins 1 source.
-*Indice : `SELECT role, source, count(*) FROM mission_pois GROUP BY role, source`*
+**Protocole** : chaque rôle exporte ses POIs en CSV (`\copy`), partage le fichier (clé USB, scp), puis un étudiant importe les 4 CSV dans sa base.
+
+*Indice : `\copy (SELECT * FROM mission_pois WHERE role='votre_role') TO 'pois.csv' CSV HEADER`*
+
+**Vérifiez** : `SELECT role, source, count(*) FROM mission_pois GROUP BY role, source` → 4 rôles présents.
 
 → [Corrigé](../corriges/phase_1.qmd#t5--partager-vos-pois)
 

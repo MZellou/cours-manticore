@@ -33,6 +33,7 @@ python scripts/00_setup.py --epci 242900314
 | `--source` | chemin CIFS | Dossier source des Parquets |
 
 **Ce qu'il fait** :
+
 1. Charge le polygone EPCI depuis `data/epci.parquet`
 2. Crée la table `bdtopo_ontology` (hiérarchie 3 niveaux)
 3. Filtre spatialement et charge les 22 tables BDTOPO (BBOX pushdown + shapely intersection)
@@ -51,6 +52,7 @@ python scripts/01_explore_postgis.py --role energie
 ```
 
 **Exemples exécutés** :
+
 - `ex1_ontologie_recursive()` — Traversée `WITH RECURSIVE` de l'ontologie
 - `ex2_poi_by_role(role)` — Requêtes POI spécifiques au rôle + insertion dans `mission_pois`
 - `ex3_clustering()` — `ST_ClusterDBSCAN` sur les POIs
@@ -67,7 +69,8 @@ python scripts/02_migrate_to_neo4j.py
 ```
 
 **Ce qu'il fait** :
-1. Charge les 3 niveaux d'ontologie → labels `:Database`, `:Object`, `:Detail`
+
+1. Charge les 3 niveaux d'ontologie → label `:ClasseOntologie` avec propriété `obj_type` ∈ {`Database`, `Object`, `Detail`}
 2. Crée les relations `[:EST_SOUS_TYPE_DE]`
 3. Charge les POIs depuis `mission_pois` → label `:POI`
 4. Crée les relations `[:DISTANCE {meters}]` entre POIs proches
@@ -85,6 +88,7 @@ python scripts/03_routing_pgrouting.py --role energie
 ```
 
 **Exemples exécutés** :
+
 - `ex1_dijkstra()` — Plus court chemin entre 2 POIs
 - `ex2_choke_points()` — Identification des nœuds critiques
 - `ex3_constrained_routing(role)` — Routage avec contraintes par rôle
@@ -108,6 +112,7 @@ python scripts/04_benchmark_comparison.py --role attaque --map data/carte.png
 | `--map` | `data/carte_situation.png` | Chemin de sortie de la carte |
 
 **Ce qu'il fait** :
+
 1. Benchmark ontologique (SQL `WITH RECURSIVE` vs Cypher traversée)
 2. Benchmark spatial (`ST_DWithin` vs approximation Cypher)
 3. Génère `generate_situation_map()` — carte POIs + routes

@@ -17,6 +17,7 @@ order: 9
 
 ### 2. Rapport markdown (`rapport.md`)
 Structure suggérée (2-3 pages) :
+
 1. **SITREP** : EPCI assigné, contexte géographique
 2. **Reconnaissance** : POIs par rôle (tableau + clustering)
 3. **Cartographie** : itinéraires, routage contraint, matrice de distances

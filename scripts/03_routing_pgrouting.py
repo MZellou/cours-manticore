@@ -216,12 +216,12 @@ def ex3_constrained_routing(conn, role):
                          THEN reverse_cost ELSE -1 END AS reverse_cost
              FROM ways""",
         "attaque": """SELECT id, source, target,
-                    CASE WHEN nature IN (''Chemin'', ''Sentier'')
+                    CASE WHEN nature IN ('Chemin', 'Sentier')
                          THEN cost * 0.7 ELSE cost * 1.3 END AS cost,
                     reverse_cost * 1.1 AS reverse_cost
              FROM ways""",
         "defense": """SELECT id, source, target,
-                    CASE WHEN importance >= 3 OR nature = ''Autoroute''
+                    CASE WHEN importance >= 3 OR nature = 'Autoroute'
                          THEN cost * 0.5 ELSE cost END AS cost,
                     reverse_cost AS reverse_cost
              FROM ways""",

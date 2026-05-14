@@ -39,6 +39,7 @@ Vous avez ignoré la table `troncon_de_route` jusqu'ici (trop volumineuse, peu u
 ### Du **mono-paradigme SQL** au **bi-paradigme SQL + Cypher**
 
 Vous avez écrit du SQL toute la Phase 1. Phase 2 ajoute Cypher pour :
+
 - L'ontologie (au lieu de `WITH RECURSIVE`)
 - Le réseau de POIs (relations `[:DISTANCE]`)
 - Les patterns multi-étapes

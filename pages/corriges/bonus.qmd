@@ -102,12 +102,14 @@ ORDER BY c.nature, r.importance;
 ```
 
 **Explication des concepts** :
+
 - `construction_lineaire` : table BDTOPO qui stocke les objets linéaires (ponts, tunnels, murs, glacis…). Chaque ligne a une `nature` qui dit de quel objet il s'agit.
 - `troncon_de_route` : table BDTOPO des segments de route. Chaque segment a une `importance` (1=Autoroute → 5=Chemin) et une `nature` descriptive.
 - `ST_Intersects(g1, g2)` : fonction PostGIS qui retourne `TRUE` si deux géométries partagent une partie de leur espace (se touchent ou se croisent). Ici, le pont/tunnel croise la route.
 - `CAST(importance AS INTEGER)` : `importance` est stockée en texte (VARCHAR) dans la BDTOPO. `CAST(... AS INTEGER)` la convertit en nombre pour pouvoir comparer avec `<= 2`. Sans CAST, PostgreSQL ferait une comparaison alphabétique : `'10' < '2'` = vrai, ce qui serait faux.
 
 **Interprétation des résultats** :
+
 - Chaque ligne = un point où une infrastructure routière stratégique croise un ouvrage vulnérable.
 - Plus `importance` est faible (1=Autoroute), plus la route est critique et donc plus l'impact d'une destruction du pont/tunnel serait élevé.
 - Si la requête retourne peu de résultats : votre EPCI a peu de grands axes, ou peu d'ouvrages d'art.
@@ -131,11 +133,13 @@ ORDER BY nb_antennes;
 ```
 
 **Explication des concepts** :
+
 - `ST_SnapToGrid(geom, 5000)` : arrondit les coordonnées d'une géométrie au multiple de 5000 mètres (5 km) le plus proche. Effet : des points distants de moins de 5 km se retrouvent avec les mêmes coordonnées arrondies, et sont donc groupés ensemble par `GROUP BY`. C'est une façon simple de créer une **grille** virtuelle sans créer de table.
 - Le paramètre `5000` = la taille d'un carreau en mètres. Plus il est petit, plus l'analyse est fine. Essayez `2000` pour une maille plus précise.
 - `GROUP BY` : regroupe les lignes qui ont la même valeur (ici, le même carreau). `count(*)` compte combien d'antennes tombent dans chaque carreau.
 
 **Interprétation des résultats** :
+
 - Les carreaux avec `nb_antennes = 0` sont des zones blanches (pas d'antenne proche).
 - Les carreaux avec `nb_antennes = 1` sont des zones de couverture minimale (fragiles : si l'antenne tombe, la zone devient blanche).
 - **Variante** : changez la taille de la grille (`2000`, `10000`) pour voir l'effet sur la granularité. Une grille plus fine donne plus de zones blanches (précision), une grille plus grande donne moins de zones blanches (lissage).
@@ -161,12 +165,14 @@ ORDER BY distance_m;
 ```
 
 **Explication des concepts** :
+
 - `surface_hydrographique` : table BDTOPO des surfaces en eau : lacs, étangs, retenues, réservoirs… Chaque entrée a une `nature` qui précise le type.
 - `ST_DWithin(g1, g2, d)` : fonction PostGIS qui retourne `TRUE` si la distance entre `g1` et `g2` est inférieure ou égale à `d` mètres. C'est une version spatiale de "à moins de N mètres". Avantage : elle utilise l'index GIST (contrairement à `ST_Distance`).
 - `500` mètres : distance réglementaire fréquente dans les PPRI (Plans de Prévention des Risques Inondation). C'est la zone d'exposition directe.
 - `round(ST_Distance(...)::numeric, 0)` : `ST_Distance` retourne un nombre réel en mètres. On le caste en `numeric` pour `round` qui l'arrondit à l'unité. Sans ça, on aurait des nombres à 6 décimales.
 
 **Interprétation des résultats** :
+
 - Plus `distance_m` est faible, plus le risque inondation est immédiat. Distance = 0 signifie que la cible est dans la retenue d'eau (résultat à vérifier : est-ce une erreur de données ?).
 - Si la requête retourne beaucoup de résultats : votre EPCI est en zone inondable, et les cibles prioritaires sont exposées.
 - Cette info peut alimenter la Phase 3 (simulation) : ces cibles pourraient être inatteignables après une crue simulée.
@@ -267,6 +273,7 @@ FROM epci e, zones_couvertes z;
 ```
 
 **Explication des concepts** :
+
 - **CTE (`WITH ... AS`)** : permet de décomposer une requête complexe en étapes nommées et lisibles. Chaque CTE est comme une table temporaire qui n'existe que le temps de la requête.
   - `pompiers` : sélectionne les POI de type pompier pour la défense
   - `zones_couvertes` : calcule la zone couverte par les pompiers
@@ -276,6 +283,7 @@ FROM epci e, zones_couvertes z;
 - `ST_Area(...) / 1000000` : `ST_Area` retourne la surface en m² (car SRID 2154). On divise par 1 000 000 pour obtenir des km² (1 km² = 1 000 000 m²).
 
 **Interprétation des résultats** :
+
 - Si `zone_non_couverte_km2` est proche de 0 : le territoire est bien maillé.
 - Si la valeur est grande (plusieurs dizaines de km²) : des zones entières sont hors d'atteinte des secours en moins de 10 min → risque pour la Défense.
 - **Variante** : changez le rayon (`5000` pour 5 km, `15000` pour 15 km) pour voir comment le taux de couverture évolue.
@@ -302,11 +310,13 @@ ORDER BY distance_m;
 ```
 
 **Explication des concepts** :
+
 - `mission_pois` filtré `source = 'hopital'` : ce sont les hôpitaux que vous avez chargés comme POI Défense dans la Phase 1 (via la table `zone_d_activite_ou_d_interet` où `nature IN ('Hôpital', 'Établissement hospitalier')`).
 - `equipement_de_transport` : table BDTOPO des équipements de transport : gares, stations, ports, aires… La colonne `nature` distingue les différents types : 'Gare', 'Station de métro', 'Station de tramway', 'Aéroport'…
 - 500 mètres : distance piétonne confortable (5 à 7 minutes de marche). Au-delà, un blessé ne pourrait pas être transporté à pied jusqu'à la station.
 
 **Interprétation des résultats** :
+
 - Si la requête retourne des lignes : ces hôpitaux ont un plan B d'évacuation par transport urbain.
 - Si la requête est vide : tous les hôpitaux sont dépendants de la route pour l'évacuation. En Phase 3, couper les routes autour de ces hôpitaux les isole complètement.
 - La colonne `distance_m` indique quel hôpital est le mieux connecté (le plus proche d'une station).
@@ -398,6 +408,7 @@ ORDER BY c.toponyme;
 ```
 
 **Explication des concepts** :
+
 - `cours_d_eau` : table BDTOPO de tous les cours d'eau : fleuves, rivières, ruisseaux, canaux… Chaque segment a :
   - `toponyme` : nom du cours d'eau (ex: "Seine", "Rhône")
   - `caractere_permanent` : 'Oui' si le cours d'eau coule toute l'année, 'Non' s'il est intermittent (sec une partie de l'année)
@@ -406,6 +417,7 @@ ORDER BY c.toponyme;
 - `ST_Intersects(cours_d_eau, zone_industrielle)` : teste si le cours d'eau traverse la zone industrielle (ou la longe). Si oui, la zone a un accès direct à la voie d'eau.
 
 **Interprétation des résultats** :
+
 - Chaque ligne = une zone industrielle avec un accès direct à une voie fluviale permanente.
 - Si la requête est vide : votre EPCI n'a pas de transport fluvial exploitable pour l'industrie (typique des régions sans grand fleuve). Dans ce cas, le ravitaillement dépend entièrement de la route et du rail.
 - Si beaucoup de résultats : le réseau fluvial est un atout logistique. En Phase 2 (routage), ces zones pourraient être approvisionnées par voie d'eau si les routes sont coupées.
@@ -430,11 +442,13 @@ ORDER BY distance_m;
 ```
 
 **Explication des concepts** :
+
 - `equipement_de_transport` : table BDTOPO des infrastructures de transport. La nature `'Aire de repos ou de service'` couvre les aires autoroutières avec parking, station-service, restauration.
 - 1 km (1000 mètres) : distance de transbordement courte, réalisable par un véhicule de livraison local. Au-delà, l'intérêt logistique diminue (coût de rupture de charge trop élevé).
 - `ST_DWithin` : test spatial à distance maximale. Contrairement à `ST_Distance` qui calcule puis compare (et n'utilise pas l'index), `ST_DWithin` utilise l'index GIST et est beaucoup plus rapide sur de grandes tables.
 
 **Interprétation des résultats** :
+
 - Ces couples (aire de repos + zone industrielle) sont des **hubs logistiques potentiels**. L'aire sert de point d'éclatement : les camions longue distance s'arrêtent, et des petits véhicules livrent les zones industrielles voisines.
 - Plus `distance_m` est faible, plus le hub est efficace (transbordement rapide).
 - En Phase 2 (routage contraint), ces hubs pourraient être les points d'entrée du ravitaillement si les poids lourds sont interdits dans certaines zones.
@@ -532,12 +546,14 @@ ORDER BY secteur;
 ```
 
 **Explication des concepts** :
+
 - `ST_SnapToGrid(geom, 5000)` : arrondit les coordonnées au multiple de 5000 mètres (5 km). Cela regroupe tous les POIs qui sont dans le même carreau de la grille. Le paramètre `5000` = la taille du carreau en mètres. Plus il est petit, plus l'analyse est fine.
 - `count(*) FILTER (WHERE condition)` : c'est la syntaxe PostgreSQL pour compter uniquement les lignes qui satisfont une condition. Équivalent à `SUM(CASE WHEN condition THEN 1 ELSE 0 END)` mais plus lisible et potentiellement plus performant.
 - `CASE WHEN ... THEN ... ELSE NULL END` : structure conditionnelle. Ici, on évite la division par zéro : si un secteur n'a pas de poste, le ratio n'a pas de sens (NULL).
 - `::numeric` : cast explicite en type NUMERIC (décimal). Sans ça, la division de deux entiers (INTEGER) ferait une division euclidienne : `5 / 2 = 2` au lieu de `5 / 2 = 2.5`. En castant en NUMERIC, on obtient une vraie division décimale.
 
 **Interprétation des résultats** :
+
 - `ratio_pylones_par_poste` : nombre moyen de pylônes par poste dans chaque secteur.
   - **Ratio élevé (ex: > 10)** : le réseau est peu maillé. Peu de postes pour beaucoup de pylônes = si un poste saute, une grande portion de ligne est affectée. Zones rurales/montagneuses typiquement.
   - **Ratio faible (ex: < 5)** : le réseau est bien maillé. Beaucoup de postes = redondance, résilience. Zones urbaines typiquement.
@@ -566,11 +582,13 @@ ORDER BY distance_m;
 ```
 
 **Explication des concepts** :
+
 - `mission_pois` filtré `source = 'poste_ht'` : ce sont les postes de transformation que vous avez identifiés comme POI Énergie en Phase 1. Leur `nature` correspond à la colonne `importance` de la table source `poste_de_transformation` (1 = poste le plus critique, 5 = poste secondaire).
 - `cours_d_eau` : table BDTOPO des linéaires d'eau. `caractere_permanent = 'Oui'` filtre sur les cours pérennes — ceux qui coulent toute l'année. Un cours d'eau intermittent (sec l'été) ne présente pas de risque inondation permanent.
 - 1 km (1000 mètres) : distance d'impact typique d'une crue centennale ou d'un débordement majeur. Au-delà, le risque est faible.
 
 **Interprétation des résultats** :
+
 - Chaque ligne = un couple poste + cours d'eau à risque. Plus `distance_m` est faible, plus le risque est immédiat.
 - **Effet cascade** : si ce poste est inondé et tombe, les postes en aval (alimentés par celui-ci) tombent aussi, créant une panne en chaîne. C'est l'équivalent électrique d'un goulot d'étranglement routier.
 - En Phase 3 (simulation), ces postes devraient être prioritaires pour le rôle Défense (protection contre les coupes).
@@ -596,6 +614,7 @@ ORDER BY distance_m;
 ```
 
 **Explication des concepts** :
+
 - **Auto-jointure** : on joint la table `construction_surfacique` avec elle-même. Les deux alias `b` et `e` font référence à la **même** table, mais on leur donne des rôles différents :
   - `b` = les lignes qui sont des barrages (`b.nature = 'Barrage'`)
   - `e` = les lignes qui sont des écluses (`e.nature = 'Ecluse'`)
@@ -604,6 +623,7 @@ ORDER BY distance_m;
 - 1 km : distance critique. Si la distance est très faible (< 100 m), le barrage et l'écluse font partie du même complexe ouvragé — ils partagent la même infrastructure.
 
 **Interprétation des résultats** :
+
 - Chaque ligne = un point de vulnérabilité **inter-rôle** : le barrage intéresse l'Énergie, l'écluse intéresse le Ravitaillement.
 - Si un barrage est saboté (Phase 3 — simulation), l'écluse est exposée aux conséquences (vague, débris, variation du niveau d'eau). Et inversement : une écluse bloquée peut gêner l'accès au barrage pour maintenance.
 - Ces ouvrages sont des candidats naturels pour la **protection prioritaire** par le rôle Défense (Phase 3 — T7).

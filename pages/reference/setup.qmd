@@ -18,8 +18,25 @@ order: 5
 | **Python** | 3.11+ | `python --version` |
 | **uv** | latest | `uv --version` ([installer](https://docs.astral.sh/uv/)) |
 | **Git** | 2.x | `git --version` |
+| **rclone** | 1.60+ | `rclone version` (voir [§2](#installer-rclone)) |
 
-## 2. Installation
+## 2. Installer rclone {#installer-rclone}
+
+`rclone` est utilisé par `make data-pull` pour télécharger les données depuis Cloudflare R2.
+
+| OS | Commande |
+|----|----------|
+| **Linux** (Debian/Ubuntu) | `sudo apt install rclone` *ou* `curl https://rclone.org/install.sh \| sudo bash` |
+| **macOS** | `brew install rclone` |
+| **Windows** | `winget install Rclone.Rclone` *ou* `choco install rclone` |
+
+Vérification : `rclone version`
+
+> **Windows** : `make` n'est pas natif. Deux options :
+> - Lancer le script directement sous Git Bash : `bash scripts/data_pull.sh`
+> - Copier-coller les commandes `rclone` de la section [Téléchargement manuel](#téléchargement-manuel)
+
+## 3. Installation
 
 ```bash
 # Cloner le repo
@@ -38,7 +55,7 @@ docker compose up -d
 uv sync
 ```
 
-## 3. Télécharger les données
+## 4. Télécharger les données
 
 Les données sont hébergées sur **Cloudflare R2** (bucket public). Aucune authentification nécessaire.
 
@@ -55,7 +72,7 @@ Cela télécharge dans `data/` :
 | `ontologie/` | Ontologie BDTOPO (3 niveaux) | ~50 MB |
 | `gold_dumps/` | Graphes routiers pré-calculés | Variable |
 
-### Téléchargement manuel
+### Téléchargement manuel {#téléchargement-manuel}
 
 Si `make data-pull` ne fonctionne pas, utilisez `rclone` directement :
 
@@ -76,7 +93,7 @@ rclone --config rclone.conf copy "manticore:manticore/epci_extracts/$EPCI/" "dat
 
 > **Codes SIREN des EPCIs** : `200023414` `200040715` `200046977` `200067106` `200067205` `200084952` `200093201` `242900314` `243300316` `243700754` `244400404` `245900428` `246700488`
 
-## 4. Vérifications
+## 5. Vérifications
 
 ### PostGIS + pgRouting
 
@@ -112,7 +129,7 @@ python scripts/00_setup.py --list-epci
 python scripts/00_setup.py --epci "Brest Métropole"
 ```
 
-## 5. Architecture des services
+## 6. Architecture des services
 
 ```
 ┌─────────────────────────────────────────┐
@@ -132,10 +149,11 @@ python scripts/00_setup.py --epci "Brest Métropole"
 └─────────────────────────────────────────┘
 ```
 
-## 6. Problèmes fréquents
+## 7. Problèmes fréquents
 
 | Problème | Solution |
 |----------|----------|
+| `rclone: command not found` | Installer rclone (voir [§2](#installer-rclone)) — `winget install Rclone.Rclone` sous Windows |
 | `Connection refused` (PostGIS) | `docker compose up -d` puis attendre le healthcheck |
 | Neo4j ne démarre pas | Vérifier la RAM dispo → réduire `NEO4J_server_memory_heap_max__size` à `512M` |
 | `module psycopg2 not found` | `uv sync` dans le dossier du projet |

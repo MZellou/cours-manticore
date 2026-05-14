@@ -111,15 +111,18 @@ sur la connectivité du réseau.
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
+
 - Que mesure exactement la **betweenness** d'un nœud ? Pourquoi un score de 0 ne veut **pas** dire "inutile" ?
 - Si vous deviez écrire la betweenness en SQL pur, combien d'appels `pgr_dijkstra` faudrait-il ? (indice : N²/2 pour un graphe non orienté)
 - Est-ce que les choke points (betweenness élevée) sont les mêmes que les **hubs** (degré élevé, T10) ? Pourquoi pas forcément ?
 
 **Prompts LLM suggérés**
+
 - *"Explique-moi la betweenness centrality avec un schéma à 5 nœuds en chaîne. Pourquoi le nœud du milieu a le score max ?"*
 - *"Compare betweenness, closeness et degree centrality. Quand utiliser laquelle pour identifier des points critiques d'un réseau routier ?"*
 
 **Mini-défi**
+
 - Top 5 par betweenness vs top 5 par degré : combien de nœuds en commun ? Note la corrélation dans le rapport.
 - Bonus : faites pareil après avoir **coupé** une arête à fort betweenness — les scores sont-ils stables ?
 :::
@@ -175,13 +178,14 @@ SELECT count(*) FROM hierarchy;   -- 11 = 1 racine + 10 enfants
 ```
 
 ```cypher
-MATCH (n)-[:EST_SOUS_TYPE_DE*1..3]->(:ClasseOntologie {name:'Tronçon de route'})
+MATCH (n)-[:EST_SOUS_TYPE_DE*1..3]->(:ClasseOntologie {name: 'Tronçon de route', obj_type: 'Database'})
 RETURN count(n);   -- 10 = juste les descendants, la racine n'est pas un "n"
 ```
 
 Le `WITH RECURSIVE` SQL **inclut** la seed row par défaut (le `WHERE name = ...` la matche). Le pattern Cypher `*1..3` exige un saut au minimum (`1..`), donc la source du `MATCH` n'est jamais elle-même.
 
 **Comment benchmarker honnêtement** ?
+
 - Soit on aligne : `MATCH (n)-[:EST_SOUS_TYPE_DE*0..3]->(root) RETURN count(n)` côté Cypher (inclut la racine), ou `WHERE id != root_id` côté SQL.
 - Soit on l'accepte et on **compare des ordres de grandeur**, pas des nombres exacts. Ce qui compte ici, c'est : 1 ms vs 4 ms (SQL gagne sur cette taille), pas que ce soit "11 vs 10".
 
@@ -190,15 +194,18 @@ Annotez votre tableau benchmark pour préciser ce que chaque moteur a réellemen
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
+
 - Sur la requête 4 (`ST_DWithin`), pourquoi **SQL gagne** ? Que se passerait-il dans Neo4j ?
 - Sur la requête 1 (sous-types ontologiques), regardez les plans : combien d'`AllNodesScan` côté Cypher ? Combien de jointures côté SQL ? Lequel est plus économe en lignes lues ?
 - `Execution Time` SQL et `db hits` Cypher ne sont pas comparables directement — comment vraiment **comparer** la performance ? (réponse : timing wall-clock, mais aussi nombre d'I/O et complexité du code).
 
 **Prompts LLM suggérés**
+
 - *"Comment lire un plan EXPLAIN ANALYZE PostgreSQL ? Liste les opérateurs courants (Seq Scan, Index Scan, Nested Loop, Hash Join) et ce qu'ils signifient."*
 - *"Comment lire un plan Cypher PROFILE ? Quelles sont les pires opérations (AllNodesScan) et les meilleures (NodeIndexSeek) ?"*
 
 **Mini-défi**
+
 - Pour chaque requête du tableau, faites tourner `EXPLAIN (ANALYZE, BUFFERS)` côté SQL. Notez : `Execution Time`, présence de `Seq Scan` vs `Index Scan`.
 - Bonus : ajoutez un index manquant et **mesurez l'écart**.
 :::
@@ -229,6 +236,7 @@ Complétez ce tableau dans votre rapport :
 Choisissez une arête identifiée comme **choke point** (cf. T1) et bloquez-la.
 
 **Objectifs** :
+
 1. Sauvegarder les coûts originaux (`CREATE TABLE ways_backup AS SELECT * FROM ways`)
 2. Bloquer l'arête (`UPDATE ways SET cost = -1, reverse_cost = -1 WHERE id = ...`)
 3. Mesurer la distance entre 2 POIs avant/après (détour en %)
@@ -238,15 +246,18 @@ Choisissez une arête identifiée comme **choke point** (cf. T1) et bloquez-la.
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
+
 - Pourquoi sauvegarder `ways` dans `ways_backup` avant de modifier ? Que se passerait-il sans ça ?
 - L'arête a-t-elle un sens unique (`reverse_cost = -1` initial) ? Faut-il bloquer **les deux** sens pour simuler une destruction ?
 - Si `pgr_dijkstra` ne trouve plus de chemin (résultat vide), que doit montrer la carte ? Et le rapport ?
 
 **Prompts LLM suggérés**
+
 - *"Comment annuler proprement une modification destructive sur une table PostgreSQL ? `BEGIN/ROLLBACK` vs `CREATE TABLE backup` ?"*
 - *"Pourquoi un graphe non orienté nécessite de bloquer cost ET reverse_cost pour une coupe ?"*
 
 **Mini-défi**
+
 - Choisissez votre choke point #1 (T1). **Avant** la coupe, mesurez la distance moyenne entre 5 paires de POIs. **Après** la coupe, remesurez. Quel est l'allongement médian (%)? Combien de paires deviennent inatteignables ?
 :::
 
@@ -274,6 +285,7 @@ Vous êtes le **rôle Défense**. Choisissez 5 arêtes à **protéger**.
 **Critère** : maximiser le nombre de POIs défense qui restent accessibles après l'attaque.
 
 **Méthode** :
+
 1. L'agent Attaque identifie ses 5 arêtes cibles
 2. L'agent Défense identifie ses 5 arêtes à protéger
 3. Si une arête est ciblée ET protégée → elle tient
@@ -288,6 +300,7 @@ Vous êtes le **rôle Attaque**. Trouvez les 5 arêtes dont la coupure **maximis
 *Indice : pour chaque arête "importante", simuler la coupure et calculer `distance_moyenne_après - distance_moyenne_avant`. Les 5 plus gros impacts = vos cibles.*
 
 **Mesurez** :
+
 - Nombre de POIs devenus inatteignables
 - Augmentation moyenne de distance entre POIs
 - Nombre de composantes connexes créées
@@ -309,6 +322,7 @@ Vous êtes le **rôle Attaque**. Trouvez les 5 arêtes dont la coupure **maximis
 **Objectif** : comparer `pgr_connectedComponents` AVANT (T0) et APRÈS (T8) — quelles arêtes ont **vraiment** fragmenté le réseau ?
 
 **Analysez** :
+
 1. Composantes T0 (intact) → composantes T8 (5 arêtes coupées) : delta ?
 2. Y a-t-il une coupe qui a créé une **nouvelle** composante (= un pont stratégique) ? Ou des coupes "à vide" qui n'ont rien isolé ?
 3. Combien de **nouveaux** POIs sont devenus isolés ? Quel est leur rôle dominant (attaque/défense/...) ?
@@ -320,6 +334,7 @@ Vous êtes le **rôle Attaque**. Trouvez les 5 arêtes dont la coupure **maximis
 **Objectif** : calculer le degré de chaque POI (nombre de voisins) et identifier les hubs.
 
 **Interprétation** :
+
 - Degré élevé = **hub** (bien connecté)
 - Couper un hub → impact maximal
 - Protéger un hub → priorité défensive
@@ -335,6 +350,7 @@ python scripts/04_benchmark_comparison.py --role <votre_role> --map data/carte_s
 ```
 
 La carte doit montrer :
+
 - POIs des 4 rôles (couleurs distinctes)
 - Choke points identifiés
 - Routes normales vs contraintes

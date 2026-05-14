@@ -25,34 +25,48 @@ order: 2
 
 ## Ontologie : 3 niveaux hiérarchiques
 
-La BDTOPO organise ses objets en une hiérarchie **Database → Object → Detail** :
+Les données BDTOPO sont organisées en 45 **tables** (Databases), chacune contenant des **Objects** (natures), elles-mêmes parfois subdivisées en **Details** :
 
 ```
-Database: BDTOPO
-├── Object: Tronçon de route
-│   ├── Detail: Route à 1 chaussée
-│   ├── Detail: Route à 2 chaussées
-│   ├── Detail: Type autoroutier
-│   ├── Detail: Chemin
-│   └── Detail: Sentier
-├── Object: Construction ponctuelle
-│   ├── Detail: Éolienne
-│   ├── Detail: Transformateur
-│   ├── Detail: Phare
-│   └── Detail: Tour de contrôle
-└── Object: Zone d'activité ou d'intérêt
-    ├── Detail: Hôpital
-    ├── Detail: Gendarmerie
-    ├── Detail: Zone industrielle
-    └── Detail: Barrage
+Database: troncon_de_route
+├── Object: Route à 1 chaussée
+├── Object: Route à 2 chaussées
+├── Object: Type autoroutier
+├── Object: Chemin
+├── Object: Sentier
+├── Object: Bretelle
+└── Object: Rond-point
+
+Database: construction_ponctuelle
+├── Object: Antenne
+├── Object: Éolienne
+├── Object: Phare
+├── Object: Transformateur
+├── Object: Cheminée
+└── Object: Clocher
+
+Database: zone_d_activite_ou_d_interet
+├── Object: Hôpital
+│   ├── Detail: Centre hospitalier régional
+│   ├── Detail: Hôpital militaire
+│   └── Detail: Hôpital spécialisé
+├── Object: Gendarmerie
+├── Object: Centrale électrique
+├── Object: Zone industrielle
+├── Object: Golf
+│   ├── Detail: Mini-golf
+│   └── Detail: Practice
+└── Object: Stade
 ```
+
+> Les Databases sont les **noms de tables** BDTOPO. Chaque Object correspond à une valeur de `nature` dans la table.
 
 ### En SQL
 
 ```sql
 WITH RECURSIVE hierarchy AS (
     SELECT id, name, obj_type, parent_id, 0 AS depth
-    FROM bdtopo_ontology WHERE name = 'Tronçon de route'
+    FROM bdtopo_ontology WHERE name = 'Tronçon de route' AND obj_type = 'Database'
     UNION ALL
     SELECT child.id, child.name, child.obj_type, child.parent_id, h.depth + 1
     FROM bdtopo_ontology child JOIN hierarchy h ON child.parent_id = h.id
@@ -63,7 +77,8 @@ SELECT depth, obj_type, name FROM hierarchy ORDER BY depth;
 ### En Cypher
 
 ```sql
-MATCH path = (d)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
+MATCH path = (n:ClasseOntologie)-[:EST_SOUS_TYPE_DE*]->
+             (root:ClasseOntologie {name: 'Tronçon de route', obj_type: 'Database'})
 RETURN [n IN nodes(path) | n.name] AS hierarchy;
 ```
 
@@ -78,6 +93,7 @@ RETURN [n IN nodes(path) | n.name] AS hierarchy;
 La plus riche. Contient hôpitaux, gendarmeries, zones industrielles, églises, écoles…
 
 Filtres utiles :
+
 - `categorie` : Santé, Administratif ou militaire, Industriel et commercial…
 - `nature` : Hôpital, Gendarmerie, Zone industrielle…
 - `nature_detaillee` : Place, Port de commerce, École élémentaire…

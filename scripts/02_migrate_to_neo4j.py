@@ -81,12 +81,17 @@ def load_details(tx, df):
 # =============================================================================
 
 def load_pois_from_postgis(tx, pois):
-    """Charge les POIs depuis mission_pois (PostGIS) dans Neo4j."""
+    """Charge les POIs depuis mission_pois (PostGIS) dans Neo4j.
+
+    Utilise une clé composite {cleabs, role} pour éviter les collisions :
+    un même objet BDTOPO (ex: gendarmerie) peut apparaître dans mission_pois
+    pour plusieurs rôles (attaque + défense). MERGE sur cleabs seul écrasait
+    le role du précédent — on créait 1 nœud au lieu de 2.
+    """
     tx.run("""
         UNWIND $pois AS p
-        MERGE (poi:POI {cleabs: p.cleabs})
-        SET poi.role = p.role,
-            poi.source = p.source,
+        MERGE (poi:POI {cleabs: p.cleabs, role: p.role})
+        SET poi.source = p.source,
             poi.categorie = p.categorie,
             poi.nature = p.nature,
             poi.nom = p.nom,
@@ -112,9 +117,9 @@ def demo_apoc_queries(session):
 
     # 1. Sous-types par pattern matching
     result = session.run("""
-        MATCH path = (d:Detail)-[:EST_SOUS_TYPE_DE*]->(o:Object)
-        WHERE o.name = 'Tronçon de route'
-        RETURN [n IN nodes(path) | n.name] AS hierarchy
+        MATCH path = (n:ClasseOntologie)-[:EST_SOUS_TYPE_DE*]->
+                     (root:ClasseOntologie {name: 'Tronçon de route', obj_type: 'Database'})
+        RETURN [node IN nodes(path) | node.name] AS hierarchy
         LIMIT 5
     """)
     for r in result:

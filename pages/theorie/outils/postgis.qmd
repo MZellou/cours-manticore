@@ -134,6 +134,7 @@ WHERE role = 'attaque';
 | Rapide vue d'ensemble | `eps = 5000`, `minpoints = 3` |
 
 **Effet attendu quand vous variez `eps`** :
+
 - `eps` petit → beaucoup de **petits** clusters + beaucoup de bruit (`cluster_id = NULL`)
 - `eps` grand → un **gros** cluster fusionné qui couvre tout
 - Le bon choix dépend de **l'échelle géographique** de votre EPCI.

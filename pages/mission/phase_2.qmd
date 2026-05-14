@@ -93,6 +93,7 @@ C'est l'avantage du **pivot** : une seule extraction, plusieurs formats.
 r2gg a transformé la BDTOPO en graphe. Observez sa structure :
 
 **Objectifs** :
+
 1. Explorer les tables `ways` et `ways_vertices_pgr`
 2. Compter les arêtes et les nœuds
 3. Comparer avec le nombre de tronçons dans `troncon_de_route`
@@ -116,15 +117,18 @@ Pourquoi les POIs éloignés des routes ont-ils un `distance_snap` élevé ? Est
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
+
 - Pourquoi utiliser `<->` (KNN) plutôt que `ORDER BY ST_Distance(...)` ? Lequel utilise l'index GIST ?
 - Que faire d'un POI dont le `dist_snap` dépasse 500 m ? Le filtrer ? Le garder mais le marquer ?
 - Si deux POIs sont snappés au **même** sommet, est-ce un problème pour le routage ? Pour la sémantique ?
 
 **Prompts LLM suggérés**
+
 - *"Explique `CROSS JOIN LATERAL` en PostgreSQL avec un cas concret : pour chaque ligne de la table A, trouver le voisin le plus proche dans la table B."*
 - *"Quelle est la différence entre l'opérateur `<->` (KNN) et `ST_Distance` côté plan d'exécution ?"*
 
 **Mini-défi**
+
 - Calcule la **distribution** des `dist_snap` (min, médiane, p95, max). Y a-t-il des outliers ?
 - Bonus : tracer l'histogramme des distances de snap pour ton rôle.
 :::
@@ -217,15 +221,18 @@ Le coût dans le graphe n'est pas fixe — il dépend du **profil** du véhicule
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
+
 - Pourquoi la convention pgRouting est `cost = -1` pour "interdit" et pas `NULL` ou `+infinity` ?
 - Si on multiplie un coût par 0.7 (raccourcir un chemin), Dijkstra reste-t-il **correct** ? Et avec un coût négatif ?
 - Comparer : route "rapidité" (Défense, autoroutes prioritaires) vs route "discrétion" (Attaque, sentiers prioritaires). Combien de % de différence en distance ? En temps ?
 
 **Prompts LLM suggérés**
+
 - *"Pourquoi Dijkstra ne fonctionne pas avec des coûts négatifs ? Quel algo utiliser à la place (Bellman-Ford) ?"*
 - *"Écris une sous-requête pgRouting où le coût est dynamique : `cost = base_cost * 0.5` si la route est une autoroute (importance ≤ 2), sinon `cost = base_cost`."*
 
 **Mini-défi**
+
 - Compare la **longueur** et le **temps** du même trajet pour 2 profils différents (par ex. `largeur < 4` vs `cost normal`). Tableau dans le rapport.
 - Bonus : combiner 2 contraintes (poids + largeur) en un seul `CASE`.
 :::
@@ -240,6 +247,7 @@ python scripts/02_migrate_to_neo4j.py
 ```
 
 **Objectifs dans Neo4j Browser** :
+
 1. Vérifier les POIs chargés (`MATCH (p:POI)`)
 2. Traverser l'ontologie (`[:EST_SOUS_TYPE_DE*]`)
 3. Calculer un plus court chemin entre POIs (`apoc.algo.dijkstra` — cf. [APOC essentiels](../theorie/outils/apoc_basics.qmd))
@@ -264,6 +272,7 @@ Le script fait `MERGE (p:POI {cleabs: $cleabs})`. Or **certains `cleabs` sont pa
 C'est un piège classique de modélisation graphe : la **clé naturelle** (`cleabs` BDTOPO) ne reflète pas l'**identité métier** ici (un POI = (objet réel, rôle de mission)).
 
 Trois fixes possibles, à discuter en groupe :
+
 1. **Clé composite** : `MERGE (p:POI {cleabs: $cleabs, role: $role})` → 2 nœuds distincts pour le réservoir, un par rôle. Simple, mais duplique la géométrie.
 2. **Multi-label** : un seul nœud, on `SET p:Ravitaillement, p:Energie` ou on stocke `roles: [...]` en liste. Plus propre, mais les requêtes `MATCH (p:POI {role: 'energie'})` doivent devenir `WHERE 'energie' IN p.roles`.
 3. **Modélisation explicite** : `(:Asset {cleabs})-[:JOUE_ROLE]->(:RoleMission {name})`. Plus normalisé, plus de jointures.
@@ -291,15 +300,18 @@ MERGE (o:ClasseOntologie {sql_name: 'construction_lineaire',
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
+
 - Pourquoi crée-t-on des **index** Neo4j *avant* de lancer un gros `MERGE` ? Que se passe-t-il sans index sur 10 000 POIs ?
 - `MERGE` vs `CREATE` : pourquoi est-ce que `MERGE` est **idempotent** mais plus lent ? Quand préférer chacun ?
 - L'ontologie est-elle un **arbre** ou un **graphe** ? Y a-t-il des cas où un Detail a 2 parents ?
 
 **Prompts LLM suggérés**
+
 - *"Explique l'effet d'un index Neo4j `CREATE INDEX FOR (p:POI) ON (p.cleabs)` sur la vitesse d'un MERGE qui matche par `cleabs`."*
 - *"Compare `MERGE` Cypher et `INSERT ... ON CONFLICT DO NOTHING` PostgreSQL. Différences et points communs."*
 
 **Mini-défi**
+
 - Avant migration : compte les nœuds par label (`MATCH (n) RETURN labels(n)[0], count(*)`). Note les chiffres.
 - Après migration : recompte. Tout colle ? Si non, pourquoi ?
 - Bonus : ajoute un index secondaire sur `(p:POI) ON (p.role)` et `PROFILE` une requête filtrée par rôle avant/après.
@@ -328,6 +340,7 @@ MERGE (o:ClasseOntologie {sql_name: 'construction_lineaire',
 Votre groupe a des **bases avancées** et des **points de ralliement** qui ne sont pas dans la BDTOPO. Créez-les.
 
 **Objectifs** :
+
 1. Créer au moins 2 nœuds `:Base` (base avancée, hôpital de campagne, dépôt...)
 2. Les relier aux POIs proches avec des relations `[:DISTANCE]`
 
@@ -338,6 +351,7 @@ Votre groupe a des **bases avancées** et des **points de ralliement** qui ne so
 ### T8 — OPTIONAL MATCH et UNWIND
 
 **Objectifs** :
+
 1. Trouver les POIs sans connexion (isolés dans le graphe)
 2. Lister les POIs avec leur nombre de voisins (`OPTIONAL MATCH`)
 3. Utiliser `UNWIND` pour aplatir les listes
@@ -349,6 +363,7 @@ Votre groupe a des **bases avancées** et des **points de ralliement** qui ne so
 ### T9 — Pattern matching avancé
 
 **Objectifs** :
+
 1. Trouver les chemins entre attaque et défense passant **uniquement** par des POIs énergie
 2. Détecter les triangles (3 POIs mutuellement connectés)
 
@@ -400,6 +415,7 @@ En groupe, complétez ce tableau pour **votre EPCI** avec vos mesures réelles :
 | Hiérarchie ontologique complète | | | | | | |
 
 **Débattez** :
+
 1. Y a-t-il des requêtes où SQL est clairement meilleur ?
 2. Y a-t-il des requêtes impossibles dans un des outils ?
 3. Si vous deviez choisir **un seul** outil pour tout faire, lequel ?

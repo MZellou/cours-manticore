@@ -183,6 +183,7 @@ order: 3
 | 6 | 2 574 221 |
 
 **Contraintes de routage disponibles :**
+
 - `restriction_de_poids_total` : 3.5t à 19t (ex: 18 797 tronçons à 3.5t)
 - `restriction_de_hauteur` : présent sur ~5% du réseau
 - `restriction_de_largeur` : rare
@@ -198,6 +199,7 @@ order: 3
 ### 3.1 Critères de sélection
 
 Les 13 EPCIs sont choisis pour maximiser la **diversité géographique et thématique** :
+
 - **Métropoles littorales** : Brest, Le Havre, Bordeaux, Nantes, Rouen
 - **Frontières** : Strasbourg (Allemagne), Lille (Belgique), Dunkerque (Belgique + nucléaire), Pays Basque (Espagne)
 - **Montagne / cuvette** : Grenoble, Pays Basque
@@ -368,6 +370,7 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 
 ### 5.3 Centrales nucléaires (non dans BDTOPO)
 Les centrales ne sont pas des POI BDTOPO. Pour les rôles Énergie, on peut :
+
 1. Injecter des POIs custom (coords approximatives) lors du setup
 2. Ou utiliser uniquement les infractions BDTOPO réelles (postes THT, barrages, etc.)
 

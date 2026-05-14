@@ -91,7 +91,7 @@ RETURN voisin.nom, voisin.role;
 
 ```sql
 // Tous les sous-types (à n'importe quelle profondeur)
-MATCH (d)-[:EST_SOUS_TYPE_DE*]->(o:Object {name: 'Tronçon de route'})
+MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:ClasseOntologie {name: 'Tronçon de route', obj_type: 'Database'})
 RETURN d.name;
 ```
 

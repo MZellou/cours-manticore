@@ -39,7 +39,7 @@ Trois problèmes opérationnels :
 L'équivalent Cypher :
 
 ```sql
-MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:Object {name: 'Tronçon de route'})
+MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:ClasseOntologie {name: 'Tronçon de route', obj_type: 'Database'})
 RETURN d.name;
 ```
 
@@ -117,7 +117,7 @@ Execution Time: 423.5 ms       ← le chiffre qui compte
 
 ```sql
 PROFILE
-MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:Object {name: 'Tronçon de route'})
+MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:ClasseOntologie {name: 'Tronçon de route', obj_type: 'Database'})
 RETURN d.name;
 ```
 

@@ -63,12 +63,14 @@ Chaque groupe de 4 étudiants : 1 Attaque, 1 Défense, 1 Ravitaillement, 1 Éner
 Les scripts `01_explore_postgis.py` à `04_benchmark_comparison.py` contiennent les **corrigés complets**.
 
 Pour distribuer aux étudiants :
+
 - Fournir les briefings dans `mission/` (déjà présents)
 - Les scripts sont des exemples — les étudiants écrivent leurs propres requêtes dans un notebook ou en CLI
 
 ## 7. Évaluation
 
 Voir la [grille de relecture](../mission/debriefing.qmd#grille-de-relecture-des-concepts) :
+
 - Requêtes SQL : **25%**
 - Requêtes Cypher : **20%**
 - Routage pgRouting : **20%**
@@ -388,7 +390,7 @@ WHERE z.nature IN ('Hôpital', 'Établissement hospitalier');
 **T0c — Cypher ontologie** (nécessite migration Neo4j déjà faite) :
 
 ```cypher
-MATCH (d:Detail)-[:EST_SOUS_TYPE_DE]->(o:Object {name: 'Construction ponctuelle'})
+MATCH (d)-[:EST_SOUS_TYPE_DE]->(:ClasseOntologie {name: 'Construction ponctuelle', obj_type: 'Database'})
 RETURN count(d) AS nb_sous_types;
 ```
 
