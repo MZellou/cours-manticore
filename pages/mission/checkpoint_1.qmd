@@ -108,7 +108,32 @@ ORDER BY cluster_id NULLS LAST;
 
 ---
 
-## 6. Auto-validation : ce que vous savez expliquer
+## 6. Sync intra-groupe — échange Parquet
+
+Avant de passer au Cypher Lab, les 3 agents synchronisent leurs exports.
+
+**Checklist groupe :**
+
+- [ ] Chaque rôle a généré son `mission_pois_<role>.parquet` (voir [fin Phase 1](phase_1.qmd#export-parquet-checkpoint-1))
+- [ ] Les 3 fichiers sont dans le dossier partagé du groupe (`exports/`)
+- [ ] Lecture croisée rapide — chacun vérifie les Parquets des 2 autres (5 min) :
+
+```bash
+# Vérification rapide des Parquets du groupe
+duckdb -c "SELECT count(*), source FROM read_parquet('exports/mission_pois_attaque.parquet') GROUP BY source;"
+duckdb -c "SELECT count(*), source FROM read_parquet('exports/mission_pois_defense.parquet') GROUP BY source;"
+duckdb -c "SELECT count(*), source FROM read_parquet('exports/mission_pois_logistique.parquet') GROUP BY source;"
+```
+
+| Symptôme | Diagnostic |
+|----------|------------|
+| 3 fichiers présents, counts > 0 | ✅ Prêts pour le Cypher Lab |
+| Un fichier absent | ⚠️ L'agent concerné doit relancer son export |
+| Un count = 0 | ⚠️ Filtre trop strict — revenir à T2 de cet agent |
+
+---
+
+## 7. Auto-validation : ce que vous savez expliquer
 
 Avant de passer en Phase 2, vous devriez pouvoir **répondre sans LLM** :
 

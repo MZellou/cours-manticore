@@ -7,7 +7,7 @@ order: 1
 
 > Vous êtes agents de renseignement. Votre mission : cartographier les infrastructures critiques d'une zone EPCI et évaluer la résilience de son réseau routier face à une simulation d'attaque.
 
-**Format :** 0.5J théorie + 2J hands-on — 35 étudiants / ~12 groupes × 3 rôles.
+**Format :** 0.5J théorie + 2J hands-on — N groupes de 3 (1 EPCI / groupe), effectif variable.
 
 ---
 
@@ -17,22 +17,23 @@ Lisez le [Briefing général](briefing.qmd) : composition des groupes, rôles, l
 
 ---
 
-## Les 3 phases
+## Les phases
 
 | Phase | Intitulé | Mode | Durée |
 |-------|----------|------|-------|
-| [Phase 1 — Reconnaissance](phase_1.qmd) | POIs critiques par rôle (SQL + PostGIS) | Solo | 6h |
+| [Phase 1 — Reconnaissance](phase_1.qmd) | POIs critiques par rôle (SQL + PostGIS) | Solo, coordonné | 6h |
+| [Cypher Lab](transition_1_2.qmd) | Atelier Cypher sur jeu jouet (Movies) | Solo | 1h |
 | [Phase 2 — Cartographie](phase_2.qmd) | Graphe routier + Neo4j (pgRouting + Cypher) | Groupe | 5h |
-| [Phase 3 — Simulation](phase_3.qmd) | Attaque / benchmark SQL vs Cypher | Groupe | 5h |
+| [Phase 3 — Simulation](phase_3.qmd) | Simulation + Carte de Situation Commune | Groupe | 5h |
 
 ---
 
 ## Transitions et checkpoints
 
-- [Checkpoint Phase 1](checkpoint_1.qmd) — sanity check avant Phase 2
-- [Transition 1 → 2](transition_1_2.qmd) — ce qui change entre les phases
+- [Checkpoint Phase 1](checkpoint_1.qmd) — sanity check + sync Parquet intra-groupe
+- [Cypher Lab](transition_1_2.qmd) — atelier Cypher autonome (1h)
 - [Checkpoint Phase 2](checkpoint_2.qmd) — sanity check avant Phase 3
-- [Transition 2 → 3](transition_2_3.qmd) — nouveaux outils (APOC, simulation)
+- [Transition 2 → 3](transition_2_3.qmd) — nouveaux outils (APOC, simulation, T-Synthèse)
 
 ---
 

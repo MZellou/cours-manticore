@@ -7,7 +7,17 @@ order: 8
 > *"Simuler une attaque sur le réseau et comparer les approches SQL vs Graphe."*
 
 **Mode** : Groupe (les 3 rôles collaborent sur la simulation).
-**Durée estimée** : 5h (benchmark 1h30 + simulation itérative 2h + analyse réseau 1h + rédaction 30min)
+**Durée estimée** : 5h (benchmark 1h30 + simulation itérative 2h + analyse réseau 1h + T-Synthèse 30min)
+
+::: {.callout-tip title="La simulation impacte les 3 rôles différemment"}
+Chaque agent mesure **son** indicateur lors de la simulation d'attaque :
+
+- **Attaque** : combien de cibles deviennent déconnectées du reste du réseau ?
+- **Défense** : combien d'hôpitaux / ponts sont isolés après les coupes ?
+- **Logistique** : combien de corridors énergétiques / d'approvisionnement sont rompus ?
+
+Comparez vos indicateurs en fin de phase : le même graphe coupé n'a pas le même impact selon le rôle.
+:::
 
 ::: {.callout-note title="📚 Théorie pré-requise"}
 - [APOC — avancé](../theorie/avance/apoc.qmd) — `betweenness`, `expandConfig`, `PROFILE` (essentiel)
@@ -358,7 +368,82 @@ La carte doit montrer :
 
 ---
 
-## Partie D — Rédaction du rapport (30min)
+## Partie D — T-Synthèse : Carte de Situation Commune (30 min)
+
+> *Le livrable principal de la mission — les 3 perspectives fusionnées sur votre EPCI.*
+
+### T-Synthèse — Fusionner les résultats du groupe
+
+#### Étape 1 : chaque étudiant exporte ses tables finales
+
+```python
+import pandas as pd
+from sqlalchemy import create_engine
+
+engine = create_engine("postgresql://postgres:manticore2026@localhost/bdtopo_manticore")
+
+# Adaptez au nom de votre rôle
+mon_role = "attaque"  # ou "defense" ou "logistique"
+
+pd.read_sql(f"SELECT * FROM mission_pois WHERE role = '{mon_role}'", engine
+            ).to_parquet(f"exports/mission_pois_{mon_role}.parquet", index=False)
+
+# Tables spécifiques à chaque rôle (créées lors des tâches précédentes)
+# Attaque :
+pd.read_sql("SELECT * FROM attaque_targets", engine
+            ).to_parquet("exports/attaque_targets.parquet", index=False)
+# Défense :
+# pd.read_sql("SELECT * FROM defense_choke_points", engine).to_parquet(...)
+# Logistique :
+# pd.read_sql("SELECT * FROM logistique_corridors", engine).to_parquet(...)
+```
+
+Déposez vos fichiers dans le dossier `exports/` du groupe.
+
+#### Étape 2 : le « carteur » importe les 3 exports
+
+Le carteur désigné importe les Parquets de ses coéquipiers dans sa BDD :
+
+```python
+import pandas as pd
+from sqlalchemy import create_engine
+
+engine = create_engine("postgresql://postgres:manticore2026@localhost/bdtopo_manticore")
+
+# Import croisé (si pas déjà fait en début de Phase 2)
+for role in ["attaque", "defense", "logistique"]:
+    df = pd.read_parquet(f"exports/mission_pois_{role}.parquet")
+    df.to_sql("mission_pois", engine, if_exists="append", index=False,
+              method="multi", chunksize=500)
+```
+
+#### Étape 3 : générer la Carte de Situation Commune
+
+```python
+from scripts.benchmark_comparison import generate_situation_map
+
+generate_situation_map(
+    epci="<votre EPCI>",  # ex. "Brest Métropole"
+    layers=["attaque", "defense", "logistique"],
+    output="exports/carte_situation_<epci>.png"
+)
+```
+
+La carte superpose les POIs des 3 rôles (couleurs distinctes), les choke points, et les routes impactées par la simulation.
+
+#### Étape 4 : mini-debrief écrit (5 lignes par rôle)
+
+Chaque agent rédige 5 lignes dans le rapport commun :
+
+- Ce que j'ai appris en analysant mon rôle sur cet EPCI
+- Ce qui m'a surpris dans les données (un écart, une anomalie, une structure inattendue)
+- Ce que je referais différemment avec plus de temps
+- Un indicateur clé de mon rôle (nombre de POIs critiques, choke points détectés, etc.)
+- En quoi la coopération avec les autres rôles a enrichi mon analyse
+
+---
+
+## Partie E — Rédaction du rapport (intégré à T-Synthèse)
 
 ### T12 — Synthèse finale
 

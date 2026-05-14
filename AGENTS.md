@@ -5,7 +5,7 @@
 ## Project identity
 
 Teaching repo: DB course (NoSQL graph + spatial), IGN/BDTOPO context.
-**Format:** 0.5J theory + 2J hands-on, 40 students / 10 groups × 4 roles (× 3 EPCIs bonus = 13 EPCIs total).
+**Format:** 0.5J theory + 2J hands-on, **N groupes de 3 (1 EPCI / groupe)**, effectif variable (13 EPCIs disponibles).
 **Immersive project:** 3 connected phases (Reconnaissance → Cartographie → Simulation).
 
 ## Environment
@@ -70,7 +70,7 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 
 ## Key concepts
 
-- **4 roles:** Attaque (targets), Défense (protection), Ravitaillement (logistics), Énergie (energy grid)
+- **3 roles:** Attaque (targets), Défense (protection), Logistique (logistics + energy grid) — Logistique = ancienne fusion Ravitaillement+Énergie
 - **13 EPCIs:** Diverse profiles (ports, borders, mountains, nuclear)
 - BDTOPO ontology: 3 levels (`Database → Object → Detail`) linked by `parent_id`
 - Neo4j labels: `:ClasseOntologie`, `:POI` with role/source properties

@@ -3,6 +3,10 @@ title: "Contenu des données BDTOPO"
 order: 3
 ---
 
+:::{.callout-important title="Page de référence"}
+Cette page liste les statistiques détaillées des 13 EPCIs. **Ne la lisez pas linéairement** — survolez-la, et **lisez en détail uniquement la section de votre EPCI assigné**. Revenez ici en Phase 3 pour des références juste-à-temps.
+:::
+
 > Statistiques par EPCI et graphiques générés par `scripts/generate_theory_stats.py` depuis `data/epci_extracts/`.
 > Pour ajouter ou retirer un EPCI : modifier le dict `EPCIS` en haut du script et relancer `uv run python scripts/generate_theory_stats.py`.
 
@@ -265,7 +269,7 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 
 ![Road network](../../assets/img/theory/chart_road_network.png)
 
-**Deux couleurs** : bleu = tronçons en zone urbaine, orange = rural. Les EPCIs métropoles (Lyon, Lille, Bordeaux) ont un réseau quasi-intégralement urbain. Le Cotentin et le Pays Basque sont profondément ruraux. Utile pour le TD ravitaillement : les livraisons en zone rurale dépendent des chemins (plus lents, plus vulnérables).
+**Deux couleurs** : bleu = tronçons en zone urbaine, orange = rural. Les EPCIs métropoles (Lyon, Lille, Bordeaux) ont un réseau quasi-intégralement urbain. Le Cotentin et le Pays Basque sont profondément ruraux. Utile pour le TD Logistique : les livraisons en zone rurale dépendent des chemins (plus lents, plus vulnérables).
 
 #### Chaleur : alignment des rôles
 

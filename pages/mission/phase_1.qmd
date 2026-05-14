@@ -20,6 +20,21 @@ order: 2
 
 ---
 
+::: {.callout-tip title="Points de contact entre rôles"}
+Cette phase est **solo**, mais coordonnée. Chacun a sa propre stack Docker et sa propre BDD — pas de serveur partagé. La coordination passe par les **exports Parquet** au checkpoint 1.
+
+**Comment les 3 rôles se complètent :**
+
+- **Attaque** pose les cibles stratégiques (aérodromes, casernes, ports).
+- **Défense** identifie les points à protéger, souvent les mêmes objets vus sous un autre angle.
+- **Logistique** trace les approvisionnements entre cibles et bases de soutien.
+
+**Convention de nommage commune** (à respecter dans tout le groupe) :
+- Même nom de table : `mission_pois` avec colonnes `role`, `source`, `cleabs`, `categorie`, `nature`, `nom`, `geom`
+- Même SRID : **2154** (Lambert-93)
+- Export : `mission_pois_<role>.parquet` (ex. `mission_pois_attaque.parquet`)
+:::
+
 ## Prérequis
 
 - Docker stack lancé (PostGIS + Neo4j)
@@ -201,6 +216,10 @@ Comptez le nombre de nœuds à chaque profondeur de l'ontologie (niveau 1 = Data
 ## Tâches principales (2h30)
 
 ### T1 — Explorer l'ontologie BDTOPO
+
+::: {.callout-note title="Rappel : WITH RECURSIVE"}
+`WITH RECURSIVE` est une CTE qui s'appelle elle-même — comme une fonction récursive. Elle a un **cas de base** (la requête initiale) et un **cas récursif** (qui joint sur le résultat précédent). Elle s'arrête quand le cas récursif ne retourne plus de lignes. Lecture : [SQL — limites & récursion](../theorie/outils/sql_recursion.qmd).
+:::
 
 L'ontologie a 3 niveaux hiérarchiques : Database → Object → Detail.
 
@@ -471,10 +490,38 @@ Inclus un GROUP BY pour compter par type."
 - [ ] Au moins 1 cross-rôle (T7) documenté
 - [ ] Requêtes documentées dans le rapport (avec commentaires)
 
+::: {.callout-important title="Export Parquet — Checkpoint 1"}
+Avant de valider le checkpoint, exportez votre table `mission_pois` en Parquet pour la partager avec votre groupe.
+
+**Depuis psql (via DuckDB) :**
+
+```sql
+-- Option 1 : DuckDB CLI
+-- duckdb -c "INSTALL postgres; LOAD postgres;
+--   COPY (SELECT * FROM postgres_scan('host=localhost dbname=bdtopo_manticore user=postgres', 'public', 'mission_pois')
+--   WHERE role = 'attaque')
+--   TO 'exports/mission_pois_attaque.parquet' (FORMAT PARQUET);"
+```
+
+**Depuis Python (recommandé) :**
+
+```python
+import pandas as pd
+from sqlalchemy import create_engine
+
+engine = create_engine("postgresql://postgres:manticore2026@localhost/bdtopo_manticore")
+df = pd.read_sql("SELECT * FROM mission_pois WHERE role = 'attaque'", engine)
+df.to_parquet("exports/mission_pois_attaque.parquet", index=False)
+```
+
+Remplacez `'attaque'` par votre rôle (`'defense'` ou `'logistique'`).
+Déposez le fichier dans le dossier `exports/` du groupe (clé USB, Drive, dossier réseau — convention définie lors de la [Concertation initiale](briefing.qmd#concertation-initiale-15-min)).
+:::
+
 ::: {.callout-warning title="✅ Checkpoint"}
 Avant de passer à la cartographie, **validez les comptes** dans `mission_pois` :
 
-→ [Checkpoint Phase 1](checkpoint_1.qmd) — sanity check + débogage si écart.
+→ [Checkpoint Phase 1](checkpoint_1.qmd) — sanity check + sync Parquet intra-groupe.
 :::
 
 ## Auto-évaluation (non notée)

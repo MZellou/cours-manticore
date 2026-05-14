@@ -6,6 +6,116 @@ order: 3
 
 > Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
+## T-Synthèse — Carte de Situation Commune
+
+**Objectif** : fusionner les exports Parquet des 3 rôles, les charger dans PostGIS, puis générer la Carte de Situation Commune via `generate_situation_map()`.
+
+### Étape 1 — Import des Parquets via DuckDB → PostGIS
+
+Le « carteur » désigné récupère les 3 fichiers du dossier partagé du groupe et les importe dans sa base locale :
+
+```python
+import duckdb
+import psycopg2
+
+PG_CONN = "host=localhost dbname=bdtopo_manticore user=postgres password=manticore2026"
+
+con = duckdb.connect()
+# Attacher la base PostGIS
+con.execute(f"ATTACH '{PG_CONN}' AS pg (TYPE POSTGRES)")
+
+for role in ['attaque', 'defense', 'logistique']:
+    parquet_path = f'exports/mission_pois_{role}.parquet'
+    # Supprimer les données existantes pour ce rôle avant import
+    con.execute(f"DELETE FROM pg.public.mission_pois WHERE role = '{role}'")
+    # Insérer depuis le Parquet
+    con.execute(f"""
+        INSERT INTO pg.public.mission_pois
+        SELECT * FROM read_parquet('{parquet_path}')
+    """)
+    print(f"role={role} importe")
+
+con.close()
+```
+
+> Si le connecteur DuckDB Postgres n'est pas disponible, passez par un export CSV intermédiaire :
+>
+> ```python
+> import duckdb, psycopg2, pandas as pd
+>
+> for role in ['attaque', 'defense', 'logistique']:
+>     df = duckdb.query(f"SELECT * FROM 'exports/mission_pois_{role}.parquet'").df()
+>     conn = psycopg2.connect(PG_CONN)
+>     cur = conn.cursor()
+>     cur.execute(f"DELETE FROM mission_pois WHERE role = %s", (role,))
+>     for _, row in df.iterrows():
+>         cur.execute("""
+>             INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+>             VALUES (%s, %s, %s, %s, %s, %s, ST_SetSRID(ST_GeomFromWKB(%s), 2154))
+>         """, (row.role, row.source, row.cleabs, row.categorie, row.nature, row.nom, row.geom))
+>     conn.commit()
+>     conn.close()
+> ```
+
+**Vérification** :
+
+```sql
+SELECT role, count(*) FROM mission_pois GROUP BY role ORDER BY role;
+-- Attendu : 3 lignes (attaque, defense, logistique), toutes count > 0
+```
+
+### Étape 2 — Générer la Carte de Situation Commune
+
+```python
+from scripts.script_04_benchmark_comparison import generate_situation_map
+
+# Appel minimal — nom de l'EPCI de votre groupe
+generate_situation_map(epci='Brest Métropole')
+
+# Appel complet avec options
+generate_situation_map(
+    epci='Brest Métropole',
+    layers=['attaque', 'defense', 'logistique'],  # ordre des couches (de bas en haut)
+    output_path='exports/carte_situation_brest.png'
+)
+```
+
+### Paramètres de `generate_situation_map()`
+
+| Paramètre | Type | Défaut | Description |
+|-----------|------|--------|-------------|
+| `epci` | `str` | requis | Nom ou code SIREN de l'EPCI (doit être chargé dans PostGIS) |
+| `layers` | `list[str]` | `['attaque','defense','logistique']` | Rôles à afficher et ordre de superposition |
+| `output_path` | `str \| None` | `data/carte_situation.png` | Chemin du fichier PNG en sortie |
+
+### Étape 3 — Ordre des couches et couleurs
+
+L'ordre `layers` détermine qui est au-dessus de qui (dernier = dessus) :
+
+| Ordre recommandé | Rôle | Couleur suggérée | Raison |
+|-----------------|------|-----------------|--------|
+| 1 (fond) | `logistique` | bleu `#2196F3` | Corridors et réseaux = contexte de fond |
+| 2 (milieu) | `defense` | vert `#4CAF50` | Points à protéger = couche intermédiaire |
+| 3 (dessus) | `attaque` | rouge `#F44336` | Cibles = lecture prioritaire |
+
+> Conseil : si Attaque et Défense partagent des POIs (ponts, casernes), la couche `attaque` au-dessus garantit que les marqueurs rouges sont lisibles. Si vous préférez la lecture Défense, inversez l'ordre 2 et 3.
+
+**Conflits visuels fréquents** :
+- Ponts : présents dans `attaque` (fragilité réseau) ET `defense` (points d'étranglement). Le marqueur de la couche supérieure masque l'autre — c'est voulu, les deux rôles voient la même chose avec des couleurs différentes.
+- Centrales électriques : présentes dans `logistique`. Si votre EPCI a Flamanville ou Gravelines, le point apparaît en bleu — ajoutez un label dans le debrief.
+
+### Étape 4 — Sortie PNG
+
+La carte est sauvegardée en haute résolution (300 DPI par défaut) :
+
+```
+exports/carte_situation_<epci>.png
+```
+
+Partagez ce fichier avec votre groupe avant la présentation orale. La légende est générée automatiquement à partir des couleurs de chaque rôle.
+
+---
+
 ## T1 — Choke Points
 
 **Objectif** : identifier les nœuds (POI) dont la suppression maximiserait la perturbation du réseau — les points de fragilité stratégiques.
@@ -114,7 +224,7 @@ ORDER BY cost LIMIT 5;
 
 ## T2b — Plus court chemin avec nœud intermédiaire
 
-**Objectif** : trouver le plus court chemin qui passe par un nœud obligatoire — ici, Attaque → Logistique (point de ravitaillement) → Défense. Scénario : convoi qui doit se réapprovisionner avant d'atteindre sa cible.
+**Objectif** : trouver le plus court chemin qui passe par un nœud obligatoire — ici, Attaque → Logistique (point d'approvisionnement) → Défense. Scénario : convoi qui doit passer par un hub logistique avant d'atteindre sa cible.
 
 ```sql
 MATCH (a:POI {role: 'attaque'})

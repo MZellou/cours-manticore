@@ -186,6 +186,23 @@ LIMIT 5
 RETURN p.nom, p.role, degree;
 ```
 
+### `reduce()` — agrégation sur une liste
+
+`reduce()` parcourt une liste et accumule un résultat (comme `fold` / `reduce` en Python).
+
+**Forme :** `reduce(accumulateur = valeur_initiale, x IN liste | accumulateur + x)`
+
+```sql
+// Somme des poids le long d'un chemin (liste de relations)
+MATCH p = (a:POI)-[:DISTANCE*1..5]-(b:POI)
+WITH p, relationships(p) AS rels
+RETURN reduce(total = 0.0, r IN rels | total + r.meters) AS cout_total
+ORDER BY cout_total
+LIMIT 5;
+```
+
+`reduce()` est utilisé en Phase 2 dans les requêtes Cypher sur les chemins pondérés, et dans le Cypher Lab (tâche 6). C'est le seul moyen d'agréger une valeur le long d'un chemin variable sans passer par APOC.
+
 ---
 
 ## Cypher vs SQL — équivalences mentales

@@ -17,7 +17,47 @@ order: 5
 **Pré-requis Phase 1** : la table `mission_pois` est non-vide pour les 3 rôles ([Checkpoint Phase 1](checkpoint_1.qmd)).
 :::
 
-[← Transition Phase 1 → Phase 2](transition_1_2.qmd) — *à lire d'abord pour comprendre ce qui change.*
+[← Cypher Lab](transition_1_2.qmd) — *à compléter avant de démarrer cette phase.*
+
+::: {.callout-tip title="Import croisé des Parquets — à faire en début de phase"}
+Chaque étudiant importe les Parquets des **2 autres rôles** dans sa propre BDD PostGIS, afin que les requêtes Cypher croisées soient possibles pour tout le monde.
+
+```python
+import pandas as pd
+from sqlalchemy import create_engine
+
+engine = create_engine("postgresql://postgres:manticore2026@localhost/bdtopo_manticore")
+
+for role_fichier in ["exports/mission_pois_attaque.parquet",
+                     "exports/mission_pois_defense.parquet",
+                     "exports/mission_pois_logistique.parquet"]:
+    df = pd.read_parquet(role_fichier)
+    df.to_sql("mission_pois", engine, if_exists="append", index=False,
+              method="multi", chunksize=500)
+```
+
+Vérifiez ensuite :
+```sql
+SELECT role, count(*) FROM mission_pois GROUP BY role ORDER BY role;
+-- Attendu : 3 lignes, chacune > 0
+```
+:::
+
+::: {.callout-note title="Coopération Cypher : les 3 rôles dans Neo4j"}
+Une fois les POIs migrés (T5), le graphe Neo4j de votre EPCI contient les POIs des 3 rôles.
+Vos requêtes Cypher peuvent croiser les perspectives :
+
+```cypher
+MATCH (a:POI {role: 'attaque'})-[:DISTANCE]->(d:POI {role: 'defense'})
+RETURN a.nom, d.nom, d.nature
+```
+
+C'est ici que la coopération devient concrète : Attaque pose les cibles, Défense les identifie comme points à protéger, Logistique trace les corridors entre eux.
+:::
+
+::: {.callout-warning title="Note sur cost = -1"}
+Dans les tables `ways`, environ 28% des arêtes ont `cost = -1`. Ce n'est pas une erreur : c'est la convention r2gg pour les arêtes **impassables en voiture** (pistes, sentiers, voies privées, tarmac aéroport, sens interdit). Ces arêtes sont présentes dans le graphe mais exclues du routage voiture. Vous en reprendrez l'analyse en T2.5.
+:::
 
 ---
 
@@ -173,7 +213,7 @@ Trois stratégies, à choisir selon votre rôle :
 2. **Re-snapper plus loin** : chercher le 2ᵉ ou 3ᵉ vertex le plus proche, en privilégiant ceux qui ont une arête `cost > 0`. Plus robuste, mais introduit un biais (le POI "vrai" peut être à 500 m du vertex de calcul).
 3. **Documenter** : garder le POI dans le rapport final mais marquer "**inatteignable voiture**". Honnêteté intellectuelle.
 
-Discutez en groupe : un aéroport isolé du graphe routier, c'est un bug ou une feature ? Pour un agent **Attaque**, le POI compte. Pour un agent **Ravitaillement**, peut-être moins.
+Discutez en groupe : un aéroport isolé du graphe routier, c'est un bug ou une feature ? Pour un agent **Attaque**, le POI compte. Pour un agent **Logistique**, peut-être moins.
 :::
 
 → Cette section anticipe les surprises de **T3** (Dijkstra retourne NULL) et de **Phase 3** (composantes connexes du graphe).

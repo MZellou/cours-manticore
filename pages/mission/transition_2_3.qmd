@@ -73,9 +73,20 @@ Vous allez **modifier `ways`** (mettre `cost = -1` sur des arêtes), mesurer, pu
 
 ---
 
+## Ce qui vous attend en Phase 3 : la T-Synthèse
+
+Phase 3 se termine par une **T-Synthèse (~30 min)** : les 3 rôles fusionnent leurs résultats en une **Carte de Situation Commune** via `generate_situation_map()`.
+
+Chaque rôle exportera ses tables finales en Parquet, un **« carteur »** désigné par le groupe les importera dans sa BDD et lancera la carte. Pensez dès maintenant à qui sera le carteur de votre groupe.
+
+La carte finale superpose les 3 perspectives — Attaque (cibles), Défense (protections), Logistique (corridors) — sur votre EPCI.
+
+---
+
 ## Avant de cliquer "Phase 3"
 
-- [ ] [Checkpoint Phase 2](checkpoint_2.qmd) passé
+- [ ] [Checkpoint Phase 2](checkpoint_2.qmd) passé (topologie synchronisée entre les 3)
 - [ ] [APOC — avancé](../theorie/avance/apoc.qmd) lu
 - [ ] [SQL — limites & EXPLAIN](../theorie/outils/sql_recursion.qmd) lu
 - [ ] Backup `ways` prêt à être créé : `CREATE TABLE ways_backup AS SELECT * FROM ways;`
+- [ ] Carteur du groupe désigné (pour la T-Synthèse finale)

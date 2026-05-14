@@ -116,7 +116,41 @@ CREATE INDEX poi_role IF NOT EXISTS FOR (p:POI) ON (p.role);
 
 ---
 
-## 7. APOC est chargé
+## 7. Sync topologie intra-groupe
+
+Pour que les indicateurs de simulation Phase 3 soient comparables entre les 3 membres du groupe, **chacun doit partir de la même topologie routière**.
+
+```sql
+-- Chacun exécute sur sa BDD et compare les chiffres avec son groupe
+SELECT
+  (SELECT count(*) FROM ways) AS nb_ways,
+  (SELECT count(*) FROM ways_vertices_pgr) AS nb_vertices;
+```
+
+| Symptôme | Diagnostic |
+|----------|------------|
+| Les 3 membres ont les mêmes `nb_ways` et `nb_vertices` | ✅ Topologie synchronisée |
+| Écart de quelques dizaines | ⚠️ Vérifier que tous ont lancé `00_setup.py` avec le même EPCI |
+| Écart important (> 10%) | ❌ L'un a peut-être un Gold Dump différent — relancer `make data-pull` |
+
+::: {.callout-note title="Export Parquet de la topologie (optionnel)"}
+Si votre groupe veut travailler sur la même topologie exacte, le membre qui a la BDD la plus complète peut exporter :
+
+```python
+import pandas as pd
+from sqlalchemy import create_engine
+
+engine = create_engine("postgresql://postgres:manticore2026@localhost/bdtopo_manticore")
+pd.read_sql("SELECT * FROM ways", engine).to_parquet("exports/ways.parquet", index=False)
+pd.read_sql("SELECT * FROM ways_vertices_pgr", engine).to_parquet("exports/ways_vertices_pgr.parquet", index=False)
+```
+
+Les autres membres importent via `COPY` depuis DuckDB.
+:::
+
+---
+
+## 8. APOC est chargé
 
 ```sql
 CALL apoc.help('apoc') YIELD name RETURN count(*) AS apoc_procedures;
@@ -126,7 +160,7 @@ CALL apoc.help('apoc') YIELD name RETURN count(*) AS apoc_procedures;
 
 ---
 
-## 8. Auto-validation
+## 9. Auto-validation
 
 Vous devriez pouvoir **expliquer** sans LLM :
 

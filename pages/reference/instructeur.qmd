@@ -22,20 +22,45 @@ order: 9
 
 ## 2. Assignation groupes × EPCI
 
-| Groupe | EPCI | Profil tactique |
-|--------|------|-----------------|
-| 1 | Brest Métropole | Port militaire Atlantique |
-| 2 | Le Havre Seine Métropole | Port pétrolier estuaire |
-| 3 | CU de Dunkerque | Frontière + nucléaire (Gravelines) |
-| 4 | CA du Cotentin | Péninsule + nucléaire (Flamanville) |
-| 5 | Grenoble-Alpes-Métropole | Cuvette montagneuse |
-| 6 | Eurométropole de Strasbourg | Frontière Allemagne |
-| 7 | Métropole Européenne de Lille | Frontière Belgique |
-| 8 | CA du Pays Basque | Frontière Espagne + montagne |
-| 9 | Métropole Rouen Normandie | Vallée Seine |
-| 10 | Bordeaux Métropole | Estuaire Gironde |
+**Effectif variable** : N groupes de 3 (1 EPCI / groupe). L'instructeur affecte les EPCIs au démarrage en fonction du nombre de groupes présents.
+
+Catalogue des 10 EPCIs disponibles (affecter selon la taille de la session) :
+
+| EPCI | Profil tactique | Particularité Phase 3 |
+|------|-----------------|----------------------|
+| Brest Métropole | Port militaire Atlantique | Aéroport vertex isolé (cost=-1) |
+| Le Havre Seine Métropole | Port pétrolier estuaire | Dense réseau routier |
+| CU de Dunkerque | Frontière + nucléaire (Gravelines) | Centrale Gravelines |
+| CA du Cotentin | Péninsule + nucléaire (Flamanville) | Bonus B9 : 3 rôles × 20 km |
+| Grenoble-Alpes-Métropole | Cuvette montagneuse | Choke point alpin Δ=+12.8 % |
+| Eurométropole de Strasbourg | Frontière Allemagne | Réseau dense |
+| Métropole Européenne de Lille | Frontière Belgique | Réseau transfrontalier |
+| CA du Pays Basque | Frontière Espagne + montagne | Topographie contrainte |
+| Métropole Rouen Normandie | Vallée Seine | Corridors fluviaux |
+| Bordeaux Métropole | Estuaire Gironde | Réseau portuaire |
 
 Chaque groupe de 3 étudiants : 1 Attaque, 1 Défense, 1 Logistique.
+
+> Si l'effectif ne permet pas des groupes complets de 3, un étudiant peut assumer deux rôles (Attaque + Défense étant la combinaison la plus complémentaire).
+
+## 2bis. Modèle d'échange Parquet entre étudiants
+
+Chaque étudiant travaille sur sa propre stack Docker locale — pas de BDD partagée intra-groupe. L'échange de données se fait via **exports Parquet** aux checkpoints.
+
+**Recommandation** : pré-configurer un dossier partagé par groupe avant le cours :
+- Clé USB (solution la plus fiable en salle sans réseau)
+- Google Drive / OneDrive (si réseau disponible)
+- Dossier réseau de la salle (à vérifier avec l'administrateur)
+
+**Convention de nommage** :
+
+| Fichier | Produit par | Consommé par | Moment |
+|---------|------------|--------------|--------|
+| `mission_pois_attaque.parquet` | Attaque | Défense, Logistique, Carteur | Fin Phase 1 |
+| `mission_pois_defense.parquet` | Défense | Attaque, Logistique, Carteur | Fin Phase 1 |
+| `mission_pois_logistique.parquet` | Logistique | Attaque, Défense, Carteur | Fin Phase 1 |
+
+**Rôle « carteur » (Phase 3)** : un étudiant désigné par le groupe (au choix) collecte les 3 Parquets finaux, les importe dans sa BDD locale via DuckDB, et exécute `generate_situation_map()` pour produire la Carte de Situation Commune. Désigner le carteur au début de la Phase 3 (environ J3 matin).
 
 ## 3. Timing suggéré (2.5 jours)
 

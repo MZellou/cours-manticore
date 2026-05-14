@@ -5,7 +5,7 @@
 ## Project identity
 
 Teaching repo: DB course (NoSQL graph + spatial), IGN/BDTOPO context.
-**Format:** 0.5J theory + 2J hands-on, 40 students / 10 groups × 4 roles.
+**Format:** 0.5J theory + 2J hands-on, **N groupes de 3 (1 EPCI / groupe)**, effectif variable.
 **Immersive project:** 3 connected phases (Reconnaissance → Cartographie → Simulation).
 
 ## Environment
@@ -70,7 +70,7 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 
 ## Key concepts
 
-- **4 roles:** Attaque (targets), Défense (protection), Ravitaillement (logistics), Énergie (energy grid)
+- **3 roles:** Attaque (targets), Défense (protection), Logistique (logistics + energy grid) — Logistique = ancienne fusion Ravitaillement+Énergie
 - **10 EPCIs:** Diverse profiles (ports, borders, mountains, nuclear)
 - BDTOPO ontology: 3 levels (`Database → Object → Detail`) linked by `parent_id`
 - Neo4j labels: `:ClasseOntologie`, `:POI` with role/source properties
@@ -89,3 +89,4 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).
 - **Site:** Quarto website deployed to GitHub Pages via `.github/workflows/quarto.yml`. Source files at root (`*.qmd`), built to `_site/`. Theory pages under `theorie/`, mission pages under `mission/`, roles under `roles/`, corrigés under `corriges/`. Slides in `slides/` use `{{< include >}}` to reuse theory content.
 - **Quizdown:** Checkpoints (`mission/checkpoint_*.qmd`) include interactive quizzes via `quizdown` Quarto extension.
+- **Parquet workflow:** End of Phase 1 each student exports `mission_pois_<role>.parquet` to a shared folder (USB / Drive / network). A designated « carteur » in Phase 3 imports all 3 and runs `generate_situation_map()` to produce the Carte de Situation Commune.

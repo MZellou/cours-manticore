@@ -102,15 +102,9 @@ flowchart LR
 
 ## BASE : le pendant de ACID
 
-Si ACID = rigueur, BASE = **pragmatisme** :
+Si ACID = rigueur, **BASE** = pragmatisme : *Basically Available, Soft state, Eventually consistent*. Le système préfère répondre vite quitte à ce que les données convergent avec un léger délai.
 
-> **Basically Available** : le système répond toujours, même si les données ne sont pas tout-à-fait à jour.
-> **Soft state** : l'état peut changer sans requête — à cause de la réplication en arrière-plan.
-> **Eventually consistent** : la cohérence arrive… avec un petit délai.
-
-**Exemple** : le fil Twitter. Deux amis voient votre tweet dans un ordre différent pendant 1 seconde → **acceptable**. Votre banque débite sans créditer → **inacceptable**.
-
-**Neo4j est hybride** : transactions ACID en local, mais le modèle de données est un graphe (NoSQL).
+**Notre cas** : on travaille en local (mono-nœud), ACID tient sans compromis. BASE est mentionné ici pour contextualiser les bases distribuées (Cassandra, MongoDB) que vous croiserez hors cours.
 
 ---
 
@@ -173,32 +167,6 @@ SELECT * FROM sensor_data WHERE sensor_id = 'SENSOR_42'
 ```
 
 **Quand choisir** : IoT, time-series, logs — des milliards de lignes écrites en continu.
-
----
-
-## MapReduce : le moteur du Big Data
-
-Quand les données ne tiennent plus sur **une machine**, il faut les traiter **en parallèle** sur un cluster. C'est le problème que Google a résolu avec **MapReduce** (2004).
-
-**Le principe en 2 étapes** :
-
-```
-MAP    : chaque nœud applique une fonction à ses données locales
-REDUCE : les résultats partiels sont combinés (somme, moyenne, union…)
-```
-
-**Exemple** : compter les POIs par catégorie sur 10 serveurs.
-
-```
-Serveur 1 : MAP → { "hôpital": 3, "gare": 7, ... }
-Serveur 2 : MAP → { "hôpital": 5, "gare": 2, ... }
-...
-REDUCE    → { "hôpital": 47, "gare": 89, ... }   ← résultat global
-```
-
-**Spark** (Apache) est le successeur moderne : même idée, mais en mémoire (100× plus rapide que Hadoop MapReduce sur disque). C'est l'outil standard du Big Data en 2026.
-
-> **Dans ce cours** : MapReduce n'est pas utilisé directement. Mais comprendre ce modèle explique **pourquoi les bases NoSQL Colonne (Cassandra, HBase) sont conçues pour le parallélisme** — et pourquoi PostgreSQL reste le bon choix tant que les données tiennent sur un serveur.
 
 ---
 

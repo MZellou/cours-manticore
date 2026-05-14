@@ -116,6 +116,74 @@ python scripts/04_benchmark_comparison.py --role attaque --map data/carte.png
 2. Benchmark spatial (`ST_DWithin` vs approximation Cypher)
 3. Génère `generate_situation_map()` — carte POIs + routes
 
+### `generate_situation_map()` — Carte de Situation Commune
+
+Fonction principale pour la T-Synthèse (Phase 3) : fusionne les POIs des 3 rôles en une carte PNG.
+
+**Signature** :
+
+```python
+def generate_situation_map(
+    epci: str,
+    layers: list[str] = ['attaque', 'defense', 'logistique'],
+    output_path: str | None = None
+) -> str:
+    """
+    Génère la Carte de Situation Commune pour un EPCI.
+
+    Args:
+        epci: Nom ou code SIREN de l'EPCI (doit être chargé dans PostGIS).
+        layers: Rôles à afficher. L'ordre détermine la superposition
+                (dernier = couche du dessus). Défaut : les 3 rôles.
+        output_path: Chemin du PNG de sortie. Si None, utilise
+                     data/carte_situation_{epci}.png.
+
+    Returns:
+        Chemin absolu du fichier PNG généré.
+    """
+```
+
+**Prérequis — tables PostGIS chargées** :
+
+| Table | Source | Obligatoire |
+|-------|--------|-------------|
+| `mission_pois` | Exports Parquet des 3 rôles (T-Synthèse) | Oui |
+| `ways` | Gold Dump (00_setup.py) | Oui (fond cartographique) |
+| `choke_points` | Phase 3 T1 (`03_routing_pgrouting.py`) | Non (affiché si présent) |
+| `attaque_targets` | Phase 3 T8 | Non (affiché si présent) |
+| `logistique_corridors` | Phase 3 T8 | Non (affiché si présent) |
+
+**Exemples d'utilisation** :
+
+```python
+from scripts.script_04_benchmark_comparison import generate_situation_map
+
+# Cas minimal — Phase 3 T-Synthèse
+generate_situation_map(epci='Brest Métropole')
+
+# Avec chemin de sortie personnalisé
+generate_situation_map(
+    epci='Brest Métropole',
+    output_path='exports/carte_situation_brest.png'
+)
+
+# Carte partielle (2 rôles seulement, p. ex. pour un checkpoint intermédiaire)
+generate_situation_map(
+    epci='Brest Métropole',
+    layers=['attaque', 'defense']
+)
+```
+
+**Sortie** : PNG haute résolution (300 DPI), avec légende automatique par rôle. Chemin par défaut : `data/carte_situation_{epci_siren}.png`.
+
+**Ordre des couches recommandé** :
+
+1. `logistique` (fond — corridors et réseaux)
+2. `defense` (milieu — points à protéger)
+3. `attaque` (dessus — cibles prioritaires en rouge)
+
+**Cas d'usage pédagogique** : T-Synthèse Phase 3 — le « carteur » du groupe reçoit les 3 Parquets, les importe via DuckDB → PostGIS, puis appelle cette fonction. Voir le corrigé complet dans [Corrigé Phase 3 — T-Synthèse](../corriges/phase_3.qmd).
+
 ---
 
 ## `admin_generate_gold_dumps.py` — Instructeur uniquement

@@ -122,6 +122,28 @@ LIMIT 1;
 
 → Combinez avec `CROSS JOIN LATERAL` pour appliquer à chaque ligne d'une table (vu en Phase 2).
 
+:::{.callout-note title="CROSS JOIN LATERAL — pour chaque ligne A, exécute une sous-requête sur B"}
+Un `CROSS JOIN LATERAL` est une **boucle SQL** : pour chaque ligne de la table de gauche, PostgreSQL exécute la sous-requête de droite en réutilisant les colonnes de la ligne courante.
+
+Analogie : « Pour chaque POI de la mission, trouve le sommet de graphe le plus proche. »
+
+```sql
+SELECT a.id, nearest.vertex_id, nearest.distance
+FROM mission_pois a
+CROSS JOIN LATERAL (
+  SELECT b.id AS vertex_id,
+         ST_Distance(a.geom, b.the_geom) AS distance
+  FROM ways_vertices_pgr b
+  ORDER BY a.geom <-> b.the_geom
+  LIMIT 1
+) nearest;
+```
+
+**Pourquoi c'est nécessaire en spatial :** l'opérateur KNN `<->` dépend de la géométrie de `a` — il faut donc l'évaluer *pour chaque ligne* de `a`, pas une seule fois. Sans `LATERAL`, SQL ne peut pas référencer `a.geom` à l'intérieur de la sous-requête.
+
+En Phase 1 T2, vous verrez ce pattern pour accrocher chaque POI à son sommet le plus proche dans le graphe routier.
+:::
+
 ---
 
 ## Index GIST : pourquoi c'est vital

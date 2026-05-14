@@ -1,73 +1,181 @@
 ---
-title: "Transition 1 → 2"
+title: "Cypher Lab"
 order: 4
 ---
 
-# Transition Phase 1 → Phase 2
+# Atelier Cypher — 1h sur jeu jouet
 
-> Pause synthèse avant la cartographie. **5 minutes de lecture.**
+> *Du graphe SQL au graphe Cypher — avant d'attaquer les données BDTOPO réelles.*
 
----
-
-## Ce que vous avez appris en Phase 1
-
-| Compétence | Outil | Usage en Phase 2/3 |
-|-----------|-------|--------------------|
-| Filtrer des POIs par attributs | SQL `WHERE`, `JOIN` | Toujours utile (filtrage en amont des traitements graphe) |
-| Jointures spatiales | `ST_Intersects`, `ST_DWithin` | Snap des POIs au graphe (T2) |
-| Hiérarchies via récursion | `WITH RECURSIVE` | Vous allez voir l'**équivalent Cypher** en 2 lignes |
-| Clustering spatial | `ST_ClusterDBSCAN` | Pas réutilisé directement, mais le réflexe "regrouper avant d'agir" reste |
-| Index GIST | `CREATE INDEX … USING GIST` | Indispensable pour la Phase 2 (snap) |
-
-> 💡 **Ce qui reste constant** : PostGIS et le SRID 2154. Tout ce qui est *spatial pur* reste en SQL.
+**Mode** : Solo. **Durée** : 1h.
 
 ---
 
-## Ce qui change en Phase 2
+## Du SQL relationnel au graphe : un mapping en 10 lignes
 
-### Du **point** au **graphe**
+| SQL (ce que vous connaissez) | Cypher (ce qui vous attend) |
+|------------------------------|------------------------------|
+| `SELECT … FROM nodes, edges WHERE …` | `MATCH (a)-[:REL]->(b) RETURN …` |
+| `JOIN` sur clés étrangères | Pattern de chemin `(a)-[r]->(b)` — le graphe *est* la jointure |
+| `WHERE col = val` | `WHERE n.prop = val` ou `{prop: val}` inline |
+| `COUNT(*) GROUP BY` | `RETURN type(r), count(*)` |
+| `WITH RECURSIVE` (hiérarchies) | `(a)-[:R*1..n]->(b)` — récursion en une expression |
+| `INSERT INTO … VALUES …` | `CREATE (n:Label {prop: val})` |
+| `INSERT … ON CONFLICT DO NOTHING` | `MERGE (n:Label {key: val})` |
+| `UPDATE … SET …` | `SET n.prop = val` après `MATCH` |
 
-Phase 1 : vos POIs sont des **points isolés**. On les filtre, on les compte, on les regroupe.
-Phase 2 : on ajoute la **topologie** — *qui est connecté à qui, par quel chemin, à quel coût*.
-
-### Du **modèle linéaire** au **modèle pivot nœuds+arêtes**
-
-Vous avez ignoré la table `troncon_de_route` jusqu'ici (trop volumineuse, peu utile pour des POIs ponctuels). En Phase 2, **r2gg** la transforme en un **graphe** (`ways` + `ways_vertices_pgr`) — c'est ce graphe que vous interrogez.
-
-→ Lecture : [pgRouting et r2gg](../theorie/outils/pgrouting.qmd) (5 min)
-
-### Du **mono-paradigme SQL** au **bi-paradigme SQL + Cypher**
-
-Vous avez écrit du SQL toute la Phase 1. Phase 2 ajoute Cypher pour :
-
-- L'ontologie (au lieu de `WITH RECURSIVE`)
-- Le réseau de POIs (relations `[:DISTANCE]`)
-- Les patterns multi-étapes
-
-→ Lecture : [Cypher en 5 minutes](../theorie/outils/cypher_5min.qmd) (5 min)
+> La grande différence : en Cypher, **la structure du graphe est dans la requête elle-même** (les nœuds et relations que vous écrivez dans `MATCH`). En SQL, vous jointure des tables avec des clés.
 
 ---
 
-## La grande question de Phase 2
+## Charger le jeu de données jouet
 
-> **À quel moment SQL est-il insuffisant ?**
+Dans Neo4j Browser ([http://localhost:7474](http://localhost:7474)), tapez :
 
-Vous allez le **mesurer** :
+```
+:play movies
+```
 
-| Tâche | Tentative SQL | Résolution Cypher / pgRouting |
-|------|---------------|-------------------------------|
-| Plus court chemin A → B | Impossible nativement | `pgr_dijkstra` ou `shortestPath` Cypher |
-| Tous les sous-types d'une classe | `WITH RECURSIVE` (verbeux) | `(d)-[:EST_SOUS_TYPE_DE*]->(o)` |
-| Tous les chemins entre A et B | Impossible | `MATCH path = (a)-[*]-(b)` |
-| Graphe routier avec cost dynamique | OK avec pgRouting | Pas naturel en Cypher (quand 20M arêtes) |
+Cliquez sur **"Create"** dans le guide qui s'ouvre. Le dataset Movies (~38 nœuds `Person` et `Movie`, ~125 relations `ACTED_IN` / `DIRECTED` / `PRODUCED`) est chargé en quelques secondes.
 
-→ **Conclusion anticipée** : on combine. PostGIS + pgRouting + Neo4j. Aucun outil ne suffit.
+::: {.callout-note title="Pourquoi Movies et pas BDTOPO ?"}
+BDTOPO contient des centaines de milliers d'objets. Pour apprendre Cypher, un petit graphe où **vous voyez tous les nœuds à l'écran** est bien plus efficace. Phase 2 = appliquer ces mêmes patterns sur BDTOPO réel.
+:::
+
+---
+
+## Tâche 1 — Exploration visuelle (5 min)
+
+```cypher
+MATCH (n) RETURN n LIMIT 25
+```
+
+Observez le graphe dans l'interface. Cliquez sur un nœud — quels labels et propriétés voyez-vous ?
+
+**Questions :**
+
+- Quels labels existent dans ce graphe ? (`MATCH (n) RETURN distinct labels(n)`)
+- Quels types de relations ? (`MATCH ()-[r]->() RETURN distinct type(r)`)
+
+---
+
+## Tâche 2 — Pattern matching basique (10 min)
+
+```cypher
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+RETURN p.name, m.title
+ORDER BY m.title
+LIMIT 20
+```
+
+**Exercice** : trouvez les films dans lesquels Tom Hanks a joué.
+
+*Indice : ajoutez `WHERE p.name = 'Tom Hanks'`.*
+
+**Questions :**
+
+- Combien de films a-t-il joués ? (`count(m)`)
+- Quelle propriété porte le titre du film ? L'année de sortie ?
+
+---
+
+## Tâche 3 — Agrégation (10 min)
+
+```cypher
+MATCH (p)-[r]->(q)
+RETURN type(r), count(*) AS nb
+ORDER BY nb DESC
+```
+
+**Exercice** : quel acteur a le plus de films à son actif ?
+
+*Indice : `MATCH (p:Person)-[:ACTED_IN]->(m:Movie) RETURN p.name, count(m) AS nb ORDER BY nb DESC LIMIT 5`*
+
+---
+
+## Tâche 4 — Chemins variables (10 min)
+
+En Cypher, `[*1..3]` signifie "de 1 à 3 sauts" dans le graphe. C'est la clé des parcours multi-niveaux — l'équivalent du `WITH RECURSIVE` SQL mais en une ligne.
+
+```cypher
+MATCH path = (a:Person {name: 'Tom Hanks'})-[*1..3]->(b)
+RETURN [n IN nodes(path) | coalesce(n.name, n.title)] AS chemin
+LIMIT 10
+```
+
+**Questions :**
+
+- Qu'est-ce que `nodes(path)` retourne ? Et `relationships(path)` ?
+- Pourquoi borner à `*1..3` et pas `*` (non borné) sur un grand graphe ?
+
+::: {.callout-tip title="Lien avec Phase 2"}
+`(a)-[*1..3]->(b)` prépare directement les requêtes Dijkstra et betweenness de Phase 2-3. Remplacez `Person`/`Movie` par `POI`/`ClasseOntologie` et vous avez vos patterns BDTOPO.
+:::
+
+---
+
+## Tâche 5 — MERGE vs CREATE (10 min)
+
+`CREATE` crée toujours un nœud, même s'il existe déjà (doublons possibles).
+`MERGE` crée **seulement si absent** — équivalent de `INSERT ... ON CONFLICT DO NOTHING`.
+
+```cypher
+-- Crée un nœud test (à ne faire qu'une fois)
+MERGE (x:TestNode {name: 'MonTest', valeur: 42})
+RETURN x
+
+-- Relancez la même requête : combien de nœuds sont créés ?
+MATCH (x:TestNode) RETURN count(x)
+```
+
+**Exercice** : essayez `CREATE` au lieu de `MERGE` et relancez deux fois. Que se passe-t-il ?
+
+Nettoyez ensuite : `MATCH (x:TestNode) DELETE x`
+
+---
+
+## Tâche 6 — WITH et reduce() (15 min)
+
+`WITH` pipe les résultats d'une clause à la suivante (comme un `|` Unix ou un CTE SQL).
+`reduce()` accumule une valeur sur une liste — ici, la somme des distances d'un chemin.
+
+```cypher
+MATCH path = (a:Person {name: 'Tom Hanks'})-[:ACTED_IN]->(m:Movie)
+WITH path, m, length(path) AS nb_sauts
+WHERE nb_sauts >= 1
+RETURN m.title,
+       nb_sauts,
+       reduce(acc = 0, n IN nodes(path) | acc + 1) AS nb_noeuds
+ORDER BY nb_sauts
+```
+
+**Exercice plus difficile** : trouvez le chemin le plus court (en nombre de sauts) entre Tom Hanks et Keanu Reeves via des films communs.
+
+*Indice : `shortestPath((a)-[*]-(b))`*
+
+::: {.callout-tip title="Pourquoi reduce() ?"}
+En Phase 3, vous utiliserez `reduce(acc = 0.0, r IN relationships(path) | acc + r.meters)` pour calculer la distance totale d'un itinéraire entre POIs. Même syntaxe, contexte BDTOPO.
+:::
+
+---
+
+## Récapitulatif avant Phase 2
+
+Vous savez maintenant :
+
+- [ ] Lire un pattern Cypher (`MATCH`, `WHERE`, `RETURN`)
+- [ ] Écrire des agrégations (`count`, `ORDER BY`)
+- [ ] Traverser des chemins multi-sauts (`[*1..3]`)
+- [ ] Distinguer `MERGE` et `CREATE`
+- [ ] Piper des clauses avec `WITH` et accumuler avec `reduce()`
+
+> **Phase 2 = appliquer exactement ces patterns sur BDTOPO réel.** Les nœuds s'appellent `:POI` et `:ClasseOntologie`, les relations `[:EST_SOUS_TYPE_DE]` et `[:DISTANCE]`, mais la syntaxe Cypher est identique.
 
 ---
 
 ## Avant de cliquer "Phase 2"
 
-- [ ] [Checkpoint Phase 1](checkpoint_1.qmd) passé
-- [ ] [pgRouting et r2gg](../theorie/outils/pgrouting.qmd) lu
-- [ ] [Cypher en 5 minutes](../theorie/outils/cypher_5min.qmd) lu
+- [ ] [Checkpoint Phase 1](checkpoint_1.qmd) passé (3 Parquets dans `exports/`)
+- [ ] Les 6 tâches ci-dessus complétées
+- [ ] [pgRouting et r2gg](../theorie/outils/pgrouting.qmd) lu (5 min)
 - [ ] Neo4j Browser ouvert dans un onglet (`http://localhost:7474`)

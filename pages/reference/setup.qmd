@@ -38,6 +38,8 @@ Vérification : `rclone version`
 
 ## 3. Installation
 
+> **Chaque étudiant lance sa propre stack Docker locale.** Il n'y a pas de base de données partagée au sein d'un groupe — chacun a son PostGIS et son Neo4j sur son propre laptop. La synchronisation entre coéquipiers se fait via des **exports Parquet** aux checkpoints (voir ci-dessous).
+
 ```bash
 # Cloner le repo
 git clone https://github.com/MZellou/cours-manticore.git && cd cours-manticore
@@ -54,6 +56,28 @@ docker compose up -d
 # Installer les dépendances Python
 uv sync
 ```
+
+### Dossier partagé du groupe (`exports/`)
+
+Créez un dossier `exports/` partagé avec vos deux coéquipiers avant le début de la Phase 1. Ce dossier est le **canal Parquet** utilisé aux checkpoints pour synchroniser vos données.
+
+```bash
+# Créer le dossier local (à partager ensuite)
+mkdir -p exports/
+```
+
+Options de partage (choisir selon la disponibilité en salle) :
+- **Clé USB** : solution la plus fiable, pas besoin de réseau
+- **Google Drive / OneDrive** : si réseau disponible
+- **Dossier réseau de la salle** : demander à l'administrateur
+
+**Convention de nommage des exports** :
+
+| Fichier | Rôle | Moment |
+|---------|------|--------|
+| `exports/mission_pois_attaque.parquet` | Attaque | Fin Phase 1 |
+| `exports/mission_pois_defense.parquet` | Défense | Fin Phase 1 |
+| `exports/mission_pois_logistique.parquet` | Logistique | Fin Phase 1 |
 
 ## 4. Télécharger les données
 

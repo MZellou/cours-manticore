@@ -480,7 +480,7 @@ LIMIT 1;
 
 ## 🔧 Logistique {#-logistique}
 
-> Rôle consolidé fusionnant Ravitaillement (flux logistiques) et Énergie (réseaux électriques). B1–B6 = anciens bonus Ravitaillement ; B7–B13 = anciens bonus Énergie ; B14–B15 = nouvelles questions Logistique.
+> Rôle consolidé fusionnant Ravitaillement (flux logistiques) et Énergie (réseaux électriques). B1–B6 = volet logistique (flux d'approvisionnement) ; B7–B13 = **Logistique — volet énergie** (ex-Énergie) ; B14–B15 = nouvelles questions Logistique transversales.
 
 ### B1 — Ports et zones industrielles
 
@@ -608,7 +608,7 @@ ORDER BY distance_m;
 - Plus `distance_m` est faible, plus le hub est efficace (transbordement rapide).
 - En Phase 2 (routage contraint), ces hubs pourraient être les points d'entrée du ravitaillement si les poids lourds sont interdits dans certaines zones.
 
-### B7 — Postes HT et hôpitaux
+### B7 — Postes HT et hôpitaux *(Logistique — volet énergie)*
 
 ```sql
 SELECT pt.nature, pt.importance, h.toponyme AS hopital,
@@ -623,7 +623,7 @@ ORDER BY pt.importance, dist_m;
 
 **Lien Phase 3** : si ce poste tombe, l'hôpital identifié perd son alimentation électrique prioritaire.
 
-### B8 — Lignes THT et routes
+### B8 — Lignes THT et routes *(Logistique — volet énergie)*
 
 ```sql
 SELECT l.voltage, count(*) AS routes_croisees
@@ -646,7 +646,7 @@ WHERE l.voltage IN ('400 kV', '225 kV')
 GROUP BY l.voltage;
 ```
 
-### B9 — Centrales nucléaires : rayon d'influence
+### B9 — Centrales nucléaires : rayon d'influence *(Logistique — volet énergie)*
 
 ```sql
 SELECT 'Centrale ' || c.toponyme AS centrale, p.role, count(*) AS pois
@@ -658,7 +658,7 @@ GROUP BY c.toponyme, p.role
 ORDER BY c.toponyme, pois DESC;
 ```
 
-### B10 — Mix énergétique
+### B10 — Mix énergétique *(Logistique — volet énergie)*
 
 ```sql
 SELECT 'Éolienne' AS source, count(*) FROM construction_ponctuelle WHERE nature = 'Éolienne'
@@ -670,7 +670,7 @@ UNION ALL
 SELECT 'Centrale électrique', count(*) FROM zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique';
 ```
 
-### B11 — Pylônes et postes : complétude du réseau
+### B11 — Pylônes et postes : complétude du réseau *(Logistique — volet énergie)*
 
 **Objectif** : comparer le nombre de pylônes (supports de ligne) et de postes de transformation (nœuds du réseau) par secteur géographique. Un secteur avec beaucoup de pylônes mais peu de postes a un réseau aérien mal maillé — donc plus fragile (une coupure de ligne isole une plus grande zone).
 
@@ -711,7 +711,7 @@ ORDER BY secteur;
   - **NULL** : pas de poste dans ce secteur → le secteur dépend d'un poste distant (vulnérable).
 - Les secteurs avec `nb_postes = 0` mais `nb_pylones > 0` sont des zones où l'électricité transite mais n'est pas redistribuée localement — vulnérabilité.
 
-### B12 — Risque cascade
+### B12 — Risque cascade *(Logistique — volet énergie)*
 
 **Objectif** : identifier les postes haute tension situés à moins de 1 km d'un cours d'eau permanent. Ces postes sont exposés au **risque inondation** : une crue pourrait les endommager et provoquer un effet cascade (coupure en chaîne sur le réseau).
 
@@ -745,7 +745,7 @@ ORDER BY distance_m;
 - En Phase 3 (simulation), ces postes devraient être prioritaires pour le rôle Défense (protection contre les coupes).
 - **Variante** : changez la distance (`500`, `2000`) pour voir la sensibilité.
 
-### B13 — Interdépendances : barrages et écluses
+### B13 — Interdépendances : barrages et écluses *(Logistique — volet énergie)*
 
 **Objectif** : identifier les barrages qui ont une écluse à moins de 1 km. Ces ouvrages mixtes sont des points de vulnérabilité critiques car ils combinent **deux** infrastructures sensibles : la production hydroélectrique et la navigation fluviale. Un incident sur l'un affecte l'autre.
 

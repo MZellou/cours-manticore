@@ -5,7 +5,7 @@ order: 6
 
 # APOC — les essentiels
 
-> **À lire avant la Phase 2.** APOC ajoute à Cypher des procédures indispensables : Dijkstra pondéré, sous-graphes, plus courts chemins. Note : le cours utilise **Neo4j 5.x / APOC 5.x**.
+> **Lecture juste-à-temps — Phase 2 (tâches T8–T9).** Ne lisez pas cette page avant de commencer la Phase 2 : ouvrez-la au moment où les tâches sur Dijkstra Neo4j et les sous-graphes le demandent. APOC ajoute à Cypher des procédures indispensables : Dijkstra pondéré, sous-graphes, plus courts chemins. Note : le cours utilise **Neo4j 5.x / APOC 5.x**.
 
 ---
 

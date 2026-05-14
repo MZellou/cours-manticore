@@ -118,6 +118,8 @@ Le coût temporel est `longueur / vitesse`. Si la vitesse vaut `0`, on tombe sur
 Mettre `cost = 0` serait pire : pgRouting prendrait ce tronçon **gratuitement** et trouverait des itinéraires absurdes passant par des sentiers de chèvres.
 :::
 
+> **BDTOPO en chiffres** : ~28% des arêtes du graphe BDTOPO ont `cost = -1` ou `reverse_cost = -1` — essentiellement les **sens uniques** et les restrictions de circulation. Ce n'est pas une anomalie, c'est la réalité du réseau routier. `pgr_dijkstra` ignore silencieusement ces arêtes. En Phase 3, vous pourrez simuler des destructions en mettant `cost = -1` sur un pont ou un nœud, forçant le routage à contourner.
+
 ---
 
 ## Dijkstra sous pgRouting

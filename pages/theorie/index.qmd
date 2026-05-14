@@ -5,26 +5,32 @@ order: 3
 
 # Théorie
 
-> **Fil de lecture** : commencez par les **Fondements** (avant le TD), puis les **Outils** au fur et à mesure des phases. **Avancé** est optionnel.
+> **Fil de lecture** : lisez uniquement ce qui est marqué **obligatoire** avant chaque phase. Le reste se lit juste-à-temps, quand vous en avez besoin.
 
-## Lecture recommandée
+## Parcours conseillé
 
 ```
-Fondements
+AVANT J1 — Phase 1 (~1h de lecture)
   │
-  ├── Pourquoi ce cours ? ← COMMENCEZ ICI
-  ├── Modèle BDTOPO
+  ├── Pourquoi ce cours ?        ← COMMENCEZ ICI (15 min)
+  ├── Modèle BDTOPO              (15 min)
+  ├── PostGIS — essentiels       (20 min)
+  └── SQL — limites & récursion  (10 min)
+
+AVANT CYPHER LAB (entre Phase 1 et Phase 2 — ~25 min)
   │
-  ├── Outils (au fil des phases)
-  │   ├── PostGIS — essentiels       → avant Phase 1
-  │   ├── SQL — limites & EXPLAIN    → avant Phase 1 (ontologie)
-  │   ├── Cypher en 5 minutes        → avant Phase 2
-  │   ├── GraphDB 101                → avant Phase 2
-  │   └── pgRouting et r2gg          → avant Phase 2
+  ├── GraphDB 101                (15 min)
+  └── Cypher en 5 minutes        (10 min)
+
+JUSTE-À-TEMPS — Phase 2 (à lire quand la tâche le demande)
   │
-  └── Avancé (Phase 3+)
-      ├── APOC — algorithmes
-      └── Contenu des données (référence)
+  ├── pgRouting et r2gg
+  └── APOC — les essentiels      ← consulter pendant les tâches T8–T9
+
+JUSTE-À-TEMPS — Phase 3 (référence)
+  │
+  ├── APOC — algorithmes avancés
+  └── Contenu des données BDTOPO ← survoler, lire uniquement votre EPCI
 ```
 
 ## Sous-sections
