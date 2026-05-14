@@ -6,22 +6,6 @@ order: 3
 
 > Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
-**Mini-sommaire** :
-
-- [T1 — Choke Points](#t1--choke-points)
-- [T2a — Tous les chemins entre deux rôles](#t2a--tous-les-chemins-entre-deux-rles)
-- [T2b — Plus court chemin avec nœud intermédiaire](#t2b--plus-court-chemin-avec-nud-intermdiaire)
-- [T2c — Sous-graphe accessible depuis un POI](#t2c--sous-graphe-accessible-depuis-un-poi)
-- [T3 — Requêtes benchmark](#t3--requetes-benchmark)
-- [T5 — Couper 1 arête](#t5--couper-1-arte)
-- [T6 — Couper 3 arêtes](#t6--couper-3-artes)
-- [T7 — Stratégie défensive](#t7--stratgie-dfensive)
-- [T8 — Stratégie offensive](#t8--stratgie-offensive)
-- [T9 — Composantes connexes](#t9--composantes-connexes)
-- [T10 — Centralité de degré](#t10--centralit-de-degr)
-
----
-
 ## T1 — Choke Points
 
 **Objectif** : identifier les nœuds (POI) dont la suppression maximiserait la perturbation du réseau — les points de fragilité stratégiques.

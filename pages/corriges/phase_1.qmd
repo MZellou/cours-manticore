@@ -4,8 +4,6 @@ order: 1
 ---
 # Corrigé Phase 1 — Reconnaissance
 
-> **Sommaire** : [T0a — DuckDB](#t0a--explorer-les-données-sources-avec-duckdb) · [T0b — Jointures spatiales](#t0b--sql--jointures-spatiales) · [T0c — Cypher](#t0c--cypher--premiers-pas) · [T1 — Ontologie](#t1--explorer-lontologie-bdtopo) · [T2 — POIs rôle](#t2--sélectionner-les-pois-de-votre-rôle) · [T3 — Criticité](#t3--ajouter-des-critères-de-criticité) · [T4 — DBSCAN](#t4--clusteriser-les-pois-st_clusterdbscan) · [T5 — Partage](#t5--partager-vos-pois) · [T6 — Bonus](#t6--questions-bonus-par-rôle) · [T7 — Cross-rôle](#t7--cross-rôle)
-
 > Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
 ---

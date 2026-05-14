@@ -6,21 +6,6 @@ order: 2
 
 > Solutions des exercices. Cliquer sur "Copier" pour récupérer le code.
 
-## Sommaire
-
-- [T1 — Explorer le graphe r2gg](#t1)
-- [T2 — Associer les POIs aux sommets](#t2)
-- [T3 — Calculer des itinéraires (Dijkstra)](#t3)
-- [T4 — Routage contraint par rôle](#t4)
-- [T5 — Migrer dans Neo4j](#t5)
-- [T7 — Créer des nœuds personnalisés](#t7)
-- [T8 — OPTIONAL MATCH et UNWIND](#t8)
-- [T9 — Pattern matching avancé](#t9)
-- [T10 — Matrice de distances](#t10)
-- [T11 — Isochrones](#t11)
-
----
-
 ## T1 — Explorer le graphe r2gg {#t1}
 
 **Objectif** : comprendre la structure du graphe routier généré par r2gg — comment les tronçons BDTOPO ont été transformés en un graphe orienté (sommets + arêtes) utilisable par pgRouting, et quel est le schéma des tables `ways` et `ways_vertices_pgr`.

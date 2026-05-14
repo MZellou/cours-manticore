@@ -106,8 +106,8 @@ Chaque tronçon a des attributs de **routage** :
 |----------|---------|
 | `importance` (1-6) | 1 = national, 5 = local |
 | `nature` | Autoroute, Route, Chemin, Sentier |
-| `largeur_de_chaussee` | Convois exceptionnels (rôle Énergie) |
-| `restriction_de_poids_total` | Poids lourds (rôle Ravitaillement) |
+| `largeur_de_chaussee` | Convois exceptionnels (rôle Logistique) |
+| `restriction_de_poids_total` | Poids lourds (rôle Logistique) |
 | `vitesse_moyenne_vl` | Calcul de temps de parcours |
 | `sens_de_circulation` | Graphe orienté ou non |
 
@@ -116,10 +116,10 @@ Chaque tronçon a des attributs de **routage** :
 | Table | Rôle principal | Points clés |
 |-------|---------------|-------------|
 | `aerodrome` | Attaque | `categorie` filtre intérêt |
-| `equipement_de_transport` | Attaque/Ravitaillement | Ports, gares, échangeurs |
-| `poste_de_transformation` | Énergie | `importance` 1-6 (1 = critique) |
-| `ligne_electrique` | Énergie | `voltage` THT 225/400kV |
-| `reservoir` | Énergie/Ravitaillement | Réservoirs industriels |
+| `equipement_de_transport` | Attaque/Logistique | Ports, gares, échangeurs |
+| `poste_de_transformation` | Logistique | `importance` 1-6 (1 = critique) |
+| `ligne_electrique` | Logistique | `voltage` THT 225/400kV |
+| `reservoir` | Logistique | Réservoirs industriels |
 | `construction_ponctuelle` | Tous | Éoliennes, phares, antennes |
 | `construction_surfacique` | Défense | Ponts, barrages |
 

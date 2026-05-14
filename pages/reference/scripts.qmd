@@ -47,8 +47,7 @@ Requêtes SQL PostGIS par rôle (exploration + clustering).
 ```bash
 python scripts/01_explore_postgis.py --role attaque
 python scripts/01_explore_postgis.py --role defense
-python scripts/01_explore_postgis.py --role ravitaillement
-python scripts/01_explore_postgis.py --role energie
+python scripts/01_explore_postgis.py --role logistique
 ```
 
 **Exemples exécutés** :
@@ -84,7 +83,7 @@ Calcul d'itinéraires et choke points avec pgRouting.
 
 ```bash
 python scripts/03_routing_pgrouting.py --role attaque
-python scripts/03_routing_pgrouting.py --role energie
+python scripts/03_routing_pgrouting.py --role logistique
 ```
 
 **Exemples exécutés** :

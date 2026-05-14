@@ -98,6 +98,38 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 
 *Indice : joignez `mission_pois` (role='attaque') avec `surface_hydrographique` filtré `nature IN ('Retenue', 'Retenue-barrage', 'Lac')` via `ST_DWithin`.*
 
+### B8 — Degré de connectivité {#sec-b8}
+
+> Classez vos cibles par "degré" : combien d'autres cibles sont à moins de 5 km ?
+> La plus connectée = point névralgique. Que se passe-t-il si elle tombe ?
+
+*SQL : self-join sur `mission_pois` + count + ORDER BY.*
+
+**Bridge Neo4j** : en graphe, c'est le **degree centrality** — une métrique native. En SQL, c'est un O(n²) self-join. Réfléchissez : pourquoi le graphe fait ça en O(degré) et pas O(n) ?
+
+### B9 — Attaque en cascade {#sec-b9}
+
+> Si on détruit un pont, quels tronçons de route deviennent inaccessibles ? Et les cibles sur ces tronçons ?
+> Utilisez `WITH RECURSIVE` pour propager l'impact.
+
+*SQL : récursion sur `troncon_de_route` + `ST_Intersects` avec `construction_lineaire` (ponts/tunnels). Pour chaque pont détruit, identifiez les tronçons coupés, puis les cibles sur ces tronçons.*
+
+**Bridge Neo4j** : cette propagation d'impact est un **traversal de graphe natif**. Pas besoin de récursion SQL — le graphe "suit" les arêtes naturellement. Quel est le coût d'un traversal vs une CTE récursive sur 20M tronçons ?
+
+### B10 — Cypher sneak peek {#sec-b10}
+
+> Écrivez en Cypher : "Trouve toutes les cibles à 2 sauts d'un aérodrome."
+> Comparez avec votre SQL équivalent. Qu'en déduisez-vous sur la lisibilité ?
+
+*Indice Cypher :*
+
+```cypher
+MATCH (a:POI {source:'aerodrome'})-[:PROCHE*2]->(c:POI)
+RETURN c.nom, c.source
+```
+
+*Question NoSQL : essayez d'écrire la même chose en SQL. Combien de lignes ? Combien de jointures ? Quel est le coût cognitif ?*
+
 → [Corrigé](../corriges/bonus.qmd#-attaque)
 
 ---

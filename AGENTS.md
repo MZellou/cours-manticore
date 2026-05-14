@@ -100,3 +100,8 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 - **Docker env ≠ restart:** `docker compose restart` ignores env changes. Must `docker compose up -d` to recreate.
 - **Neo4j 5.x config:** Use `dbms.memory.transaction.total.max` (old-style). Docker env: `NEO4J_dbms_memory_transaction_total_max`.
 - **Validation timeouts:** Heavy Cypher queries timeout on dense graphs (>1M rels). Use explicit timeouts or SKIP markers.
+- **Role content balance:** Before adding questions/tasks to roles, count existing items per role. Uneven loads (e.g., 15 vs 6-7) mean adding equally worsens imbalance — adapt additions proportionally.
+- **Deeper ≠ harder SQL:** When students have LLM access, "push further" means conceptual/architectural thinking (graph modeling trade-offs, SQL ceiling, bridge to next phase) — not more complex syntax.
+- **Vary per-role prompts:** Repeating the same question structure across roles (e.g., "propose an LPG schema") feels redundant even with different contexts. Vary the angle per role.
+- **Check git history on refactor cues:** When user says "check last commit," recent merges (e.g., 4→3 roles) reveal architectural intent that overrides assumptions about current structure.
+- **Stale indexes after refactor:** Index/reference pages drift after structural changes. Flag as quick post-refactor cleanup.

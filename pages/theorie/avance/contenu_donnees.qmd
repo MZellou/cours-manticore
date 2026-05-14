@@ -14,20 +14,20 @@ order: 3
 |---|---|---|---|---|
 | **aerodrome** | 1 382 | Point | `categorie`, `nature`, `code_icao`, `altitude` | Attaque : aérodromes internationaux/nationaux |
 | **piste_d_aerodrome** | 2 014 | Surf. | `nature`, `fonction` | Complément aérodromes |
-| **pylone** | 265 143 | Point | `hauteur` | Énergie : réseau électrique (265k pylônes !) |
-| **poste_de_transformation** | 4 104 | Point | `importance` (1-6) | Énergie : postes critiques (importance ≤ 3) |
-| **ligne_electrique** | 14 470 | Line | `voltage` | Énergie : lignes THT (400kV, 225kV) |
+| **pylone** | 265 143 | Point | `hauteur` | Logistique : réseau électrique (265k pylônes !) |
+| **poste_de_transformation** | 4 104 | Point | `importance` (1-6) | Logistique : postes critiques (importance ≤ 3) |
+| **ligne_electrique** | 14 470 | Line | `voltage` | Logistique : lignes THT (400kV, 225kV) |
 | **zone_d_activite_ou_d_interet** | 595 892 | Surf. | `categorie`, `nature`, `nature_detaillee`, `toponyme`, `importance` | **Table maître** : tous POIs administratifs, militaires, santé, industrie, sport… |
 | **equipement_de_transport** | 182 235 | Point/Surf. | `nature`, `nature_detaillee`, `toponyme` | Ports, gares, parkings, aérogares, échangeurs |
 | **construction_ponctuelle** | 319 133 | Point | `nature`, `nature_detaillee`, `hauteur` | Antennes, éoliennes, transformateurs, cheminées, puits |
 | **construction_surfacique** | 20 476 | Surf. | `nature`, `nature_detaillee` | Ponts, barrages, écluses |
 | **construction_lineaire** | 939 141 | Line | `nature`, `nature_detaillee` | Ponts linéaires, barrages, murs, tunnels, quais |
-| **reservoir** | 91 737 | Surf. | `nature`, `volume`, `hauteur` | Ravitaillement/Énergie : réservoirs industriels, châteaux d'eau |
+| **reservoir** | 91 737 | Surf. | `nature`, `volume`, `hauteur` | Logistique : réservoirs industriels, châteaux d'eau |
 | **terrain_de_sport** | 139 272 | Surf. | `nature`, `nature_detaillee` | Peu pertinent militairement |
-| **canalisation** | 7 906 | Line | `nature` | Énergie : hydrocarbures (1 169), autres (6 737) |
+| **canalisation** | 7 906 | Line | `nature` | Logistique : hydrocarbures (1 169), autres (6 737) |
 | **foret_publique** | 17 249 | Surf. | `nature` | Défense : couverture forestière |
 | **parc_ou_reserve** | 6 942 | Surf. | `nature`, `nature_detaillee` | Contexte : zones protégées, Natura 2000 |
-| **troncon_de_voie_ferree** | 104 717 | Line | `nature`, `usage`, `electrifie`, `nombre_de_voies`, `vitesse_maximale` | Ravitaillement : voies fret, LGV |
+| **troncon_de_voie_ferree** | 104 717 | Line | `nature`, `usage`, `electrifie`, `nombre_de_voies`, `vitesse_maximale` | Logistique : voies fret, LGV |
 | **troncon_de_route** | 20 128 325 | Line | `nature`, `importance`, `largeur_de_chaussee`, `restriction_de_poids_total`, `restriction_de_hauteur`, `sens_de_circulation`, `vitesse_moyenne_vl`, `urbain` | **Réseau routier** : graphe pour pgRouting/r2gg |
 | cours_d_eau | 487 700 | Line | — | Non POI |
 | surface_hydrographique | 666 000 | Surf. | — | Non POI |
@@ -89,8 +89,7 @@ order: 3
 |---|---|---|
 | Attaque | Administratif ou militaire | Gendarmerie, Caserne, Camp militaire |
 | Défense | Santé / Administratif ou militaire | Hôpital, Maison de retraite, Gendarmerie |
-| Ravitaillement | Industriel et commercial | Zone industrielle, Usine, Marché |
-| Énergie | (via tables dédiées) | — |
+| Logistique | Industriel et commercial + (via tables dédiées) | Zone industrielle, Usine, Marché + postes HT, lignes THT, etc. |
 | Industries | Industriel et commercial | Zone industrielle, Usine, Déchèterie, Divers industriel |
 
 ### 2.3 equipement_de_transport (182 235 rows)
@@ -272,7 +271,7 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 
 ![Role heatmap](../../assets/img/theory/chart_role_heatmap.png)
 
-**Lignes** = rôles (Attaque, Défense, Ravitaillement, Énergie). **Couleurs** = pertinence des tables pour ce rôle (échelle log). Un coefficient élevé (rouge) signifie que cette table contient beaucoup de POIs utiles à ce rôle dans la majorité des EPCIs. Par exemple : Ravitaillement → `reservoir` (eau potable, industiel) est pertinent partout.
+**Lignes** = rôles (Attaque, Défense, Logistique). **Couleurs** = pertinence des tables pour ce rôle (échelle log). Un coefficient élevé (rouge) signifie que cette table contient beaucoup de POIs utiles à ce rôle dans la majorité des EPCIs. Par exemple : Logistique → `reservoir` (eau potable, industriel) est pertinent partout.
 
 #### Composition du réseau routier par type de voie
 
@@ -313,30 +312,22 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 | `construction_ponctuelle` | `nature='Phare' OR (nature='Autre construction élevée' AND nature_detaillee='Tour de guet')` | Points d'observation |
 | `construction_surfacique` | `nature='Pont'` | Ponts stratégiques |
 
-### Rôle RAVITAILLEMENT
+### Rôle LOGISTIQUE
 
-**Objectif** : Optimiser les flux logistiques.
+**Objectif** : Optimiser les flux logistiques et sécuriser le réseau énergétique.
 
 | Table | Filtre | POIs obtenus |
 |---|---|---|
 | `equipement_de_transport` | `nature IN ('Port') AND nature_detaillee IN ('Port de commerce','Port de pêche','Halte fluviale')` | Ports |
 | `equipement_de_transport` | `nature IN ('Gare fret uniquement','Gare voyageurs et fret')` | Gares fret |
 | `zone_d_activite_ou_d_interet` | `nature IN ('Zone industrielle','Usine','Marché')` | Zones logistiques |
-| `reservoir` | `nature='Réservoir industriel'` | Réservoirs |
+| `reservoir` | `nature='Réservoir industriel'` | Réservoirs industriels |
 | `troncon_de_voie_ferree` | `usage='Fret'` | Voies ferrées fret |
-
-### Rôle ÉNERGIE
-
-**Objectif** : Sécuriser le réseau énergétique.
-
-| Table | Filtre | POIs obtenus |
-|---|---|---|
 | `poste_de_transformation` | `CAST(importance AS INTEGER) <= 3` | Postes critiques (1-3) |
 | `ligne_electrique` | `voltage IN ('400 kV','225 kV')` | Lignes THT |
 | `construction_ponctuelle` | `nature IN ('Éolienne','Transformateur','Cheminée')` | Sources d'énergie |
 | `construction_surfacique` | `nature='Barrage'` | Barrages hydro |
 | `canalisation` | `nature='Hydrocarbures'` | Oléoducs/gazoducs |
-| `reservoir` | `nature='Réservoir industriel'` | Stockage énergie |
 
 ### Rôle INDUSTRIES
 
@@ -359,17 +350,17 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 - **Sweet spot** : 30k-140k routes (Brest, Dunkerque, Le Havre, Grenoble, Nantes, Toulouse, Lille, Bordeaux).
 
 ### 5.2 Spécificités notables
-- **Le Havre** : 1 737 réservoirs (port pétrolier !) → parfait rôle Énergie.
-- **Dunkerque** : 901 réservoirs + 1 151 voies ferrées → parfait rôle Industries/Ravitaillement.
+- **Le Havre** : 1 737 réservoirs (port pétrolier !) → parfait rôle Logistique.
+- **Dunkerque** : 901 réservoirs + 1 151 voies ferrées → parfait rôle Industries/Logistique.
 - **Grand Paris** : 4 482 restrictions de poids → excellent pour routage contraint.
 - **Pays Basque** : 23k chemins + 13k sentiers → terrain montagneux, routage intéressant.
 - **Cotentin** : péninsule, peu de routes alternatives → choke points évidents.
-- **Île de Ré** : 0 gares, 0 aérodromes → rôle Défense ou Ravitaillement maritime uniquement.
+- **Île de Ré** : 0 gares, 0 aérodromes → rôle Défense ou Logistique maritime uniquement.
 - **Ajaccien** : 0 autoroute → pas de réseau à grande vitesse.
 - **Grenoble** : cuvette, 1 713 restrictions de poids → zone montagneuse.
 
 ### 5.3 Centrales nucléaires (non dans BDTOPO)
-Les centrales ne sont pas des POI BDTOPO. Pour les rôles Énergie, on peut :
+Les centrales ne sont pas des POI BDTOPO. Pour le rôle Logistique (volet énergétique), on peut :
 
 1. Injecter des POIs custom (coords approximatives) lors du setup
 2. Ou utiliser uniquement les infractions BDTOPO réelles (postes THT, barrages, etc.)

@@ -177,6 +177,81 @@ ORDER BY distance_m;
 - Si la requête retourne beaucoup de résultats : votre EPCI est en zone inondable, et les cibles prioritaires sont exposées.
 - Cette info peut alimenter la Phase 3 (simulation) : ces cibles pourraient être inatteignables après une crue simulée.
 
+### B8 — Degré de connectivité
+
+**Objectif** : calculer le "degré" de chaque cible — combien d'autres cibles sont à moins de 5 km. La cible la plus connectée est le **point névralgique** du réseau. En théorie des graphes, c'est le *degree centrality*.
+
+```sql
+WITH cibles AS (
+    SELECT cleabs, nom, nature, geom
+    FROM mission_pois WHERE role = 'attaque'
+)
+SELECT c1.nom AS cible, c1.nature AS type,
+       count(*) AS degre
+FROM cibles c1
+JOIN cibles c2 ON ST_DWithin(c1.geom, c2.geom, 5000)
+  AND c1.cleabs != c2.cleabs
+GROUP BY c1.cleabs, c1.nom, c1.nature
+ORDER BY degre DESC;
+```
+
+**Bridge Neo4j** : en graphe, le degré d'un noeud est stocké nativement — le traversal suit les arêtes en O(degré). En SQL, c'est un self-join O(n²). Sur 20M tronçons, le self-join explose ; en Neo4j, le traversal reste O(degré) ≈ O(5).
+
+### B9 — Attaque en cascade
+
+**Objectif** : simuler l'impact de la destruction d'un pont. Si le pont coupe un tronçon de route, quelles cibles deviennent inaccessibles ?
+
+```sql
+WITH ponts AS (
+    SELECT cleabs, toponyme, ST_Force2D(geometrie) AS geom
+    FROM construction_lineaire WHERE nature = 'Pont'
+),
+troncons_coupes AS (
+    SELECT p.toponyme AS pont_detruit, r.cleabs AS troncon_id
+    FROM ponts p
+    JOIN troncon_de_route r ON ST_Intersects(p.geom, r.geometrie)
+),
+cibles_isolees AS (
+    SELECT tc.pont_detruit, m.nom AS cible_perdue, m.nature
+    FROM troncons_coupes tc
+    JOIN mission_pois m ON ST_DWithin(m.geom,
+        (SELECT geometrie FROM troncon_de_route WHERE cleabs = tc.troncon_id), 200)
+    WHERE m.role = 'attaque'
+)
+SELECT pont_detruit, count(*) AS cibles_perdues,
+       array_agg(DISTINCT nature) AS types_perdus
+FROM cibles_isolees
+GROUP BY pont_detruit
+ORDER BY cibles_perdues DESC;
+```
+
+**Bridge Neo4j** : cette propagation d'impact est un **traversal de graphe** natif. Pas besoin de CTE récursive — le graphe suit les arêtes. Coût : O(V+E) vs O(n²) en SQL.
+
+### B10 — Cypher sneak peek
+
+**SQL** (équivalent de "cibles à 2 sauts d'un aérodrome") :
+
+```sql
+-- 2 sauts = aérodrome → voisin_A → voisin_B
+SELECT DISTINCT b.cleabs, b.nom, b.source
+FROM mission_pois a
+JOIN mission_pois v1 ON ST_DWithin(a.geom, v1.geom, 5000)
+  AND a.cleabs != v1.cleabs
+JOIN mission_pois b ON ST_DWithin(v1.geom, b.geom, 5000)
+  AND v1.cleabs != b.cleabs
+WHERE a.source = 'aerodrome' AND a.role = 'attaque'
+  AND b.role = 'attaque';
+```
+
+**Cypher** :
+
+```cypher
+MATCH (a:POI {source:'aerodrome'})-[:PROCHE*2]->(c:POI)
+RETURN c.nom, c.source
+```
+
+**Comparaison** : SQL = 3 jointures explicites, 2 conditions de dédoublonnage, ~10 lignes. Cypher = 1 pattern, 2 lignes. Le SQL doit nommer chaque étape intermédiaire (v1) ; le Cypher laisse le moteur gérer le traversal. C'est la différence entre **énumérer les jointures** et **déclarer un pattern**.
+
 ---
 
 ## 🛡️ Défense
@@ -320,6 +395,86 @@ ORDER BY distance_m;
 - Si la requête retourne des lignes : ces hôpitaux ont un plan B d'évacuation par transport urbain.
 - Si la requête est vide : tous les hôpitaux sont dépendants de la route pour l'évacuation. En Phase 3, couper les routes autour de ces hôpitaux les isole complètement.
 - La colonne `distance_m` indique quel hôpital est le mieux connecté (le plus proche d'une station).
+
+### B7 — Chaîne d'évacuation comme chemin
+
+**Objectif** : identifier les hôpitaux disposant d'une chaîne d'évacuation complète (gare ET aérodrome). Les autres sont vulnérables.
+
+```sql
+SELECT h.toponyme AS hopital,
+       g.toponyme AS gare_proche,
+       round(ST_Distance(h.geometrie, g.geometrie)::numeric, 0) AS dist_gare_m
+FROM zone_d_activite_ou_d_interet h
+JOIN equipement_de_transport g
+  ON ST_DWithin(h.geometrie, g.geometrie, 1000)
+  AND g.nature ILIKE 'Gare%'
+WHERE h.nature IN ('Hôpital', 'Établissement hospitalier')
+  AND EXISTS (
+    SELECT 1 FROM aerodrome a
+    WHERE a.categorie IN ('Internationale', 'Nationale')
+      AND ST_DWithin(h.geometrie, a.geometrie, 15000)
+  )
+ORDER BY dist_gare_m;
+```
+
+**Bridge Neo4j** : cette chaîne est un **path pattern** orienté : `(:Hôpital)-[:PROCHE]->(:Gare)-[:PROCHE]->(:Aéroport)`. En Cypher : `MATCH path = (h:POI {source:'hopital'})-[:PROCHE*1..2]->(target)`. Le SQL nécessite 2 jointures explicites ; le graphe fusionne en un seul pattern de longueur variable.
+
+### B8 — Couverture croisée : graphe bipartite
+
+**Objectif** : construire le graphe pompiers ↔ hôpitaux et détecter les hôpitaux orphelins.
+
+```sql
+-- Graphe pompiers ↔ hôpitaux
+SELECT p.nom AS pompier,
+       h.nom AS hopital,
+       round(ST_Distance(p.geom, h.geom)::numeric, 0) AS dist_m
+FROM mission_pois p
+JOIN mission_pois h ON ST_DWithin(p.geom, h.geom, 5000)
+WHERE p.source = 'secours_decision'
+  AND h.source = 'hopital'
+ORDER BY p.nom, dist_m;
+
+-- Hôpitaux orphelins (0 pompier à <5km)
+SELECT h.nom AS hopital_orphelin
+FROM mission_pois h
+WHERE h.source = 'hopital'
+  AND NOT EXISTS (
+    SELECT 1 FROM mission_pois p
+    WHERE p.source = 'secours_decision'
+      AND ST_DWithin(p.geom, h.geom, 5000)
+  );
+
+-- Pompier le plus "central" (couvre le plus d'hôpitaux)
+SELECT p.nom AS pompier, count(*) AS hopitaux_couverts
+FROM mission_pois p
+JOIN mission_pois h ON ST_DWithin(p.geom, h.geom, 5000)
+WHERE p.source = 'secours_decision' AND h.source = 'hopital'
+GROUP BY p.nom
+ORDER BY hopitaux_couverts DESC
+LIMIT 1;
+```
+
+**Bridge Neo4j** : c'est un **graphe bipartite** — deux types de noeuds connectés. En Cypher : `MATCH (p:POI {source:'secours_decision'})-[:PROCHE]-(h:POI {source:'hopital'})`. Le traversal est immédiat. Pour la centralité : `MATCH (p)-[:PROCHE]->(h) RETURN p.nom, count(h) ORDER BY count(h) DESC`.
+
+### B9 — Relations directionnelles
+
+**Pas de code** — réflexion architecturale.
+
+**Proposition de relations** :
+
+| Relation | Direction | Sémantique |
+|----------|-----------|------------|
+| `(:Hôpital)-[:EVACUE_VERS]->(:Gare)` | Hôpital → Gare | L'hôpital *utilise* la gare pour évacuer |
+| `(:Pompier)-[:PROTEGE]->(:Hôpital)` | Pompier → Hôpital | Le pompier *couvre* l'hôpital |
+| `(:Antenne)-[:DEGAGE_VERS]->(:Hôpital)` | Antenne → Hôpital | L'antenne *sert* l'hôpital pour les comms |
+
+**Pourquoi la direction importe** :
+
+- En SQL, `A JOIN B` est symétrique — `A JOIN B` ≡ `B JOIN A`.
+- En Neo4j, les relations sont **directionnelles** : `(:Hôpital)-[:EVACUE_VERS]->(:Gare)` n'est pas la même chose que `(:Gare)-[:EVACUE_VERS]->(:Hôpital)`.
+- La direction encode la **sémantique** : qui est l'acteur, qui est la cible.
+- On peut traverser dans les deux sens (`MATCH (a)<-[:EVACUE_VERS]-(b)`), mais le sens de stockage est unique.
+- Pour la chaîne d'évacuation, la direction permet de suivre le **flux** : hôpital → gare → aéroport. Inverser la direction inverserait le récit (qui va vers qui ?).
 
 ---
 

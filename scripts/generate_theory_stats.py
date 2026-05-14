@@ -52,15 +52,13 @@ ALL_TABLES = [
 ]
 
 ROLE_TABLES = {
-    "Attaque":        ["aerodrome", "piste_d_aerodrome", "equipement_de_transport",
-                       "zone_d_activite_ou_d_interet", "construction_ponctuelle"],
-    "Défense":        ["zone_d_activite_ou_d_interet", "construction_surfacique",
-                       "construction_lineaire", "foret_publique", "equipement_de_transport"],
-    "Ravitaillement": ["equipement_de_transport", "reservoir", "troncon_de_voie_ferree",
-                       "canalisation", "construction_surfacique"],
-    "Énergie":        ["ligne_electrique", "poste_de_transformation", "pylone",
-                       "construction_ponctuelle", "construction_surfacique",
-                       "reservoir", "canalisation"],
+    "Attaque":     ["aerodrome", "piste_d_aerodrome", "equipement_de_transport",
+                    "zone_d_activite_ou_d_interet", "construction_ponctuelle"],
+    "Défense":     ["zone_d_activite_ou_d_interet", "construction_surfacique",
+                    "construction_lineaire", "foret_publique", "equipement_de_transport"],
+    "Logistique":  ["equipement_de_transport", "reservoir", "troncon_de_voie_ferree",
+                    "canalisation", "construction_surfacique", "ligne_electrique",
+                    "poste_de_transformation", "pylone", "construction_ponctuelle"],
 }
 
 

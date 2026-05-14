@@ -4,7 +4,7 @@ subtitle: "Cours BDD NoSQL — Graph + Spatial · PostGIS + pgRouting + Neo4j"
 toc: false
 ---
 
-*0.5J théorie · 2J TD · 52 étudiants / 13 groupes × 4 rôles*
+*0.5J théorie · 2J TD · 52 étudiants / 13 groupes × 3 rôles*
 
 > *Vous êtes agents de renseignement. Cartographiez les infrastructures critiques d'une zone EPCI et évaluez la résilience de son réseau routier face à une simulation d'attaque.*
 
@@ -45,14 +45,13 @@ Briefing général
          Debriefing
 ```
 
-## Les 4 rôles
+## Les 3 rôles
 
 |   | Rôle | Mission |
 |---|------|---------|
 | ⚔️ | **[Attaque](pages/roles/attaque.qmd)** | Cibles stratégiques (aérodromes, ports, casernes) |
 | 🛡️ | **[Défense](pages/roles/defense.qmd)** | Points vitaux (hôpitaux, ponts, gares) |
-| 📦 | **[Ravitaillement](pages/roles/ravitaillement.qmd)** | Flux logistiques (ports fret, zones industrielles) |
-| ⚡ | **[Énergie](pages/roles/energie.qmd)** | Réseau énergétique (postes HT, lignes THT, centrales) |
+| 🔧 | **[Logistique](pages/roles/logistique.qmd)** | Flux logistiques + réseau énergétique (ports, fret, postes HT, centrales) |
 
 ## Les 3 phases
 

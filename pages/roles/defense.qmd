@@ -94,6 +94,44 @@ Résolvez au moins 2 de ces questions. Documentez vos requêtes.
 
 *Indice : joignez `mission_pois` (source='hopital') avec `equipement_de_transport` filtré `nature IN ('Station de métro', 'Station de tramway')` via `ST_DWithin`.*
 
+### B7 — Chaîne d'évacuation comme chemin {#sec-b7}
+
+> Identifiez les hôpitaux qui ont **une gare à <1 km** ET **un aérodrome à <15 km**.
+> Ce sont les "noeuds d'évacuation complète". Les autres = vulnérables.
+> Exprimez cette chaîne comme un **path pattern** orienté.
+
+*SQL : double `EXISTS` ou deux `LEFT JOIN`. En graphe, c'est un path pattern :*
+
+```
+(:Hôpital)-[:PROCHE {meters < 1000}]->(:Gare)-[:PROCHE {meters < 15000}]->(:Aéroport)
+```
+
+**Bridge Neo4j** : en Cypher, cette chaîne s'écrit `MATCH path = (h)-[:PROCHE*1..2]->(target)` en une ligne. Pourquoi le SQL nécessite-t-il deux jointures explicites là où le graphe n'en a qu'une ?
+
+### B8 — Couverture croisée : graphe bipartite {#sec-b8}
+
+> Cartographiez le graphe **pompiers ↔ hôpitaux** (`ST_DWithin` < 5 km).
+> - Quels hôpitaux sont "orphelins" (0 pompier à portée) ?
+> - Quel pompier couvre le plus d'hôpitaux ?
+
+*SQL : jointure entre `mission_pois` (source='hopital') et `mission_pois` (source='secours_decision') avec `ST_DWithin`. Utilisez `LEFT JOIN` pour détecter les orphelins.*
+
+**Bridge Neo4j** : c'est un **graphe bipartite** — un type de réseau où les noeuds se divisent en deux camps. En Neo4j, le traversal est immédiat via `MATCH (p:POI {source:'secours_decision'})-[:PROCHE]-(h:POI {source:'hopital'})`. Comment détecteriez-vous le pompier le plus "central" ?
+
+### B9 — Relations directionnelles {#sec-b9}
+
+> Proposez **3 types de relations** pour le rôle Défense, avec leur direction :
+> - `(:Hôpital)-[:EVACUE_VERS]->(:Gare)` ?
+> - `(:Pompier)-[:PROTEGE]->(:Hôpital)` ?
+> - `(:Antenne)-[:DEGAGE_VERS]->(:Hôpital)` ?
+>
+> Pourquoi la direction importe-t-elle dans un graphe ?
+> Que se passe-t-il si on l'inverse ?
+
+*Pas de code — réflexion architecturale. Relisez le cours [graphdb_101](../theorie/outils/graphdb_101.qmd) sur les LPG.*
+
+**Question NoSQL** : en SQL, une relation est une jointure symétrique (`A JOIN B` = `B JOIN A`). En Neo4j, les relations sont **directionnelles**. Pourquoi est-ce un avantage pour modéliser une chaîne d'évacuation ?
+
 → [Corrigé](../corriges/bonus.qmd#-dfense)
 
 ---

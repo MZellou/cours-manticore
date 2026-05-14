@@ -13,23 +13,14 @@ order: 3
 
 Neo4j utilise le modèle **Labeled Property Graph** :
 
-```
-  ┌──────────────────┐         ┌──────────────────┐
-  │  (:POI)           │         │  (:POI)           │
-  │  labels: [POI]    │         │  labels: [POI]    │
-  │  properties:      │         │  properties:      │
-  │    nom: "Brest"   │──5400m──│    nom: "Quimper" │
-  │    role: "attaque"│         │    role: "défense"│
-  └──────────────────┘         └──────────────────┘
-         │
-         │ EST_SOUS_TYPE_DE
-         ▼
-  ┌──────────────────┐
-  │ (:ClasseOntologie)│
-  │  labels: [Detail]  │
-  │  properties:       │
-  │    name: "Aérodrome"│
-  └──────────────────┘
+```{mermaid}
+%%{init: {'theme': 'neutral', 'themeVariables': {'clusterBkg': '#f0f4ff', 'primaryTextColor': '#1a1a1a', 'lineColor': '#333366'}}}%%
+flowchart LR
+  POI1["(:POI)<br/><b>labels:</b> [POI]<br/><b>properties:</b><br/>nom: Brest<br/>role: attaque"]
+  POI2["(:POI)<br/><b>labels:</b> [POI]<br/><b>properties:</b><br/>nom: Quimper<br/>role: défense"]
+  ONTO["(:ClasseOntologie)<br/><b>labels:</b> [Detail]<br/><b>properties:</b><br/>name: Aérodrome"]
+  POI1 -->|"DISTANCE 5400m"| POI2
+  POI1 -->|EST_SOUS_TYPE_DE| ONTO
 ```
 
 **3 concepts** :
@@ -55,6 +46,7 @@ Neo4j utilise le modèle **Labeled Property Graph** :
 - **En graphe** : Jean a un **pointeur direct** vers chacun de ses amis, stocké dans le nœud lui-même. Trouver ses amis = suivre ces pointeurs → O(1) par saut, **indépendamment de la taille du graphe**.
 
 ```{mermaid}
+%%{init: {'theme': 'neutral', 'themeVariables': {'clusterBkg': '#f0f4ff', 'clusterBorder': '#8899cc', 'primaryTextColor': '#1a1a1a', 'lineColor': '#333366'}}}%%
 flowchart LR
   subgraph SQL["SQL — index lookup O(log n)"]
     Q1[Requête: amis de Jean] --> IDX[(B-tree index<br/>1 M entrées)]

@@ -81,7 +81,7 @@ CALL gds.graph.drop('myGraph');
 Variante riche : accepte des filtres de chemin complexes (interdire un type de nœud, obliger à passer par un autre…).
 
 ::: {.callout-tip title="🎯 Cas concret Phase 3 — éviter une centrale détruite"}
-Imaginez qu'en début de simulation, **la centrale de Flamanville est neutralisée**. Vous voulez recalculer les chemins logistiques **sans passer par les nœuds énergie hors-service**.
+Imaginez qu'en début de simulation, **la centrale de Flamanville est neutralisée**. Vous voulez recalculer les chemins logistiques **sans passer par les POIs logistiques liés à la centrale neutralisée**.
 
 `blacklistedNodes` accepte une liste de nœuds à **exclure de l'expansion** : l'algorithme fait comme s'ils n'existaient pas. C'est l'équivalent graphe de "couper le courant d'un quartier puis recalculer le routage".
 
@@ -94,12 +94,12 @@ Imaginez qu'en début de simulation, **la centrale de Flamanville est neutralis�
 :::
 
 ```sql
-// Chemin attaque → défense en évitant les POIs énergie
+// Chemin attaque → défense en évitant les POIs logistiques de la centrale neutralisée
 MATCH (a:POI {role: 'attaque', nom: 'Centrale_Flamanville'})
 CALL apoc.path.expandConfig(a, {
   relationshipFilter: 'DISTANCE',
   labelFilter: '/POI',
-  blacklistedNodes: [(p:POI {role: 'énergie'}) | p],
+  blacklistedNodes: [(p:POI {role: 'logistique'}) | p],
   terminatorNodes: [(p:POI {role: 'défense'}) | p],
   maxLevel: 5
 })

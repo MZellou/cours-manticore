@@ -39,17 +39,17 @@ SELECT * FROM chemin;
 
 **r2gg** (route-graph-generator) transforme la table linéaire en un schéma **nœuds + arêtes** :
 
-```
-BDTOPO (PostGIS)                      Pivot (graphe)
-┌──────────────────────┐              ┌──────────────────────────┐
-│ troncon_de_route     │              │ ways_vertices_pgr        │
-│ ├─ geometrie (line)  │  ──r2gg──>   │ ├─ id, the_geom (point)  │
-│ ├─ nature            │              │                          │
-│ ├─ vitesse_moyenne   │              │ ways                     │
-│ ├─ largeur_de_chaussee│             │ ├─ source, target → vertex│
-│ └─ restriction_*     │              │ ├─ cost, reverse_cost     │
-└──────────────────────┘              │ └─ length_m, attributs    │
-                                      └──────────────────────────┘
+```{mermaid}
+%%{init: {'theme': 'neutral', 'themeVariables': {'clusterBkg': '#f0f4ff', 'clusterBorder': '#8899cc', 'primaryBackgroundColor': '#ffffff', 'primaryTextColor': '#1a1a1a', 'lineColor': '#333366'}}}%%
+flowchart LR
+  subgraph BDTOPO["BDTOPO (PostGIS)"]
+    T["troncon_de_route<br/>├─ geometrie (line)<br/>├─ nature<br/>├─ vitesse_moyenne<br/>├─ largeur_de_chaussee<br/>└─ restriction_*"]
+  end
+  subgraph PIVOT["Pivot (graphe)"]
+    V["ways_vertices_pgr<br/>├─ id, the_geom (point)"]
+    W["ways<br/>├─ source, target → vertex<br/>├─ cost, reverse_cost<br/>└─ length_m, attributs"]
+  end
+  BDTOPO -->|r2gg| PIVOT
 ```
 
 Deux étapes invisibles mais cruciales :
@@ -78,6 +78,7 @@ Chaque tronçon a **une géométrie** mais peut être parcouru dans les **deux s
 :::
 
 ```{mermaid}
+%%{init: {'theme': 'neutral', 'themeVariables': {'clusterBkg': '#f0f4ff', 'clusterBorder': '#8899cc', 'primaryTextColor': '#1a1a1a', 'lineColor': '#333366'}}}%%
 flowchart LR
   subgraph BIDI["🛣️ Route bidirectionnelle"]
     A1((source)) -- "cost = 100" --> B1((target))
