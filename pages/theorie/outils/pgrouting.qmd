@@ -73,6 +73,26 @@ Une arête routière peut avoir des coûts **asymétriques** :
 
 > ⚠️ Convention pgRouting : **`-1` = interdit** (pas zéro, pas `NULL`).
 
+::: {.callout-tip title="🎯 Une seule arête, deux directions possibles"}
+Chaque tronçon a **une géométrie** mais peut être parcouru dans les **deux sens**. `cost` est le prix du sens *source → target*, `reverse_cost` le prix du sens inverse. La convention `-1` est un drapeau : pgRouting le détecte comme "interdiction" et n'essaiera pas cette direction.
+:::
+
+```{mermaid}
+flowchart LR
+  subgraph BIDI["🛣️ Route bidirectionnelle"]
+    A1((source)) -- "cost = 100" --> B1((target))
+    B1 -- "reverse_cost = 100" --> A1
+  end
+  subgraph UNI["⬆️ Sens unique"]
+    A2((source)) -- "cost = 100" --> B2((target))
+    B2 -. "reverse_cost = -1<br/>(interdit)" .-> A2
+  end
+  subgraph BLOCK["⛔ Arête détruite (Phase 3)"]
+    A3((source)) -. "cost = -1" .-> B3((target))
+    B3 -. "reverse_cost = -1" .-> A3
+  end
+```
+
 Le coût peut être :
 
 - la **longueur** (plus court chemin géométrique)
@@ -88,6 +108,14 @@ cost = ST_Length(geom) / NULLIF(vitesse_moyenne_vl, 0) / 1000.0
 ```
 
 > Si `vitesse_moyenne_vl = 0` (chemin piéton), `NULLIF` retourne `NULL` → pgRouting ignore ce tronçon pour le routage motorisé.
+
+::: {.callout-tip title="🎯 Pourquoi `NULLIF` plutôt que de laisser 0 ?"}
+Le coût temporel est `longueur / vitesse`. Si la vitesse vaut `0`, on tombe sur une **division par zéro** → temps **infini** (ou erreur SQL).
+
+`NULLIF(vitesse, 0)` dit : *"si la vitesse est nulle, remplace-la par `NULL`"*. Le calcul devient `longueur / NULL = NULL`, et pgRouting traite `cost = NULL` comme **"arête à ignorer"** — exactement ce qu'on veut pour un chemin piéton que la voiture ne peut pas emprunter.
+
+Mettre `cost = 0` serait pire : pgRouting prendrait ce tronçon **gratuitement** et trouverait des itinéraires absurdes passant par des sentiers de chèvres.
+:::
 
 ---
 

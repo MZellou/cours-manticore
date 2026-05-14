@@ -67,6 +67,28 @@ Dans un système distribué, on ne garantit que **2 sur 3** :
      tolerance
 ```
 
+::: {.callout-tip title="🎯 Analogie — le câble transatlantique"}
+Imaginez la BDTOPO répliquée sur **deux serveurs IGN** : un à Saint-Mandé (Paris), un à Marne-la-Vallée. Le câble entre les deux **lâche** (= une *partition réseau*).
+
+À cet instant, vous devez choisir :
+
+- **C — Consistency** : refuser toute écriture jusqu'au retour du câble (les deux serveurs restent cohérents, mais le service est en panne).
+- **A — Availability** : accepter les écritures sur chaque côté séparément (le service répond, mais les deux serveurs vont diverger).
+
+"P — Partition tolerance" n'est pas un choix : c'est la **réalité physique** qu'on ne peut pas éviter sur Internet. Donc on choisit entre C et A *quand la partition se produit*.
+:::
+
+```{mermaid}
+flowchart LR
+  U1[Utilisateur Paris] -->|écrit POI| DC1[(Serveur Saint-Mandé)]
+  U2[Utilisateur Lyon] -->|écrit POI| DC2[(Serveur Marne-la-Vallée)]
+  DC1 -.X.-|câble coupé| DC2
+  DC1 --> CHOIX{Que faire ?}
+  CHOIX -->|Choix C| BLOCK[Refuser l'écriture<br/>→ cohérent mais indisponible]
+  CHOIX -->|Choix A| DIVERGE[Accepter localement<br/>→ disponible mais divergent]
+```
+
+
 | Système | Choix | Pourquoi |
 |---------|-------|---------|
 | **PostgreSQL** (mono-nœud) | CA | Pas de partition réseau → cohérence totale |

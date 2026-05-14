@@ -18,6 +18,10 @@ order: 2
 //   nœud + label + propriétés       relation typée    autre nœud
 ```
 
+::: {.callout-tip title="🎯 Analogie — dessine-moi un mouton"}
+En SQL, vous décrivez **comment aller chercher** les données (jointures, conditions, projections). En Cypher, vous **dessinez le motif** que vous cherchez, et le moteur trouve toutes les correspondances. C'est la différence entre dire *"prends la 3e étagère, descend de 2 cases, et applique le filtre"* et *"montre-moi tous les triangles rouges"*.
+:::
+
 ---
 
 ## Les 4 verbes de base
@@ -29,6 +33,18 @@ order: 2
 MATCH (p:POI {role: 'attaque'})
 RETURN p.nom, p.source LIMIT 10;
 ```
+
+::: {.callout-tip title="🎯 Les accolades `{ }` : un WHERE écrit DANS le nœud"}
+`(p:POI {role: 'attaque'})` est **strictement équivalent** à :
+
+```sql
+MATCH (p:POI) WHERE p.role = 'attaque'
+```
+
+Les accolades posent un **filtre de propriétés directement dans le motif** — c'est plus court à écrire et le moteur peut optimiser plus tôt. Utilisez `{ }` pour des **égalités simples** ; passez à `WHERE` pour des conditions complexes (`>`, `IN`, regex, OR…).
+
+⚠️ Piège classique pour qui vient de SQL : `{role: 'attaque'}` n'est **pas** un objet JSON ni un dictionnaire — c'est un **filtre de pattern**.
+:::
 
 ### `WHERE` — filtre
 
@@ -96,6 +112,34 @@ RETURN d.name;
 ```
 
 `*` = profondeur quelconque. `*1..3` = de 1 à 3 sauts.
+
+::: {.callout-tip title="🎯 Que veut dire « profondeur 2 » ?"}
+Partez d'un POI et regardez **qui est à 1 saut, 2 sauts, 3 sauts**. Chaque saut suit une relation `[:DISTANCE]` vers un voisin.
+:::
+
+```{mermaid}
+flowchart LR
+  H((Hôpital<br/>de Brest)) ---|1 saut| V1((Voisin A))
+  H ---|1 saut| V2((Voisin B))
+  H ---|1 saut| V3((Voisin C))
+  V1 ---|2 sauts| V11((D))
+  V1 ---|2 sauts| V12((E))
+  V2 ---|2 sauts| V21((F))
+  V12 ---|3 sauts| V121((G))
+  V21 ---|3 sauts| V211((H))
+  classDef depth0 fill:#ffd166,stroke:#333,color:#000
+  classDef depth1 fill:#06d6a0,stroke:#333,color:#000
+  classDef depth2 fill:#118ab2,stroke:#333,color:#fff
+  classDef depth3 fill:#073b4c,stroke:#333,color:#fff
+  class H depth0
+  class V1,V2,V3 depth1
+  class V11,V12,V21 depth2
+  class V121,V211 depth3
+```
+
+- `*1..1` → uniquement les voisins jaunes/verts (1 saut).
+- `*1..2` → ajoute les bleus clairs (2 sauts).
+- `*1..3` → tout le sous-arbre, y compris bleus foncés.
 
 > 💡 **C'est ici que Cypher écrase SQL** : pas de `WITH RECURSIVE`, juste un `*`.
 

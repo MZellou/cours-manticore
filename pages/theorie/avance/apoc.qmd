@@ -15,7 +15,37 @@ order: 1
 
 **Betweenness centrality** d'un nœud = nombre de plus courts chemins entre toutes les paires qui **passent par ce nœud**. Plus le score est haut, plus le nœud est un **choke point** potentiel.
 
+::: {.callout-tip title="🎯 Analogie — combien de chemins passent par moi ?"}
+Imaginez un **pont** qui relie deux villes : presque tout le trafic entre les deux côtés doit passer par lui. Sa **betweenness est énorme**. Détruisez le pont → les deux villes deviennent quasi inaccessibles l'une à l'autre.
+
+À l'inverse, une rue en cul-de-sac ne sert qu'à ses propres habitants : aucun plus court chemin inter-villes ne passe par elle → **betweenness ≈ 0**.
+
+En Phase 3, on cherche les "ponts du réseau" : ce sont les **cibles à haute valeur stratégique** (un poste électrique, un nœud routier obligé, un échangeur autoroutier).
+:::
+
+```{mermaid}
+flowchart LR
+  A1((Ville A1)) --- P((Pont))
+  A2((Ville A2)) --- P
+  A3((Ville A3)) --- P
+  P --- B1((Ville B1))
+  P --- B2((Ville B2))
+  P --- B3((Ville B3))
+  classDef hub fill:#ef476f,stroke:#333,color:#fff
+  class P hub
+```
+
+→ Le nœud **Pont** a une betweenness extrême : 9 paires de villes (A1↔B1, A1↔B2, …, A3↔B3) le traversent.
+
 **Pourquoi projeter le graphe ?** GDS charge le graphe en mémoire pour des calculs optimisés. C'est obligatoire avant tout algorithme GDS.
+
+::: {.callout-tip title="🎯 La projection GDS = vue matérialisée en RAM"}
+`gds.graph.project('myGraph', ...)` extrait un **sous-ensemble** du graphe Neo4j (les labels et relations qu'on veut analyser) et le copie dans une **structure ultra-compacte en mémoire vive**.
+
+Analogie : c'est comme une **vue matérialisée SQL**, mais entièrement en RAM, conçue pour les algorithmes itératifs. Calculer la betweenness sur le graphe natif Neo4j (avec tous les labels, propriétés, transactions) serait beaucoup plus lent — la projection enlève tout ce qui ne sert pas au calcul.
+
+Pensez à **`gds.graph.drop('myGraph')`** après usage pour libérer la RAM (sinon elle reste allouée jusqu'au redémarrage du serveur).
+:::
 
 ```sql
 // 1. Projetter le graphe dans le catalogue GDS
@@ -49,6 +79,19 @@ CALL gds.graph.drop('myGraph');
 ## `apoc.path.expandConfig` — chemin avec contraintes
 
 Variante riche : accepte des filtres de chemin complexes (interdire un type de nœud, obliger à passer par un autre…).
+
+::: {.callout-tip title="🎯 Cas concret Phase 3 — éviter une centrale détruite"}
+Imaginez qu'en début de simulation, **la centrale de Flamanville est neutralisée**. Vous voulez recalculer les chemins logistiques **sans passer par les nœuds énergie hors-service**.
+
+`blacklistedNodes` accepte une liste de nœuds à **exclure de l'expansion** : l'algorithme fait comme s'ils n'existaient pas. C'est l'équivalent graphe de "couper le courant d'un quartier puis recalculer le routage".
+
+| Option | Effet |
+|--------|-------|
+| `blacklistedNodes` | nœuds à **éviter complètement** (centrale détruite, route coupée) |
+| `terminatorNodes` | nœuds **où s'arrêter** (cibles défensives) |
+| `labelFilter: '/POI'` | n'expanser que vers des nœuds de label `POI` |
+| `maxLevel: 5` | profondeur max de l'expansion |
+:::
 
 ```sql
 // Chemin attaque → défense en évitant les POIs énergie

@@ -23,6 +23,20 @@ Chaque géométrie est **typée par son SRID** (système de coordonnées). Ne co
 
 ## SRID : Lambert-93 vs WGS84
 
+::: {.callout-tip title="🎯 Analogie — la géométrie est un dessin, le SRID est la règle"}
+Imaginez deux cartes du même quartier de Brest. La première est dessinée **en mètres** (échelle 1:25 000), la seconde **en degrés** (carte du monde). Les deux montrent les mêmes bâtiments — mais les **coordonnées des points** sont totalement différentes.
+
+- **Géométrie** = la forme dessinée (point, ligne, polygone).
+- **SRID** = l'**unité de mesure** + la projection utilisée.
+
+Mélanger deux SRID, c'est comme **additionner des kilomètres et des miles** sans convertir : le calcul tourne, le résultat n'a aucun sens.
+
+| SRID | Unité | Utilité |
+|------|-------|---------|
+| `4326` (WGS84) | degrés lat/lon | GPS, Leaflet, web |
+| `2154` (Lambert-93) | mètres | Toute la France métropolitaine — calculs de distance fiables |
+:::
+
 La BDTOPO est en **EPSG:2154 (Lambert-93)** — coordonnées en **mètres**.
 Vos coordonnées GPS sont en **EPSG:4326 (WGS84)** — degrés de latitude/longitude.
 
@@ -41,6 +55,23 @@ ST_Transform(geom, 4326)
 ### `ST_Force2D` — pourquoi parfois nécessaire
 
 Certaines géométries BDTOPO ont une **3e coordonnée Z (altitude)**. Beaucoup de fonctions PostGIS les acceptent mais certaines opérations spatiales (notamment `ST_Intersects` strict, comparaisons d'égalité) échouent silencieusement. Quand un résultat est vide alors qu'il ne devrait pas → essayez `ST_Force2D(geom)`.
+
+::: {.callout-tip title="🎯 Quand dégainer `ST_Force2D` ?"}
+**Symptômes** :
+
+- `ST_Intersects(a, b)` retourne `false` alors que les objets se touchent à l'œil sur QGIS.
+- `ST_Equals(a, b)` retourne `false` pour deux géométries qui ont visiblement les mêmes coordonnées XY.
+- Un `JOIN` spatial sort 0 ligne sans erreur.
+
+**Cause probable** : `a` est en 3D (`POINT Z`) et `b` en 2D. PostGIS compare alors `(x, y, z)` à `(x, y, NULL)` → faux.
+
+**Solution** :
+```sql
+SELECT ST_Intersects(ST_Force2D(a.geom), b.geom) FROM …
+```
+
+**Vérifier le type** : `SELECT ST_NDims(geom), GeometryType(geom) FROM ma_table LIMIT 1;` — si `ST_NDims` retourne 3, vous êtes en Z.
+:::
 
 ---
 

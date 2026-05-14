@@ -44,10 +44,30 @@ Neo4j utilise le modèle **Labeled Property Graph** :
 
 ## Index-Free Adjacency
 
-**L'analogie** : vous cherchez les amis de Jean.
+::: {.callout-tip title="🎯 Analogie — l'annuaire vs le carnet d'adresses"}
+- **SQL = un annuaire papier** : pour trouver les contacts de Jean, vous ouvrez l'annuaire, cherchez "Jean" par dichotomie (`O(log n)`), lisez ses amis listés, puis **retournez à l'index** pour chercher chacun d'eux. Plus l'annuaire grossit, plus chaque recherche prend du temps.
+- **Neo4j = un carnet avec post-it** : sur la page de Jean, un **post-it pointe directement** vers la page de chaque ami. Vous suivez le post-it, vous y êtes. Aucune recherche dans un index. La taille du carnet n'a aucune importance — seul compte le nombre d'amis de Jean (son *degré*).
+:::
+
+**Concrètement** : vous cherchez les amis de Jean.
 
 - **En SQL** : `SELECT * FROM utilisateurs JOIN amis ON ... WHERE id = 'Jean'` → le SGBD parcourt un **index B-tree** de 1 million d'entrées → O(log n).
 - **En graphe** : Jean a un **pointeur direct** vers chacun de ses amis, stocké dans le nœud lui-même. Trouver ses amis = suivre ces pointeurs → O(1) par saut, **indépendamment de la taille du graphe**.
+
+```{mermaid}
+flowchart LR
+  subgraph SQL["SQL — index lookup O(log n)"]
+    Q1[Requête: amis de Jean] --> IDX[(B-tree index<br/>1 M entrées)]
+    IDX -->|dichotomie| ROW1[ligne Jean]
+    ROW1 --> IDX2[(B-tree index)]
+    IDX2 -->|dichotomie x N| ROW2[lignes amis]
+  end
+  subgraph GRAPH["Neo4j — pointeur direct O(1)"]
+    JEAN((Jean)) -->|pointeur| A1((Alice))
+    JEAN -->|pointeur| A2((Bob))
+    JEAN -->|pointeur| A3((Chloé))
+  end
+```
 
 ```
 SQL     :  SELECT * FROM edges WHERE source_id = 42;  → index lookup O(log n)
@@ -64,6 +84,17 @@ Neo4j   :  MATCH (n)-[r]->(m) WHERE id(n) = 42;     → pointeur direct O(1)
 ---
 
 ## Cypher : le SQL du graphe
+
+::: {.callout-tip title="🎯 La syntaxe ASCII-art de Cypher"}
+Cypher dessine littéralement le graphe qu'on cherche, comme avec un crayon :
+
+- **`( )` = un nœud** (un cercle, une entité). `(p:POI)` = un nœud avec le label `POI`, surnommé `p`.
+- **`[ ]` = une relation** (une étiquette sur la flèche). `[:DISTANCE]` = relation de type `DISTANCE`.
+- **`-` = lien non-orienté**, **`->` = flèche orientée**, **`<-` = flèche inverse**.
+- **`{ }` = un filtre de propriétés** posé *à l'intérieur* du nœud ou de la relation. `(p:POI {role: 'attaque'})` = "un POI dont la propriété role vaut 'attaque'". C'est l'équivalent d'un `WHERE` écrit directement dans le motif.
+
+> Mnémonique : **rond = nœud, crochet = lien, accolade = filtre, flèche = sens**.
+:::
 
 ### Patterns de base
 

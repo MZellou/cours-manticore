@@ -30,6 +30,48 @@ WITH RECURSIVE hierarchy AS (
 SELECT * FROM hierarchy ORDER BY depth;
 ```
 
+::: {.callout-tip title="🎯 Analogie — la poupée russe / l'arbre généalogique"}
+Une CTE récursive ressemble à un **arbre généalogique** que l'on déroule génération par génération :
+
+1. **Ancre** (cas de base) : "voici l'ancêtre — la racine".
+2. **Étape récursive** : "qui sont les enfants directs de ce que j'ai déjà ?". On les ajoute au résultat.
+3. **On répète** l'étape 2 sur les nouveaux venus, jusqu'à ce que plus aucun enfant n'apparaisse.
+
+C'est aussi le principe de la **poupée russe** : on ouvre une poupée, on trouve une plus petite à l'intérieur, on l'ouvre, on en trouve une plus petite encore… jusqu'à la dernière.
+:::
+
+```{mermaid}
+flowchart TD
+  subgraph N0["Itération 0 — ancre"]
+    A0[Tronçon de route]
+  end
+  subgraph N1["Itération 1 — enfants directs"]
+    A1[Route nommée]
+    A2[Bretelle]
+    A3[Sentier]
+  end
+  subgraph N2["Itération 2 — petits-enfants"]
+    B1[Route principale]
+    B2[Voie de service]
+    B3[Sentier balisé]
+  end
+  A0 --> A1 & A2 & A3
+  A1 --> B1 & B2
+  A3 --> B3
+  N0 -.UNION ALL.-> N1
+  N1 -.UNION ALL.-> N2
+```
+
+À chaque tour, l'`UNION ALL` **empile une nouvelle génération** dans la table temporaire `hierarchy`. La récursion s'arrête quand l'itération produit zéro ligne — c'est le **point fixe**.
+
+::: {.callout-note title="📦 Exemple BDTOPO — Domaine Bâti"}
+**Question** : "Lister tous les sous-types de bâtiments BDTOPO (à n'importe quelle profondeur)."
+
+- **En SQL sans récursion** : il faudrait connaître à l'avance la profondeur max et écrire **autant de `JOIN` que de niveaux** (4 niveaux Bâti → 4 jointures empilées). Si on rajoute un niveau dans l'ontologie, la requête casse.
+- **Avec `WITH RECURSIVE`** : un seul bloc qui s'auto-adapte à la profondeur. Pas de modification si l'ontologie change.
+- **En Cypher** : `MATCH (d)-[:EST_SOUS_TYPE_DE*]->(:ClasseOntologie {name: 'Bâti'})` — une ligne.
+:::
+
 Trois problèmes opérationnels :
 
 1. **Verbeux** : 8+ lignes pour exprimer "tous les descendants".
