@@ -1,0 +1,1 @@
+WITH clusters AS (SELECT *, ST_ClusterDBSCAN(geom, 1000, 2) OVER() AS cid FROM mission_pois WHERE role = 'energie') SELECT cid, count(*) AS nb, ST_AsText(ST_Centroid(ST_Collect(geom))) AS centre FROM clusters WHERE cid IS NOT NULL GROUP BY cid ORDER BY nb DESC LIMIT 5;

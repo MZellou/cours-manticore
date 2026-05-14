@@ -1,0 +1,5 @@
+ voltage | ponts_fragiles 
+---------+----------------
+ 225 kV  |              3
+(1 row)
+

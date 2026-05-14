@@ -1,0 +1,6 @@
+a.nom, b.nom, hops, dist_m
+NULL, NULL, 1, 10
+NULL, NULL, 1, 11
+"Pont de l'Île Verte", "la Tronche-Hôpital", 1, 12
+"Caserne de Pompiers de Sassenage", NULL, 1, 13
+"Gare de Grenoble Universités Gières", NULL, 1, 15

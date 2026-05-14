@@ -1,0 +1,10 @@
+{'p.nom': None, 'p.role': 'energie', 'degre': 132800}
+{'p.nom': None, 'p.role': 'defense', 'degre': 28693}
+{'p.nom': None, 'p.role': 'ravitaillement', 'degre': 5211}
+{'p.nom': 'Gendarmerie de Meylan', 'p.role': 'defense', 'degre': 611}
+{'p.nom': 'EHPAD André Léo', 'p.role': 'defense', 'degre': 525}
+{'p.nom': 'Logement-Foyer les Alpins', 'p.role': 'defense', 'degre': 525}
+{'p.nom': "Marché d'Intérêt National de Grenoble", 'p.role': 'ravitaillement', 'degre': 524}
+{'p.nom': "Zone d'Activités les Peupliers", 'p.role': 'ravitaillement', 'degre': 523}
+{'p.nom': 'EHPAD Vigny Musset', 'p.role': 'defense', 'degre': 523}
+{'p.nom': "Zone d'Activités des Granges", 'p.role': 'ravitaillement', 'degre': 523}

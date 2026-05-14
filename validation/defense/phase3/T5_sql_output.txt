@@ -1,0 +1,18 @@
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=12084.87..12084.92 rows=20 width=80) (actual time=205.882..205.886 rows=20 loops=1)
+   ->  Sort  (cost=12084.87..12085.92 rows=423 width=80) (actual time=205.880..205.883 rows=20 loops=1)
+         Sort Key: (round((st_distance(p1.geom, p2.geom))::numeric, 0))
+         Sort Method: top-N heapsort  Memory: 28kB
+         ->  Nested Loop  (cost=0.27..12073.61 rows=423 width=80) (actual time=0.480..198.013 rows=35810 loops=1)
+               ->  Seq Scan on mission_pois p1  (cost=0.00..116.38 rows=488 width=247) (actual time=0.295..0.383 rows=488 loops=1)
+                     Filter: (role = 'defense'::text)
+                     Rows Removed by Filter: 1782
+               ->  Index Scan using mission_pois_geom_idx on mission_pois p2  (cost=0.27..13.65 rows=1 width=247) (actual time=0.026..0.287 rows=73 loops=488)
+                     Index Cond: (geom && st_expand(p1.geom, '5000'::double precision))
+                     Filter: ((role = 'defense'::text) AND (p1.cleabs < cleabs) AND st_dwithin(p1.geom, geom, '5000'::double precision))
+                     Rows Removed by Filter: 529
+ Planning Time: 9.575 ms
+ Execution Time: 205.981 ms
+(14 rows)
+

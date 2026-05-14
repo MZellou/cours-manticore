@@ -1,0 +1,1 @@
+SELECT p1.source, p2.source, ROUND(ST_Distance(p1.geom, p2.geom)::numeric, 0) AS dist_m FROM mission_pois p1 CROSS JOIN mission_pois p2 WHERE p1.role = 'ravitaillement' AND p2.role = 'ravitaillement' AND p1.cleabs < p2.cleabs ORDER BY dist_m ASC LIMIT 10;

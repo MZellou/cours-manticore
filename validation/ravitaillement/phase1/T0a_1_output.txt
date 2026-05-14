@@ -1,0 +1,12 @@
+         categorie          | nb  
+----------------------------+-----
+ Culture et loisirs         | 370
+ Science et enseignement    | 262
+ Administratif ou militaire | 201
+ Sport                      | 196
+ Industriel et commercial   | 173
+ Religieux                  | 113
+ Gestion des eaux           |  49
+ Santé                      |  46
+(8 rows)
+

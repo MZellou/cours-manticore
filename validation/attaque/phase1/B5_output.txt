@@ -1,0 +1,321 @@
+ nature |      nom_ouvrage      |     type_route      | importance 
+--------+-----------------------+---------------------+------------
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Bretelle            | 1
+ Pont   |                       | Bretelle            | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Bretelle            | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   | Pont Léon Fournier    | Type autoroutier    | 1
+ Pont   | Pont Léon Fournier    | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   | Viaduc de la Rivoire  | Type autoroutier    | 1
+ Pont   | Viaduc de la Rivoire  | Type autoroutier    | 1
+ Pont   | Viaduc de la Rivoire  | Type autoroutier    | 1
+ Pont   | Viaduc de la Rivoire  | Type autoroutier    | 1
+ Pont   | Viaduc de la Rivoire  | Type autoroutier    | 1
+ Pont   | Viaduc de la Rivoire  | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   | Viaducs du Crozet     | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   | Pont du Drac          | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   | Viaducs du Crozet     | Type autoroutier    | 1
+ Pont   | Viaducs du Crozet     | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 1
+ Pont   | Pont du Drac          | Type autoroutier    | 1
+ Pont   |                       | Type autoroutier    | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   | Grand Pont            | Route à 1 chaussée  | 2
+ Pont   | Grand Pont            | Route à 1 chaussée  | 2
+ Pont   | Grand Pont            | Route à 1 chaussée  | 2
+ Pont   | Grand Pont            | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   | Pont Pasteur          | Bretelle            | 2
+ Pont   | Pont Pasteur          | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   | Pont de Jaillières    | Route à 1 chaussée  | 2
+ Pont   | Pont de Jaillières    | Route à 1 chaussée  | 2
+ Pont   | Pont de Jaillières    | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   | Pont Saint-Laurent    | Route à 1 chaussée  | 2
+ Pont   | Pont Saint-Laurent    | Route à 1 chaussée  | 2
+ Pont   | Pont Saint-Laurent    | Route à 1 chaussée  | 2
+ Pont   | Pont Saint-Laurent    | Route à 1 chaussée  | 2
+ Pont   | Pont de Chartreuse    | Route à 1 chaussée  | 2
+ Pont   | Pont de Chartreuse    | Route à 1 chaussée  | 2
+ Pont   | Pont de Chartreuse    | Route à 1 chaussée  | 2
+ Pont   | Pont de la Citadelle  | Route à 1 chaussée  | 2
+ Pont   | Pont de la Citadelle  | Route à 1 chaussée  | 2
+ Pont   | Pont de la Citadelle  | Route à 1 chaussée  | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Type autoroutier    | 2
+ Pont   |                       | Type autoroutier    | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Bretelle            | 2
+ Pont   |                       | Type autoroutier    | 2
+ Pont   |                       | Type autoroutier    | 2
+ Pont   |                       | Type autoroutier    | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Rond-point          | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   |                       | Route à 2 chaussées | 2
+ Pont   | Viaducs du Crozet     | Route à 2 chaussées | 2
+ Pont   | Viaducs du Crozet     | Route à 2 chaussées | 2
+ Pont   |                       | Route à 1 chaussée  | 2
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel | Tunnel du Petit Brion | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel |                       | Type autoroutier    | 1
+ Tunnel | Tunnel du Petit Brion | Type autoroutier    | 1
+ Tunnel | Tunnel du Petit Brion | Type autoroutier    | 1
+ Tunnel | Tunnel du Petit Brion | Type autoroutier    | 1
+ Tunnel | Tunnel du Petit Brion | Type autoroutier    | 1
+ Tunnel | Tunnel du Petit Brion | Type autoroutier    | 1
+ Tunnel | Tunnel d'Uriol        | Type autoroutier    | 1
+ Tunnel | Tunnel d'Uriol        | Type autoroutier    | 1
+ Tunnel | Tunnel d'Uriol        | Type autoroutier    | 1
+ Tunnel |                       | Route à 1 chaussée  | 2
+ Tunnel |                       | Route à 1 chaussée  | 2
+ Tunnel |                       | Route à 1 chaussée  | 2
+ Tunnel |                       | Route à 2 chaussées | 2
+ Tunnel |                       | Route à 1 chaussée  | 2
+ Tunnel |                       | Route à 2 chaussées | 2
+ Tunnel |                       | Route à 2 chaussées | 2
+ Tunnel |                       | Route à 1 chaussée  | 2
+ Tunnel |                       | Route à 2 chaussées | 2
+(317 rows)
+

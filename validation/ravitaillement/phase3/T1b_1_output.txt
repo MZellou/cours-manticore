@@ -1,0 +1,5 @@
+     start     |              end              | cost 
+---------------+-------------------------------+------
+ Gare du Havre | Gare du Havre Soquence Triage |     
+(1 row)
+

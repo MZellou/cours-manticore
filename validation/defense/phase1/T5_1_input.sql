@@ -1,0 +1,1 @@
+SELECT r1.source AS source1, r2.source AS source2, count(*) AS paires_proches FROM mission_pois r1 JOIN mission_pois r2 ON r1.role = 'defense' AND r2.role <> 'defense' AND ST_DWithin(r1.geom, r2.geom, 1000) AND r1.cleabs < r2.cleabs GROUP BY r1.source, r2.source ORDER BY paires_proches DESC LIMIT 15;

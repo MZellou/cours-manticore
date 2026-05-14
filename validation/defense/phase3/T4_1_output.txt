@@ -1,0 +1,11 @@
+       nature        | nb  
+---------------------+-----
+ Route à 1 chaussée  | 216
+ Route à 2 chaussées |  63
+ Rond-point          |   8
+ Bretelle            |   6
+ Sentier             |   5
+ Escalier            |   2
+ Route empierrée     |   2
+(7 rows)
+

@@ -94,3 +94,9 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).
 - **Site:** Quarto website deployed to GitHub Pages via `.github/workflows/quarto.yml`. Source files at root (`*.qmd`), built to `_site/`. Theory pages under `theorie/`, mission pages under `mission/`, roles under `roles/`, corrigés under `corriges/`. Slides in `slides/` use `{{< include >}}` to reuse theory content.
 - **Quizdown:** Checkpoints (`mission/checkpoint_*.qmd`) include interactive quizzes via `quizdown` Quarto extension.
+- **Neo4j DISTANCE O(n²) OOM:** All-pairs DISTANCE (<10km) OOMs on 4000+ POIs. Fix: (a) batch 100 POIs, (b) spatial pre-filter `abs(a.lat-b.lat)<0.1`, (c) `dbms.memory.transaction.total.max=2G`.
+- **Neo4j nuke via volume:** `DETACH DELETE` OOMs on millions of rels. Use `docker compose down && docker volume rm <project>_neo4j_data`.
+- **cypher-shell inside Docker:** CLI not on host. Use `docker exec -i manticore-neo4j cypher-shell -u neo4j -p manticore2026`.
+- **Docker env ≠ restart:** `docker compose restart` ignores env changes. Must `docker compose up -d` to recreate.
+- **Neo4j 5.x config:** Use `dbms.memory.transaction.total.max` (old-style). Docker env: `NEO4J_dbms_memory_transaction_total_max`.
+- **Validation timeouts:** Heavy Cypher queries timeout on dense graphs (>1M rels). Use explicit timeouts or SKIP markers.

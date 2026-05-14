@@ -1,0 +1,5 @@
+             toponyme             | categorie | tours_proches 
+----------------------------------+-----------+---------------
+ Aérodrome de Grenoble-le Versoud | Nationale |             0
+(1 row)
+

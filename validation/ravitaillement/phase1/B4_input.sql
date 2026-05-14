@@ -1,0 +1,1 @@
+SELECT z.nature, count(*) AS nb FROM zone_d_activite_ou_d_interet z JOIN mission_pois p ON ST_DWithin(z.geometrie, p.geom, 2000) WHERE p.role = 'ravitaillement' AND z.categorie = 'Santé' GROUP BY z.nature ORDER BY nb DESC;

@@ -1,0 +1,11 @@
+p.nom, q.nom, d.meters
+NULL, NULL, 0
+NULL, NULL, 0
+NULL, NULL, 0
+NULL, NULL, 1
+NULL, NULL, 1
+NULL, NULL, 1
+NULL, NULL, 1
+NULL, NULL, 1
+NULL, NULL, 1
+NULL, NULL, 1

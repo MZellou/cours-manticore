@@ -1,0 +1,13 @@
+    poi_source    | nb_within_2km 
+------------------+---------------
+ communication    |           816
+ transport_public |           630
+ pont             |           553
+ hopital          |           439
+ secours_decision |           152
+ securite         |           111
+ etranglement     |           101
+ gare             |            24
+ eau_potable      |            13
+(9 rows)
+

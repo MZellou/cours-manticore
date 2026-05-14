@@ -1,0 +1,1 @@
+WITH clustered AS (SELECT *, ST_ClusterDBSCAN(geom, eps := 1000, minpoints := 2) OVER() AS cluster_id FROM mission_pois WHERE role = 'energie') SELECT cluster_id, count(*) AS nb, array_agg(source) AS sources FROM clustered WHERE cluster_id IS NOT NULL GROUP BY cluster_id ORDER BY nb DESC LIMIT 10;

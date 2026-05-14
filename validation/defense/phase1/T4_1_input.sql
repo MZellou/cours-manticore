@@ -1,0 +1,1 @@
+WITH clustered AS (SELECT *, ST_ClusterDBSCAN(geom, eps := 500, minpoints := 3) OVER() AS cluster_id FROM mission_pois WHERE role = 'defense') SELECT cluster_id, count(*) AS nb FROM clustered WHERE cluster_id IS NOT NULL GROUP BY cluster_id ORDER BY nb DESC LIMIT 10;

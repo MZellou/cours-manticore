@@ -1,0 +1,5 @@
+role, nb
+"attaque", 1119
+"defense", 487
+"energie", 1836
+"ravitaillement", 2147

@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS ways_backup AS SELECT * FROM ways;

@@ -1,0 +1,5 @@
+ total_edges | carrossable | non_carrossable 
+-------------+-------------+-----------------
+       69692 |       69692 |               0
+(1 row)
+

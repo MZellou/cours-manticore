@@ -1,0 +1,13 @@
+|          nature           | cnt  |                                                 short_def                                                 |
+|---------------------------|-----:|-----------------------------------------------------------------------------------------------------------|
+| Maison de retraite        | 7842 | #Informations:
+##Définition : Établissement d'hébergement pour personnes âgées, généralement médicalisé.
+##Regroupement                                                                                            |
+| Hôpital                   | 2537 | #Informations:
+##Définition : Établissement public ou privé, où sont effectués tous les soins médicaux et chirurgicaux,  |
+| Etablissement hospitalier | 2362 | #Informations:
+##Définition : Autres établissements relevant de la loi hospitalière.
+##Regroupement : Etablissement hosp                                                                       |
+| Etablissement thermal     | 134  | #Informations:
+##Définition : Etablissement où l’on utilise les eaux médicinales à des fins thérapeutiques.
+##Regroupeme                                                                                              |

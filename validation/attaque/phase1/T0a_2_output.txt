@@ -1,0 +1,10 @@
+|         categorie          |   nb   |
+|----------------------------|-------:|
+| Culture et loisirs         | 181185 |
+| Administratif ou militaire | 90367  |
+| Science et enseignement    | 83820  |
+| Religieux                  | 70409  |
+| Industriel et commercial   | 60892  |
+| Sport                      | 52592  |
+| Gestion des eaux           | 43752  |
+| Santé                      | 12875  |

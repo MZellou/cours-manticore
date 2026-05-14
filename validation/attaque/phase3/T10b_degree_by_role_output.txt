@@ -1,0 +1,4 @@
+{'p.role': 'energie', 'total_voisins': 132800, 'nb_pois': 378}
+{'p.role': 'defense', 'total_voisins': 64936, 'nb_pois': 160}
+{'p.role': 'ravitaillement', 'total_voisins': 43316, 'nb_pois': 113}
+{'p.role': 'attaque', 'total_voisins': 742, 'nb_pois': 3}

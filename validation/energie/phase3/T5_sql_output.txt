@@ -1,0 +1,22 @@
+                                                                           QUERY PLAN                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=751431.36..751431.41 rows=20 width=78) (actual time=2324.861..2324.865 rows=20 loops=1)
+   ->  Sort  (cost=751431.36..751576.05 rows=57878 width=78) (actual time=2155.218..2155.220 rows=20 loops=1)
+         Sort Key: (round((st_distance(p1.geom, p2.geom))::numeric, 0))
+         Sort Method: top-N heapsort  Memory: 26kB
+         ->  Nested Loop  (cost=0.27..749891.24 rows=57878 width=78) (actual time=0.230..2082.960 rows=554200 loops=1)
+               ->  Seq Scan on mission_pois p1  (cost=0.00..532.88 rows=1836 width=441) (actual time=0.080..0.917 rows=1836 loops=1)
+                     Filter: (role = 'energie'::text)
+                     Rows Removed by Filter: 3754
+               ->  Index Scan using mission_pois_geom_idx on mission_pois p2  (cost=0.27..13.93 rows=1 width=441) (actual time=0.016..0.649 rows=302 loops=1836)
+                     Index Cond: (geom && st_expand(p1.geom, '5000'::double precision))
+                     Filter: ((role = 'energie'::text) AND (p1.cleabs < cleabs) AND st_dwithin(p1.geom, geom, '5000'::double precision))
+                     Rows Removed by Filter: 446
+ Planning Time: 7.586 ms
+ JIT:
+   Functions: 11
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+   Timing: Generation 0.789 ms, Inlining 43.246 ms, Optimization 76.769 ms, Emission 49.630 ms, Total 170.434 ms
+ Execution Time: 2339.159 ms
+(18 rows)
+

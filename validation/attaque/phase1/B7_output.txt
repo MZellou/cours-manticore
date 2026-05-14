@@ -1,0 +1,586 @@
+                    cible                    |         nature          |  type_retenue   | distance_m 
+---------------------------------------------+-------------------------+-----------------+------------
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             | Passerelle              | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             | Passerelle              | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue-barrage |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          0
+                                             |                         | Retenue         |          2
+                                             |                         | Retenue         |          2
+                                             |                         | Retenue         |          2
+                                             |                         | Retenue         |          2
+                                             | Passerelle              | Retenue         |          2
+                                             |                         | Retenue         |          4
+                                             |                         | Retenue         |          4
+                                             |                         | Retenue         |          6
+                                             |                         | Retenue         |          7
+                                             |                         | Retenue         |          7
+ Aquapôle                                    | Station d'épuration     | Retenue         |          7
+                                             |                         | Retenue         |          8
+                                             |                         | Retenue         |          8
+                                             |                         | Retenue         |          8
+                                             |                         | Retenue         |          9
+                                             |                         | Retenue         |          9
+                                             |                         | Retenue         |          9
+                                             |                         | Retenue         |          9
+                                             |                         | Retenue         |         14
+                                             |                         | Retenue         |         14
+                                             |                         | Retenue         |         14
+                                             |                         | Retenue         |         16
+                                             |                         | Retenue         |         16
+ Aquapôle                                    | Station d'épuration     | Retenue         |         17
+                                             |                         | Retenue         |         18
+                                             |                         | Retenue         |         18
+                                             |                         | Retenue         |         19
+                                             |                         | Retenue         |         19
+                                             |                         | Retenue         |         20
+                                             | Passerelle              | Retenue         |         20
+                                             |                         | Retenue         |         20
+                                             | Antenne-relais          | Retenue         |         20
+ Aérodrome de Grenoble-le Versoud            | Aérodrome               | Retenue         |         22
+                                             |                         | Retenue         |         24
+                                             |                         | Retenue         |         24
+                                             |                         | Retenue         |         25
+                                             |                         | Retenue         |         25
+                                             |                         | Retenue         |         26
+                                             |                         | Retenue         |         26
+                                             |                         | Retenue         |         27
+                                             |                         | Retenue         |         27
+                                             |                         | Retenue-barrage |         29
+                                             | Passerelle              | Retenue         |         32
+                                             |                         | Retenue         |         32
+                                             |                         | Retenue         |         35
+                                             | Passerelle              | Retenue         |         41
+                                             |                         | Retenue         |         42
+                                             |                         | Retenue         |         42
+                                             |                         | Retenue         |         43
+                                             |                         | Retenue         |         45
+ Mairie de Saint-Égrève                      | Mairie                  | Retenue         |         46
+                                             |                         | Retenue         |         53
+                                             |                         | Retenue         |         58
+                                             |                         | Retenue         |         60
+                                             |                         | Retenue         |         64
+                                             |                         | Retenue         |         66
+                                             |                         | Retenue         |         66
+                                             | Antenne-relais          | Retenue         |         67
+                                             |                         | Retenue         |         73
+                                             | Passerelle              | Retenue         |         74
+                                             |                         | Retenue         |         75
+                                             | Passerelle              | Retenue         |         77
+                                             |                         | Retenue         |         78
+                                             |                         | Retenue         |         79
+                                             |                         | Retenue         |         79
+                                             |                         | Retenue         |         82
+                                             |                         | Retenue         |         84
+                                             | Passerelle              | Retenue         |         85
+                                             |                         | Retenue         |         85
+                                             |                         | Retenue         |         85
+                                             |                         | Retenue         |         88
+                                             |                         | Retenue         |         89
+                                             |                         | Retenue         |         94
+                                             |                         | Retenue         |         95
+                                             |                         | Retenue         |         95
+                                             |                         | Retenue         |         97
+                                             |                         | Retenue         |         97
+                                             | Antenne-relais          | Retenue         |        100
+                                             |                         | Retenue         |        100
+ Mairie de Veurey-Voroize                    | Mairie                  | Retenue         |        102
+ Mairie de Grenoble                          | Mairie                  | Retenue         |        102
+                                             |                         | Retenue         |        106
+                                             |                         | Retenue         |        110
+                                             | Passerelle              | Retenue         |        110
+ Gendarmerie de Saint-Égrève                 | Gendarmerie             | Retenue         |        111
+                                             |                         | Retenue         |        112
+                                             |                         | Retenue         |        112
+                                             |                         | Retenue         |        112
+                                             |                         | Retenue         |        118
+                                             |                         | Retenue         |        119
+                                             | Antenne-relais          | Retenue         |        120
+                                             |                         | Retenue         |        124
+                                             |                         | Retenue         |        126
+                                             |                         | Retenue         |        137
+                                             |                         | Retenue         |        137
+                                             |                         | Retenue         |        138
+                                             |                         | Retenue         |        138
+                                             | Pont isolé              | Retenue         |        139
+                                             |                         | Retenue         |        143
+                                             |                         | Retenue         |        144
+                                             |                         | Retenue         |        144
+                                             |                         | Retenue         |        145
+                                             |                         | Retenue         |        146
+ Mairie de Vaulnaveys-le-Haut                | Mairie                  | Retenue         |        148
+                                             |                         | Retenue         |        150
+                                             |                         | Retenue         |        152
+                                             |                         | Retenue         |        152
+                                             | Passerelle              | Retenue         |        153
+                                             |                         | Retenue         |        153
+                                             |                         | Retenue         |        157
+                                             | Passerelle              | Retenue         |        158
+                                             |                         | Retenue         |        159
+                                             | Antenne-relais          | Retenue         |        160
+                                             |                         | Retenue         |        162
+                                             |                         | Retenue         |        163
+                                             |                         | Retenue         |        166
+                                             | Antenne-relais          | Retenue         |        168
+                                             |                         | Retenue         |        172
+                                             |                         | Retenue         |        174
+                                             |                         | Retenue         |        180
+                                             |                         | Retenue         |        180
+                                             |                         | Retenue         |        180
+                                             |                         | Retenue         |        181
+                                             |                         | Retenue         |        181
+                                             |                         | Retenue         |        182
+                                             |                         | Retenue         |        182
+                                             |                         | Retenue         |        189
+                                             |                         | Retenue         |        189
+                                             |                         | Retenue         |        190
+                                             | Antenne-relais          | Retenue         |        191
+ Mairie de Séchilienne                       | Mairie                  | Retenue         |        191
+                                             | Antenne-relais          | Retenue         |        192
+                                             | Antenne-relais          | Retenue         |        192
+                                             |                         | Retenue         |        194
+                                             |                         | Retenue         |        194
+                                             |                         | Retenue         |        194
+                                             |                         | Retenue         |        195
+                                             |                         | Retenue         |        196
+ Mairie du Gua                               | Mairie                  | Retenue         |        197
+                                             |                         | Retenue         |        198
+                                             |                         | Retenue         |        199
+                                             |                         | Retenue         |        201
+                                             | Pont isolé              | Retenue         |        203
+                                             | Pont isolé              | Retenue         |        206
+                                             |                         | Retenue         |        209
+                                             |                         | Retenue         |        209
+                                             | Passerelle              | Retenue         |        209
+                                             |                         | Retenue         |        210
+                                             |                         | Retenue         |        211
+                                             |                         | Retenue         |        214
+                                             |                         | Retenue         |        214
+                                             |                         | Retenue         |        219
+                                             |                         | Retenue         |        220
+                                             |                         | Retenue         |        222
+                                             |                         | Retenue         |        224
+                                             |                         | Retenue         |        228
+                                             | Passerelle              | Retenue         |        229
+                                             |                         | Retenue         |        229
+                                             |                         | Retenue         |        232
+                                             |                         | Retenue         |        233
+                                             | Passerelle              | Retenue         |        234
+                                             |                         | Retenue         |        235
+ Gendarmerie de Grenoble                     | Gendarmerie             | Retenue         |        236
+ Mairie de Grenoble                          | Mairie                  | Retenue         |        238
+                                             | Antenne-relais          | Retenue         |        243
+                                             |                         | Retenue         |        244
+                                             |                         | Retenue         |        245
+                                             |                         | Retenue         |        247
+                                             | Antenne-relais          | Retenue         |        248
+ Mairie du Pont-de-Claix                     | Mairie                  | Retenue         |        250
+                                             |                         | Retenue         |        250
+                                             |                         | Retenue         |        250
+ Mairie de Vizille                           | Mairie                  | Retenue         |        250
+                                             |                         | Retenue         |        254
+ Mairie de Jarrie                            | Mairie                  | Retenue         |        255
+                                             |                         | Retenue         |        257
+                                             |                         | Retenue         |        258
+                                             | Antenne-relais          | Retenue         |        259
+                                             |                         | Retenue         |        259
+                                             |                         | Retenue         |        259
+                                             |                         | Retenue         |        261
+                                             |                         | Retenue         |        262
+                                             | Pont isolé              | Retenue         |        262
+                                             |                         | Retenue         |        262
+                                             |                         | Retenue         |        264
+                                             |                         | Retenue         |        266
+                                             |                         | Retenue         |        266
+                                             |                         | Retenue         |        267
+                                             |                         | Retenue         |        267
+                                             |                         | Retenue         |        267
+                                             |                         | Retenue         |        269
+ Mairie de Vaulnaveys-le-Bas                 | Mairie                  | Retenue         |        270
+                                             |                         | Retenue         |        272
+                                             |                         | Retenue         |        272
+                                             |                         | Retenue         |        272
+                                             |                         | Retenue         |        272
+                                             |                         | Retenue         |        272
+                                             | Antenne-relais          | Retenue         |        272
+                                             |                         | Retenue         |        273
+                                             |                         | Retenue         |        273
+                                             |                         | Retenue         |        276
+                                             | Pont isolé              | Retenue         |        276
+ Hôtel de Département de l'Isère             | Hôtel de département    | Retenue         |        276
+ Hôtel de Département de l'Isère             | Hôtel de département    | Retenue         |        276
+                                             |                         | Retenue         |        278
+                                             |                         | Retenue         |        279
+                                             | Pont isolé              | Retenue         |        280
+                                             |                         | Retenue         |        280
+                                             |                         | Retenue         |        280
+                                             |                         | Retenue         |        280
+                                             |                         | Retenue         |        280
+                                             |                         | Retenue         |        282
+ Gendarmerie de Sassenage                    | Gendarmerie             | Retenue         |        283
+                                             |                         | Retenue         |        283
+                                             | Antenne-relais          | Retenue         |        285
+                                             | Antenne-relais          | Retenue         |        291
+                                             |                         | Retenue         |        294
+                                             |                         | Retenue         |        294
+                                             |                         | Retenue         |        296
+                                             |                         | Retenue         |        296
+                                             |                         | Retenue         |        297
+                                             | Antenne-relais          | Retenue         |        298
+                                             |                         | Retenue         |        298
+                                             |                         | Retenue         |        299
+                                             |                         | Retenue         |        302
+                                             |                         | Retenue         |        302
+                                             |                         | Retenue         |        302
+                                             | Antenne-relais          | Retenue         |        304
+                                             | Police                  | Retenue         |        307
+                                             | Pont isolé              | Retenue         |        307
+                                             |                         | Retenue         |        308
+                                             |                         | Retenue         |        313
+                                             |                         | Retenue         |        313
+                                             |                         | Retenue         |        314
+                                             | Antenne-relais          | Retenue         |        315
+                                             |                         | Retenue         |        315
+                                             |                         | Retenue         |        316
+                                             |                         | Retenue         |        317
+                                             |                         | Retenue         |        317
+                                             |                         | Retenue         |        317
+                                             | Antenne-relais          | Retenue         |        318
+                                             |                         | Retenue         |        319
+                                             |                         | Retenue         |        320
+                                             |                         | Retenue         |        322
+                                             |                         | Retenue         |        325
+                                             |                         | Retenue         |        328
+                                             |                         | Retenue         |        328
+                                             |                         | Retenue         |        329
+                                             |                         | Retenue         |        329
+                                             |                         | Retenue         |        329
+                                             |                         | Retenue         |        330
+                                             |                         | Retenue         |        330
+                                             | Passerelle              | Retenue         |        332
+ Mairie de Saint-Georges-de-Commiers         | Mairie                  | Retenue         |        333
+                                             |                         | Retenue         |        333
+                                             |                         | Retenue         |        333
+                                             | Antenne-relais          | Retenue         |        334
+                                             |                         | Retenue         |        335
+ Aquapôle                                    | Station d'épuration     | Retenue         |        335
+                                             |                         | Retenue         |        335
+                                             |                         | Retenue         |        336
+                                             | Antenne-relais          | Retenue         |        336
+                                             |                         | Retenue         |        336
+                                             |                         | Retenue         |        336
+                                             |                         | Retenue         |        337
+                                             |                         | Retenue         |        338
+                                             |                         | Retenue         |        339
+                                             |                         | Retenue         |        339
+                                             | Antenne-relais          | Retenue         |        340
+                                             |                         | Retenue         |        341
+                                             |                         | Retenue         |        341
+                                             |                         | Retenue         |        341
+                                             |                         | Retenue-barrage |        341
+                                             | Passerelle              | Retenue         |        343
+                                             | Antenne-relais          | Retenue         |        344
+                                             |                         | Retenue         |        346
+                                             |                         | Retenue-barrage |        347
+                                             |                         | Retenue         |        347
+ Gendarmerie de Saint-Égrève                 | Gendarmerie             | Retenue         |        349
+ Gendarmerie de Meylan                       | Gendarmerie             | Retenue         |        350
+                                             |                         | Retenue         |        350
+                                             |                         | Retenue         |        350
+                                             |                         | Retenue         |        352
+                                             |                         | Retenue         |        352
+                                             |                         | Retenue         |        353
+                                             |                         | Retenue         |        358
+                                             | Antenne-relais          | Retenue         |        358
+                                             |                         | Retenue         |        358
+                                             | Passerelle              | Retenue         |        360
+                                             | Passerelle              | Retenue         |        360
+                                             |                         | Retenue         |        363
+                                             |                         | Retenue         |        363
+                                             |                         | Retenue         |        363
+ Mairie d'Eybens                             | Mairie                  | Retenue         |        363
+                                             |                         | Retenue         |        363
+                                             |                         | Retenue         |        363
+                                             |                         | Retenue         |        365
+                                             |                         | Retenue         |        365
+                                             |                         | Retenue         |        367
+                                             |                         | Retenue         |        367
+                                             |                         | Retenue         |        367
+                                             | Antenne-relais          | Retenue         |        368
+                                             |                         | Retenue         |        371
+                                             |                         | Retenue         |        372
+                                             | Antenne-relais          | Retenue         |        373
+                                             |                         | Retenue         |        375
+                                             |                         | Retenue         |        376
+                                             |                         | Retenue         |        376
+                                             |                         | Retenue         |        378
+                                             |                         | Retenue         |        379
+                                             |                         | Retenue         |        380
+                                             |                         | Retenue         |        381
+                                             |                         | Retenue         |        382
+                                             |                         | Retenue         |        382
+                                             |                         | Retenue         |        382
+                                             | Antenne-relais          | Retenue         |        383
+                                             |                         | Retenue         |        384
+                                             | Antenne-relais          | Retenue         |        384
+                                             |                         | Retenue         |        384
+                                             |                         | Retenue         |        386
+                                             | Passerelle              | Retenue         |        386
+                                             | Pont isolé              | Retenue         |        387
+                                             |                         | Retenue         |        394
+                                             |                         | Retenue         |        394
+                                             |                         | Retenue         |        394
+                                             | Pont isolé              | Retenue         |        394
+                                             | Antenne-relais          | Retenue         |        396
+ Préfecture de l'Isère                       | Préfecture              | Retenue         |        397
+                                             |                         | Retenue         |        397
+                                             |                         | Retenue         |        398
+                                             |                         | Retenue         |        398
+ Mairie d'Eybens                             | Mairie                  | Retenue         |        399
+                                             | Pont isolé              | Retenue         |        400
+                                             |                         | Retenue         |        402
+                                             |                         | Retenue         |        402
+                                             |                         | Retenue         |        402
+                                             |                         | Retenue         |        402
+                                             | Antenne-relais          | Retenue         |        405
+                                             |                         | Retenue         |        405
+                                             |                         | Retenue         |        405
+                                             | Antenne-relais          | Retenue         |        406
+                                             |                         | Retenue         |        406
+                                             |                         | Retenue         |        406
+                                             |                         | Retenue         |        407
+                                             | Pont isolé              | Retenue         |        407
+                                             |                         | Retenue         |        407
+                                             |                         | Retenue         |        410
+                                             | Pont isolé              | Retenue         |        410
+                                             |                         | Retenue         |        410
+                                             |                         | Retenue         |        411
+                                             | Passerelle              | Retenue         |        411
+                                             |                         | Retenue         |        412
+                                             | Antenne-relais          | Retenue         |        412
+                                             |                         | Retenue         |        414
+                                             |                         | Retenue         |        416
+ Gendarmerie de Saint-Égrève                 | Gendarmerie             | Retenue         |        416
+                                             |                         | Retenue         |        416
+ Préfecture de l'Isère                       | Préfecture              | Retenue         |        416
+                                             | Antenne-relais          | Retenue         |        416
+                                             | Antenne-relais          | Retenue         |        417
+                                             | Passerelle              | Retenue         |        417
+                                             | Passerelle              | Retenue         |        418
+                                             |                         | Retenue         |        420
+ Mairie de Meylan                            | Mairie                  | Retenue         |        421
+                                             |                         | Retenue         |        422
+                                             | Passerelle              | Retenue         |        423
+                                             |                         | Retenue         |        427
+                                             |                         | Retenue         |        427
+                                             |                         | Retenue         |        427
+                                             | Aqueduc                 | Retenue         |        427
+                                             |                         | Retenue         |        427
+                                             | Passerelle              | Retenue         |        429
+                                             |                         | Retenue         |        429
+                                             |                         | Retenue         |        430
+                                             |                         | Retenue         |        430
+                                             |                         | Retenue         |        432
+ Terrain d'Exercices de Notre-Dame-de-Mésage | Camp militaire non clos | Retenue         |        433
+                                             |                         | Retenue         |        434
+                                             |                         | Retenue         |        435
+                                             |                         | Retenue         |        435
+                                             |                         | Retenue         |        436
+                                             |                         | Retenue         |        436
+ Échirolles - Mairie Annexe                  | Mairie                  | Retenue         |        437
+                                             |                         | Retenue         |        439
+                                             |                         | Retenue         |        441
+                                             |                         | Retenue         |        442
+                                             | Passerelle              | Retenue         |        442
+                                             |                         | Retenue         |        443
+                                             |                         | Retenue         |        443
+                                             |                         | Retenue         |        443
+                                             |                         | Retenue         |        446
+                                             |                         | Retenue         |        446
+                                             |                         | Retenue         |        447
+                                             |                         | Retenue         |        448
+                                             | Antenne-relais          | Retenue         |        448
+ Mairie de Gières                            | Mairie                  | Retenue         |        448
+                                             |                         | Retenue         |        448
+ Mairie de Saint-Georges-de-Commiers         | Mairie                  | Retenue         |        451
+                                             | Passerelle              | Retenue         |        452
+ Gendarmerie de Vizille                      | Gendarmerie             | Retenue         |        452
+                                             |                         | Retenue         |        452
+                                             |                         | Retenue         |        453
+                                             | Antenne-relais          | Retenue         |        453
+                                             | Antenne-relais          | Retenue         |        455
+                                             |                         | Retenue         |        457
+                                             | Station d'épuration     | Retenue         |        457
+                                             |                         | Retenue         |        457
+                                             |                         | Retenue         |        458
+                                             |                         | Retenue         |        458
+                                             |                         | Retenue         |        458
+                                             |                         | Retenue         |        458
+                                             |                         | Retenue         |        461
+                                             |                         | Retenue         |        461
+                                             |                         | Retenue         |        462
+                                             |                         | Retenue         |        462
+                                             |                         | Retenue         |        462
+                                             | Antenne-relais          | Retenue         |        462
+                                             | Antenne-relais          | Retenue         |        463
+                                             | Antenne-relais          | Retenue         |        464
+                                             |                         | Retenue-barrage |        465
+                                             |                         | Retenue         |        467
+                                             |                         | Retenue         |        472
+                                             |                         | Retenue         |        472
+                                             |                         | Retenue         |        472
+                                             |                         | Retenue         |        475
+                                             |                         | Retenue         |        475
+                                             |                         | Retenue         |        475
+                                             |                         | Retenue         |        476
+                                             |                         | Retenue         |        476
+                                             |                         | Retenue         |        476
+                                             |                         | Retenue         |        476
+                                             |                         | Retenue         |        476
+                                             |                         | Retenue         |        476
+                                             |                         | Retenue         |        476
+                                             |                         | Retenue         |        477
+                                             |                         | Retenue         |        478
+                                             |                         | Retenue         |        479
+ Mairie de Champ-sur-Drac                    | Mairie                  | Retenue         |        481
+                                             |                         | Retenue         |        482
+                                             |                         | Retenue         |        482
+                                             |                         | Retenue         |        482
+                                             | Antenne-relais          | Retenue         |        482
+                                             |                         | Retenue         |        483
+                                             |                         | Retenue         |        483
+                                             |                         | Retenue         |        486
+                                             |                         | Retenue         |        486
+                                             |                         | Retenue         |        487
+                                             | Pont isolé              | Retenue         |        489
+                                             | Antenne-relais          | Retenue         |        493
+                                             |                         | Retenue         |        493
+                                             | Antenne-relais          | Retenue         |        493
+                                             |                         | Retenue         |        495
+ Gendarmerie de Meylan                       | Gendarmerie             | Retenue         |        495
+                                             |                         | Retenue         |        498
+                                             |                         | Retenue         |        499
+                                             |                         | Retenue         |        499
+(582 rows)
+

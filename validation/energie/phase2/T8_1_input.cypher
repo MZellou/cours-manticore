@@ -1,0 +1,1 @@
+MATCH (a:POI {role: 'energie'}), (b:POI {role: 'energie'}) WHERE id(a) < id(b) MATCH p = shortestPath((a)-[:DISTANCE*]-(b)) RETURN a.nom, b.nom, length(p) AS hops, reduce(t=0, r IN relationships(p) | t+r.meters) AS dist_m ORDER BY dist_m LIMIT 5;

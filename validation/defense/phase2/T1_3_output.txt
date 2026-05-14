@@ -1,0 +1,11 @@
+c.name
+"Altiport"
+"Aérodrome"
+"Héliport"
+"Hydrobase"
+"Indifférenciée"
+"Arc de triomphe"
+"Arène ou théâtre antique"
+"Industriel, agricole ou commercial"
+"Chapelle"
+"Château"

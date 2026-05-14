@@ -1,0 +1,50 @@
+{'role': 'attaque', 'nom': 'Aérodrome de Grenoble-le Versoud'}
+{'role': 'attaque', 'nom': 'Gendarmerie de Vizille'}
+{'role': 'attaque', 'nom': "Terrain d'Exercices de Notre-Dame-de-Mésage"}
+{'role': 'defense', 'nom': 'Alpes Isère'}
+{'role': 'defense', 'nom': 'Belledonne'}
+{'role': 'defense', 'nom': 'Brigade Motorisée du Pont-de-Claix'}
+{'role': 'defense', 'nom': 'Brigade Territoriale Autonome de Vif'}
+{'role': 'defense', 'nom': 'Caserne de C.R.S.'}
+{'role': 'defense', 'nom': "Caserne de l'Alma"}
+{'role': 'defense', 'nom': 'Centre Jenny Aubry'}
+{'role': 'defense', 'nom': 'Centre Michel Philibert'}
+{'role': 'defense', 'nom': 'Centre Traitement Ambulatoire Intensif'}
+{'role': 'defense', 'nom': 'Clinique Groupe du Mail'}
+{'role': 'defense', 'nom': 'Clinique Mutualiste'}
+{'role': 'defense', 'nom': 'Clinique Mutualiste des Eaux Claires'}
+{'role': 'defense', 'nom': "Clinique d'Alembert"}
+{'role': 'defense', 'nom': 'Clinique du Dauphiné'}
+{'role': 'defense', 'nom': 'Clinique du Grésivaudan'}
+{'role': 'defense', 'nom': 'EHPAD André Léo'}
+{'role': 'defense', 'nom': 'EHPAD Bon Pasteur'}
+{'role': 'defense', 'nom': 'EHPAD Bévières'}
+{'role': 'defense', 'nom': 'EHPAD Champ Fleuri'}
+{'role': 'defense', 'nom': 'EHPAD Claudette Chesne'}
+{'role': 'defense', 'nom': 'EHPAD Irène Joliot-Curie'}
+{'role': 'defense', 'nom': "EHPAD Korian l'Isle Verte"}
+{'role': 'defense', 'nom': 'EHPAD Maison Cantonale des Personnes Âgées'}
+{'role': 'defense', 'nom': 'EHPAD Maison Sévigné'}
+{'role': 'defense', 'nom': 'EHPAD Michel Philibert'}
+{'role': 'defense', 'nom': 'EHPAD Petites Sœurs des Pauvres ma Maison'}
+{'role': 'defense', 'nom': 'EHPAD Pique Pierre'}
+{'role': 'defense', 'nom': 'EHPAD Reyniès'}
+{'role': 'defense', 'nom': 'EHPAD Résidence du Parc'}
+{'role': 'defense', 'nom': 'EHPAD Saint-Bruno'}
+{'role': 'defense', 'nom': 'EHPAD Saint-Germain'}
+{'role': 'defense', 'nom': 'EHPAD Vigny Musset'}
+{'role': 'defense', 'nom': 'EHPAD de Vizille'}
+{'role': 'defense', 'nom': "EHPAD l'Abbaye"}
+{'role': 'defense', 'nom': "EHPAD l'Églantine"}
+{'role': 'defense', 'nom': 'EHPAD la Maison des Anciens'}
+{'role': 'defense', 'nom': 'EHPAD la Maison du Lac'}
+{'role': 'defense', 'nom': 'EHPAD la Providence'}
+{'role': 'defense', 'nom': "EHPAD le Bois d'Artas"}
+{'role': 'defense', 'nom': 'EHPAD le Chant du Ravinson'}
+{'role': 'defense', 'nom': 'EHPAD le Clos Besson'}
+{'role': 'defense', 'nom': 'EHPAD le Fontanil'}
+{'role': 'defense', 'nom': 'EHPAD les Ombrages'}
+{'role': 'defense', 'nom': 'EHPAD les Orchidées'}
+{'role': 'defense', 'nom': 'EHPAD les Portes du Vercors'}
+{'role': 'defense', 'nom': 'EHPAD les Vergers Noyarey'}
+{'role': 'defense', 'nom': 'Foyer de Vie le Planeau'}

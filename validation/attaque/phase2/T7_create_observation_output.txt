@@ -1,0 +1,1 @@
+{'o': <Node element_id='4:caa13400-1497-4d7c-95ed-d4b6b089a4c4:3' labels=frozenset({'Base'}) properties={'role': 'defense', 'type': 'observation', 'nom': 'Observatoire hauteur 302'}>}

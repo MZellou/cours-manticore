@@ -1,0 +1,2 @@
+other_role, nb_links
+"attaque", 70371

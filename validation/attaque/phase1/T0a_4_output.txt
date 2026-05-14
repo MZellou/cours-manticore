@@ -1,0 +1,5 @@
+|         nature          |  nb  |
+|-------------------------|-----:|
+| Gendarmerie             | 3764 |
+| Camp militaire non clos | 54   |
+| Caserne                 | 333  |

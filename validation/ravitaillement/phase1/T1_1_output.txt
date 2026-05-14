@@ -1,0 +1,15 @@
+ depth | obj_type |          name           
+-------+----------+-------------------------
+     0 | Database | Tronçon de route
+     1 | Object   | Type autoroutier
+     1 | Object   | Sentier
+     1 | Object   | Bac ou liaison maritime
+     1 | Object   | Bretelle
+     1 | Object   | Chemin
+     1 | Object   | Escalier
+     1 | Object   | Rond-point
+     1 | Object   | Route à 1 chaussée
+     1 | Object   | Route à 2 chaussées
+     1 | Object   | Route empierrée
+(11 rows)
+

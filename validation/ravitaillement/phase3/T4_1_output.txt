@@ -1,0 +1,11 @@
+       nature        | nb  
+---------------------+-----
+ Route à 1 chaussée  | 211
+ Route à 2 chaussées |  49
+ Rond-point          |  42
+ Bretelle            |   8
+ Type autoroutier    |   4
+ Route empierrée     |   3
+ Sentier             |   2
+(7 rows)
+

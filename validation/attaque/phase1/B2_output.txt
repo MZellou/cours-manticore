@@ -1,0 +1,9 @@
+ cid | nb_forces |                                                                        sites                                                                         
+-----+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------
+   2 |         6 | Gendarmerie de Grenoble, Gendarmerie d'Eybens, Caserne de C.R.S., Caserne de l'Alma, Hôtel des Troupes de Montagne, Gendarmerie de Seyssinet-Pariset
+   0 |         2 | Gendarmerie de Vizille, Terrain d'Exercices de Notre-Dame-de-Mésage
+   1 |         2 | Gendarmerie de Meylan, Gendarmerie de Meylan
+   3 |         2 | Brigade Motorisée du Pont-de-Claix, Gendarmerie du Pont-de-Claix
+   4 |         2 | Peloton Motorisé de Vif, Brigade Territoriale Autonome de Vif
+(5 rows)
+

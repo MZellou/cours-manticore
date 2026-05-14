@@ -1,0 +1,3 @@
+('attaque', 15)
+('defense', 4)
+('ravitaillement', 3)

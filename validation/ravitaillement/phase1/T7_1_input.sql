@@ -1,0 +1,1 @@
+WITH clustered AS (SELECT role, source, ST_ClusterDBSCAN(geom, 500, 3) OVER() AS cid FROM mission_pois) SELECT cid, count(DISTINCT role) AS nb_roles, array_agg(DISTINCT role) AS roles FROM clustered WHERE cid IS NOT NULL GROUP BY cid HAVING count(DISTINCT role) > 1 ORDER BY nb_roles DESC LIMIT 10;

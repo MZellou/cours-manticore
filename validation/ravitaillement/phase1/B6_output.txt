@@ -1,0 +1,14 @@
+        source        |     source      | dist_m 
+----------------------+-----------------+--------
+ reservoir_industriel | zone_logistique |      0
+ zone_logistique      | canal           |      0
+ zone_logistique      | ressource       |      0
+ reservoir_industriel | zone_logistique |      0
+ zone_logistique      | zone_logistique |      0
+ zone_logistique      | ressource       |      0
+ zone_logistique      | ressource       |      0
+ zone_logistique      | ressource       |      0
+ zone_logistique      | zone_logistique |      0
+ zone_logistique      | zone_logistique |      0
+(10 rows)
+

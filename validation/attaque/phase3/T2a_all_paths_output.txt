@@ -1,0 +1,5 @@
+{'etapes': ["Terrain d'Exercices de Notre-Dame-de-Mésage", 'Centre Jenny Aubry'], 'sauts': 1, 'distance_m': 7449}
+{'etapes': ["Terrain d'Exercices de Notre-Dame-de-Mésage", None, 'Centre Jenny Aubry'], 'sauts': 2, 'distance_m': 7452}
+{'etapes': ["Terrain d'Exercices de Notre-Dame-de-Mésage", None, 'Centre Jenny Aubry'], 'sauts': 2, 'distance_m': 7481}
+{'etapes': ["Terrain d'Exercices de Notre-Dame-de-Mésage", None, 'Centre Jenny Aubry'], 'sauts': 2, 'distance_m': 7519}
+{'etapes': ["Terrain d'Exercices de Notre-Dame-de-Mésage", None, 'Centre Jenny Aubry'], 'sauts': 2, 'distance_m': 7544}

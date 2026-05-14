@@ -1,0 +1,10 @@
+src, nb
+"stockage", 846
+"pylone", 551
+"autre_pipeline", 139
+"source_energie", 90
+"source_hydrocarbure", 84
+"ligne_tht", 79
+"oleoduc", 30
+"ecluse", 14
+"centrale", 3

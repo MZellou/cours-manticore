@@ -198,21 +198,36 @@ if __name__ == "__main__":
                 print(f"  → {len(pois)} POIs chargés dans Neo4j.")
 
             # 3. Relations DISTANCE entre POIs proches (< 10km)
-            result = session.run("""
-                MATCH (a:POI), (b:POI)
-                WHERE elementId(a) < elementId(b)
-                  AND a.lat IS NOT NULL AND b.lat IS NOT NULL
-                WITH a, b,
-                     toInteger(point.distance(
-                         point({latitude: a.lat, longitude: a.lon}),
-                         point({latitude: b.lat, longitude: b.lon})
-                     )) AS dist_m
-                WHERE dist_m < 10000
-                MERGE (a)-[:DISTANCE {meters: dist_m}]->(b)
-                RETURN count(*) AS relations
-            """)
-            r = result.single()
-            nb_rel = r["relations"] if r else 0
+            # Batching with spatial pre-filter to avoid OOM on cross-product
+            all_pois = session.run("MATCH (p:POI) WHERE p.lat IS NOT NULL RETURN elementId(p) AS eid").data()
+            poi_ids = [r["eid"] for r in all_pois]
+            batch_size = 100
+            nb_rel = 0
+
+            for i in range(0, len(poi_ids), batch_size):
+                batch = poi_ids[i : i + batch_size]
+                result = session.run("""
+                    UNWIND $ids AS eid
+                    MATCH (a:POI) WHERE elementId(a) = eid
+                    MATCH (b:POI)
+                    WHERE elementId(a) < elementId(b)
+                      AND b.lat IS NOT NULL
+                      AND abs(a.lat - b.lat) < 0.1
+                      AND abs(a.lon - b.lon) < 0.15
+                    WITH a, b,
+                         toInteger(point.distance(
+                             point({latitude: a.lat, longitude: a.lon}),
+                             point({latitude: b.lat, longitude: b.lon})
+                         )) AS dist_m
+                    WHERE dist_m < 10000
+                    MERGE (a)-[:DISTANCE {meters: dist_m}]->(b)
+                    RETURN count(*) AS batch_count
+                """, ids=batch)
+                r = result.single()
+                nb_rel += r["batch_count"] if r else 0
+                if (i // batch_size) % 5 == 0:
+                    print(f"    ... {i + len(batch)}/{len(poi_ids)} POIs traités, {nb_rel} relations")
+
             print(f"  → {nb_rel} relations DISTANCE créées (< 10km)")
 
             # 4. Démos APOC

@@ -1,0 +1,14 @@
+      source      |      source      | dist_m 
+------------------+------------------+--------
+ etranglement     | etranglement     |      0
+ etranglement     | hopital          |      0
+ etranglement     | communication    |      0
+ transport_public | hopital          |      0
+ hopital          | hopital          |      0
+ pont             | pont             |      0
+ hopital          | hopital          |      0
+ pont             | transport_public |      0
+ hopital          | hopital          |      0
+ etranglement     | hopital          |      0
+(10 rows)
+

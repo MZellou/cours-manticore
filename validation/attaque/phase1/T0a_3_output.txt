@@ -1,0 +1,17 @@
+|          nature           |              nature_detaillee               | cnt  |
+|---------------------------|---------------------------------------------|-----:|
+| Maison de retraite        | NULL                                        | 7842 |
+| Hôpital                   | NULL                                        | 1875 |
+| Etablissement hospitalier | Foyer d'accueil médicalisé                  | 1164 |
+| Etablissement hospitalier | Etablissement de réadaptation fonctionnelle | 654  |
+| Hôpital                   | Hôpital spécialisé                          | 406  |
+| Etablissement hospitalier | Maison de santé pour maladies mentales      | 246  |
+| Hôpital                   | Centre hospitalier régional                 | 244  |
+| Etablissement thermal     | NULL                                        | 134  |
+| Etablissement hospitalier | Centre médico-social                        | 86   |
+| Etablissement hospitalier | NULL                                        | 64   |
+| Etablissement hospitalier | Groupement de coopération sanitaire         | 54   |
+| Etablissement hospitalier | Protection maternelle et infantile          | 43   |
+| Etablissement hospitalier | Centre médical                              | 29   |
+| Etablissement hospitalier | Etablissement de convalescence              | 22   |
+| Hôpital                   | Hôpital militaire                           | 12   |

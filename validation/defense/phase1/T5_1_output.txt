@@ -1,0 +1,19 @@
+     source1      |     source2      | paires_proches 
+------------------+------------------+----------------
+ communication    | communication    |            185
+ communication    | retenue_eau      |            163
+ transport_public | cible_symbolique |            150
+ communication    | cible_symbolique |            117
+ pont             | retenue_eau      |            107
+ pont             | cible_symbolique |             74
+ transport_public | retenue_eau      |             64
+ communication    | zone_militaire   |             58
+ transport_public | zone_militaire   |             51
+ hopital          | retenue_eau      |             45
+ etranglement     | communication    |             40
+ etranglement     | retenue_eau      |             39
+ hopital          | cible_symbolique |             38
+ etranglement     | fragilite        |             37
+ securite         | retenue_eau      |             36
+(15 rows)
+

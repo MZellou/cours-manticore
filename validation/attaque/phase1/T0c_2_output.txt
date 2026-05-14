@@ -1,0 +1,10 @@
+{'d.obj_type': 'Object', 'd.name': 'Type autoroutier'}
+{'d.obj_type': 'Object', 'd.name': 'Route empierrée'}
+{'d.obj_type': 'Object', 'd.name': 'Rond-point'}
+{'d.obj_type': 'Object', 'd.name': 'Chemin'}
+{'d.obj_type': 'Object', 'd.name': 'Bac ou liaison maritime'}
+{'d.obj_type': 'Object', 'd.name': 'Bretelle'}
+{'d.obj_type': 'Object', 'd.name': 'Route à 2 chaussées'}
+{'d.obj_type': 'Object', 'd.name': 'Escalier'}
+{'d.obj_type': 'Object', 'd.name': 'Route à 1 chaussée'}
+{'d.obj_type': 'Object', 'd.name': 'Sentier'}

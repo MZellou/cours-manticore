@@ -1,0 +1,10 @@
+           nature            |         nature_detaillee         |    zone_nature    
+-----------------------------+----------------------------------+-------------------
+ Aire de triage              |                                  | Zone industrielle
+ Parking                     | Parking couvert                  | Zone industrielle
+ Parking                     | Parking relais                   | Zone industrielle
+ Parking                     |                                  | Zone industrielle
+ Port                        |                                  | Zone industrielle
+ Service dédié aux véhicules | Borne de rechargement électrique | Zone industrielle
+(6 rows)
+

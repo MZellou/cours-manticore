@@ -1,0 +1,189 @@
+{'p.nom': None, 'p.role': 'energie', 'nb_voisins': 132800}
+{'p.nom': None, 'p.role': 'defense', 'nb_voisins': 28693}
+{'p.nom': None, 'p.role': 'ravitaillement', 'nb_voisins': 5211}
+{'p.nom': 'Gendarmerie de Meylan', 'p.role': 'defense', 'nb_voisins': 611}
+{'p.nom': 'EHPAD André Léo', 'p.role': 'defense', 'nb_voisins': 525}
+{'p.nom': 'Logement-Foyer les Alpins', 'p.role': 'defense', 'nb_voisins': 525}
+{'p.nom': "Marché d'Intérêt National de Grenoble", 'p.role': 'ravitaillement', 'nb_voisins': 524}
+{'p.nom': 'EHPAD Vigny Musset', 'p.role': 'defense', 'nb_voisins': 523}
+{'p.nom': "Zone d'Activités les Peupliers", 'p.role': 'ravitaillement', 'nb_voisins': 523}
+{'p.nom': "Zone d'Activités des Granges", 'p.role': 'ravitaillement', 'nb_voisins': 523}
+{'p.nom': 'Clinique Groupe du Mail', 'p.role': 'defense', 'nb_voisins': 522}
+{'p.nom': "Zone d'Activités de Surieux", 'p.role': 'ravitaillement', 'nb_voisins': 522}
+{'p.nom': 'Logement-Foyer Montesquieu', 'p.role': 'defense', 'nb_voisins': 521}
+{'p.nom': 'EHPAD la Maison des Anciens', 'p.role': 'defense', 'nb_voisins': 521}
+{'p.nom': 'Gendarmerie de Grenoble', 'p.role': 'defense', 'nb_voisins': 519}
+{'p.nom': 'Logement-Foyer le Lac', 'p.role': 'defense', 'nb_voisins': 518}
+{'p.nom': 'Za Blum Mangin', 'p.role': 'ravitaillement', 'nb_voisins': 518}
+{'p.nom': "Zone d'Activités Beauvert", 'p.role': 'ravitaillement', 'nb_voisins': 516}
+{'p.nom': "Parc d'Entreprises Sud Galaxie", 'p.role': 'ravitaillement', 'nb_voisins': 515}
+{'p.nom': "EHPAD l'Abbaye", 'p.role': 'defense', 'nb_voisins': 513}
+{'p.nom': "Parc d'Activités des Ruires", 'p.role': 'ravitaillement', 'nb_voisins': 513}
+{'p.nom': 'Hôpital Sud', 'p.role': 'defense', 'nb_voisins': 512}
+{'p.nom': "Zone d'Activités Cure-Bourse", 'p.role': 'ravitaillement', 'nb_voisins': 512}
+{'p.nom': "Zone d'Activités Vercors les Maisons Neuves", 'p.role': 'ravitaillement', 'nb_voisins': 512}
+{'p.nom': "Zone d'Activités des Essarts", 'p.role': 'ravitaillement', 'nb_voisins': 512}
+{'p.nom': 'les Cèdres', 'p.role': 'defense', 'nb_voisins': 511}
+{'p.nom': 'EHPAD Champ Fleuri', 'p.role': 'defense', 'nb_voisins': 510}
+{'p.nom': "Zone d'Activités Technisud", 'p.role': 'ravitaillement', 'nb_voisins': 510}
+{'p.nom': 'Caterpillar', 'p.role': 'ravitaillement', 'nb_voisins': 510}
+{'p.nom': "Zone d'Activités des Buttes", 'p.role': 'ravitaillement', 'nb_voisins': 510}
+{'p.nom': "Zone d'Activités du Rondeau", 'p.role': 'ravitaillement', 'nb_voisins': 509}
+{'p.nom': 'Zone Artisanale Percevalière', 'p.role': 'ravitaillement', 'nb_voisins': 508}
+{'p.nom': "Zone d'Activités du Pré Ruffier", 'p.role': 'ravitaillement', 'nb_voisins': 507}
+{'p.nom': 'Pont du Rondeau', 'p.role': 'defense', 'nb_voisins': 506}
+{'p.nom': 'Centre Michel Philibert', 'p.role': 'defense', 'nb_voisins': 505}
+{'p.nom': 'EHPAD Michel Philibert', 'p.role': 'defense', 'nb_voisins': 505}
+{'p.nom': "Zone d'Activités des Poulardes", 'p.role': 'ravitaillement', 'nb_voisins': 505}
+{'p.nom': "Zone d'Activités des Javaux", 'p.role': 'ravitaillement', 'nb_voisins': 505}
+{'p.nom': 'Rondeau Rive Gauche', 'p.role': 'ravitaillement', 'nb_voisins': 504}
+{'p.nom': 'EHPAD Claudette Chesne', 'p.role': 'defense', 'nb_voisins': 503}
+{'p.nom': 'Sandvik Hyperion Sas', 'p.role': 'ravitaillement', 'nb_voisins': 502}
+{'p.nom': "Gendarmerie d'Eybens", 'p.role': 'defense', 'nb_voisins': 500}
+{'p.nom': 'EHPAD Reyniès', 'p.role': 'defense', 'nb_voisins': 500}
+{'p.nom': 'EHPAD les Orchidées', 'p.role': 'defense', 'nb_voisins': 499}
+{'p.nom': "Zone d'Activités de Belledonne", 'p.role': 'ravitaillement', 'nb_voisins': 499}
+{'p.nom': 'Centre Jenny Aubry', 'p.role': 'defense', 'nb_voisins': 498}
+{'p.nom': "Zone d'Activités les Condamines", 'p.role': 'ravitaillement', 'nb_voisins': 498}
+{'p.nom': 'Eurotungstene Poudres', 'p.role': 'ravitaillement', 'nb_voisins': 497}
+{'p.nom': 'Clinique Mutualiste', 'p.role': 'defense', 'nb_voisins': 496}
+{'p.nom': 'Zone Artisanale les Condamines', 'p.role': 'ravitaillement', 'nb_voisins': 496}
+{'p.nom': "Zone d'Activités Sud Village", 'p.role': 'ravitaillement', 'nb_voisins': 495}
+{'p.nom': 'Zone Industrielle Sud', 'p.role': 'ravitaillement', 'nb_voisins': 494}
+{'p.nom': 'Clinique du Dauphiné', 'p.role': 'defense', 'nb_voisins': 492}
+{'p.nom': 'Zone Artisanale la Tuilerie', 'p.role': 'ravitaillement', 'nb_voisins': 490}
+{'p.nom': 'Caserne de C.R.S.', 'p.role': 'defense', 'nb_voisins': 489}
+{'p.nom': 'Zone Industrielle du Bourgamon', 'p.role': 'ravitaillement', 'nb_voisins': 489}
+{'p.nom': 'Zone Artisanale des Cataplas', 'p.role': 'ravitaillement', 'nb_voisins': 488}
+{'p.nom': "Zone d'Activités Champ Fila", 'p.role': 'ravitaillement', 'nb_voisins': 487}
+{'p.nom': "Zone d'Activités de Champ Fila", 'p.role': 'ravitaillement', 'nb_voisins': 486}
+{'p.nom': 'Gendarmerie du Pont-de-Claix', 'p.role': 'defense', 'nb_voisins': 485}
+{'p.nom': "Zone d'Activités les Pellets", 'p.role': 'ravitaillement', 'nb_voisins': 485}
+{'p.nom': 'Brigade Motorisée du Pont-de-Claix', 'p.role': 'defense', 'nb_voisins': 484}
+{'p.nom': 'Zone Artisanale des Fleurs', 'p.role': 'ravitaillement', 'nb_voisins': 484}
+{'p.nom': 'Zone Industrielle des Îles', 'p.role': 'ravitaillement', 'nb_voisins': 479}
+{'p.nom': "Zone d'Aménagement Concerté Centre", 'p.role': 'ravitaillement', 'nb_voisins': 475}
+{'p.nom': 'EHPAD Bon Pasteur', 'p.role': 'defense', 'nb_voisins': 473}
+{'p.nom': 'Clinique Mutualiste des Eaux Claires', 'p.role': 'defense', 'nb_voisins': 470}
+{'p.nom': 'Institut Daniel Hollard', 'p.role': 'defense', 'nb_voisins': 467}
+{'p.nom': 'Gare de Grenoble', 'p.role': 'ravitaillement', 'nb_voisins': 467}
+{'p.nom': "Zone d'Activités Europôle", 'p.role': 'ravitaillement', 'nb_voisins': 467}
+{'p.nom': 'EHPAD Irène Joliot-Curie', 'p.role': 'defense', 'nb_voisins': 466}
+{'p.nom': 'Logement-Foyer les Saulnes', 'p.role': 'defense', 'nb_voisins': 466}
+{'p.nom': "EHPAD le Bois d'Artas", 'p.role': 'defense', 'nb_voisins': 463}
+{'p.nom': 'Plate-Forme Chimique du Pont-de-Claix', 'p.role': 'ravitaillement', 'nb_voisins': 463}
+{'p.nom': 'EHPAD Bévières', 'p.role': 'defense', 'nb_voisins': 462}
+{'p.nom': "Clinique d'Alembert", 'p.role': 'defense', 'nb_voisins': 462}
+{'p.nom': 'Pont Esclandon', 'p.role': 'defense', 'nb_voisins': 462}
+{'p.nom': 'Hôpital de Jour Enfants Fontaine I02', 'p.role': 'defense', 'nb_voisins': 461}
+{'p.nom': 'Résidence des Bains', 'p.role': 'defense', 'nb_voisins': 459}
+{'p.nom': 'Hôtel des Troupes de Montagne', 'p.role': 'defense', 'nb_voisins': 458}
+{'p.nom': 'EHPAD Saint-Bruno', 'p.role': 'defense', 'nb_voisins': 458}
+{'p.nom': 'Halles Sainte-Claire', 'p.role': 'ravitaillement', 'nb_voisins': 458}
+{'p.nom': 'Pont de Catane', 'p.role': 'defense', 'nb_voisins': 457}
+{'p.nom': 'Pont Kofi-Annan', 'p.role': 'defense', 'nb_voisins': 457}
+{'p.nom': 'Zone Artisanale de la Houille Blanche', 'p.role': 'ravitaillement', 'nb_voisins': 457}
+{'p.nom': "Caserne de l'Alma", 'p.role': 'defense', 'nb_voisins': 456}
+{'p.nom': 'Logement-Foyer Notre-Dame', 'p.role': 'defense', 'nb_voisins': 456}
+{'p.nom': 'Gendarmerie de Seyssinet-Pariset', 'p.role': 'defense', 'nb_voisins': 455}
+{'p.nom': 'EHPAD Maison Sévigné', 'p.role': 'defense', 'nb_voisins': 454}
+{'p.nom': 'Perreau', 'p.role': 'defense', 'nb_voisins': 454}
+{'p.nom': 'EHPAD Pique Pierre', 'p.role': 'defense', 'nb_voisins': 452}
+{'p.nom': 'Parc Polytec', 'p.role': 'ravitaillement', 'nb_voisins': 452}
+{'p.nom': 'Foyer de Vie le Planeau', 'p.role': 'defense', 'nb_voisins': 450}
+{'p.nom': 'Pont de la Porte de Savoie', 'p.role': 'defense', 'nb_voisins': 448}
+{'p.nom': "Zone d'Activités de Fond Ratel", 'p.role': 'ravitaillement', 'nb_voisins': 447}
+{'p.nom': "Parc d'Oxford", 'p.role': 'ravitaillement', 'nb_voisins': 446}
+{'p.nom': 'Logement-Foyer Saint-Laurent', 'p.role': 'defense', 'nb_voisins': 445}
+{'p.nom': "Parc d'Activités des Plans", 'p.role': 'ravitaillement', 'nb_voisins': 444}
+{'p.nom': "EHPAD l'Églantine", 'p.role': 'defense', 'nb_voisins': 443}
+{'p.nom': 'Centre Traitement Ambulatoire Intensif', 'p.role': 'defense', 'nb_voisins': 442}
+{'p.nom': 'Finoptim', 'p.role': 'ravitaillement', 'nb_voisins': 442}
+{'p.nom': "Zone d'Activités de l'Argentière-la Pinéa", 'p.role': 'ravitaillement', 'nb_voisins': 442}
+{'p.nom': "EHPAD Korian l'Isle Verte", 'p.role': 'defense', 'nb_voisins': 441}
+{'p.nom': "Zone Industrielle de l'Argentière", 'p.role': 'ravitaillement', 'nb_voisins': 440}
+{'p.nom': 'Hôpital Nord', 'p.role': 'defense', 'nb_voisins': 439}
+{'p.nom': 'Hôpital Nord - C.H.U. Grenoble Alpes', 'p.role': 'defense', 'nb_voisins': 438}
+{'p.nom': "Pont de l'Île Verte", 'p.role': 'defense', 'nb_voisins': 438}
+{'p.nom': 'EHPAD Petites Sœurs des Pauvres ma Maison', 'p.role': 'defense', 'nb_voisins': 435}
+{'p.nom': 'Hôpital Couple-Enfant', 'p.role': 'defense', 'nb_voisins': 433}
+{'p.nom': 'Zone Industrielle de la Falaise', 'p.role': 'ravitaillement', 'nb_voisins': 432}
+{'p.nom': 'Belledonne', 'p.role': 'defense', 'nb_voisins': 427}
+{'p.nom': 'EHPAD les Ombrages', 'p.role': 'defense', 'nb_voisins': 423}
+{'p.nom': 'Clinique du Grésivaudan', 'p.role': 'defense', 'nb_voisins': 423}
+{'p.nom': 'Zone Industrielle des Glairons', 'p.role': 'ravitaillement', 'nb_voisins': 421}
+{'p.nom': 'Zone Industrielle de Champ Roman', 'p.role': 'ravitaillement', 'nb_voisins': 410}
+{'p.nom': 'Zone Industrielle des Beauches', 'p.role': 'ravitaillement', 'nb_voisins': 399}
+{'p.nom': 'Zone Industrielle de Mayencin II', 'p.role': 'ravitaillement', 'nb_voisins': 398}
+{'p.nom': 'EHPAD les Portes du Vercors', 'p.role': 'defense', 'nb_voisins': 394}
+{'p.nom': 'Zone Industrielle de Mayencin', 'p.role': 'ravitaillement', 'nb_voisins': 392}
+{'p.nom': "Zone d'Activités Pré de l'Orme", 'p.role': 'ravitaillement', 'nb_voisins': 391}
+{'p.nom': 'EHPAD Saint-Germain', 'p.role': 'defense', 'nb_voisins': 386}
+{'p.nom': 'Gendarmerie de Sassenage', 'p.role': 'defense', 'nb_voisins': 385}
+{'p.nom': 'Gare de Grenoble Universités Gières', 'p.role': 'ravitaillement', 'nb_voisins': 374}
+{'p.nom': 'Quartier Chef de Bataillon de Reyniès', 'p.role': 'defense', 'nb_voisins': 367}
+{'p.nom': 'EHPAD la Maison du Lac', 'p.role': 'defense', 'nb_voisins': 363}
+{'p.nom': 'Sogif', 'p.role': 'ravitaillement', 'nb_voisins': 359}
+{'p.nom': 'Areva Np', 'p.role': 'ravitaillement', 'nb_voisins': 358}
+{'p.nom': 'Logement-Foyer Résidence Roger Meffreys', 'p.role': 'defense', 'nb_voisins': 356}
+{'p.nom': 'Pont de Champ', 'p.role': 'defense', 'nb_voisins': 355}
+{'p.nom': "Zone d'Activités du Pont de Champ", 'p.role': 'ravitaillement', 'nb_voisins': 354}
+{'p.nom': "Zone d'Activités Saint-Ange", 'p.role': 'ravitaillement', 'nb_voisins': 353}
+{'p.nom': 'Pont de Vence', 'p.role': 'defense', 'nb_voisins': 351}
+{'p.nom': 'Arkema', 'p.role': 'ravitaillement', 'nb_voisins': 348}
+{'p.nom': "Zone d'Activités des Sources", 'p.role': 'ravitaillement', 'nb_voisins': 347}
+{'p.nom': "Zone d'Activités Champ de la Guerre", 'p.role': 'ravitaillement', 'nb_voisins': 345}
+{'p.nom': 'Gare de Jarrie-Vizille', 'p.role': 'ravitaillement', 'nb_voisins': 344}
+{'p.nom': 'Vence Écoparc', 'p.role': 'ravitaillement', 'nb_voisins': 344}
+{'p.nom': 'Air Liquide-Altal', 'p.role': 'ravitaillement', 'nb_voisins': 339}
+{'p.nom': 'Logement-Foyer le Pré Blanc', 'p.role': 'defense', 'nb_voisins': 337}
+{'p.nom': 'EHPAD la Providence', 'p.role': 'defense', 'nb_voisins': 334}
+{'p.nom': 'Logement-Foyer Maurice Gariel', 'p.role': 'defense', 'nb_voisins': 334}
+{'p.nom': 'Zone Industrielle Cornage', 'p.role': 'ravitaillement', 'nb_voisins': 330}
+{'p.nom': 'Alpes Isère', 'p.role': 'defense', 'nb_voisins': 325}
+{'p.nom': "Terrain d'Exercices de Notre-Dame-de-Mésage", 'p.role': 'attaque', 'nb_voisins': 324}
+{'p.nom': 'Usine Saint-Joseph', 'p.role': 'ravitaillement', 'nb_voisins': 324}
+{'p.nom': 'EHPAD Maison Cantonale des Personnes Âgées', 'p.role': 'defense', 'nb_voisins': 322}
+{'p.nom': 'EHPAD de Vizille', 'p.role': 'defense', 'nb_voisins': 311}
+{'p.nom': "Parc d'Activités High Tech", 'p.role': 'ravitaillement', 'nb_voisins': 304}
+{'p.nom': 'Gare de Saint-Égrève Saint-Robert', 'p.role': 'ravitaillement', 'nb_voisins': 303}
+{'p.nom': "Zone d'Activités Messidor", 'p.role': 'ravitaillement', 'nb_voisins': 301}
+{'p.nom': 'Sico', 'p.role': 'ravitaillement', 'nb_voisins': 301}
+{'p.nom': 'Gendarmerie de Vizille', 'p.role': 'attaque', 'nb_voisins': 296}
+{'p.nom': 'Gendarmerie de Saint-Égrève', 'p.role': 'defense', 'nb_voisins': 295}
+{'p.nom': 'Zone Industrielle des Moironds', 'p.role': 'ravitaillement', 'nb_voisins': 293}
+{'p.nom': "Zone d'Activités Économiques des Viallards", 'p.role': 'ravitaillement', 'nb_voisins': 289}
+{'p.nom': 'Zone Scientifique et Technique des Béalières', 'p.role': 'ravitaillement', 'nb_voisins': 285}
+{'p.nom': "les Jardins d'Entreprises de Maupertuis", 'p.role': 'ravitaillement', 'nb_voisins': 279}
+{'p.nom': 'le Chaudron', 'p.role': 'ravitaillement', 'nb_voisins': 278}
+{'p.nom': "Zone d'Activités du Pied de Gières", 'p.role': 'ravitaillement', 'nb_voisins': 276}
+{'p.nom': 'Parc des Busserolles', 'p.role': 'ravitaillement', 'nb_voisins': 270}
+{'p.nom': "Zone d'Activités des Moironds", 'p.role': 'ravitaillement', 'nb_voisins': 267}
+{'p.nom': 'la Californie', 'p.role': 'ravitaillement', 'nb_voisins': 261}
+{'p.nom': "Zone d'Activités des Isles", 'p.role': 'ravitaillement', 'nb_voisins': 260}
+{'p.nom': "Zone d'Activités les Speyres", 'p.role': 'ravitaillement', 'nb_voisins': 257}
+{'p.nom': 'Brigade Territoriale Autonome de Vif', 'p.role': 'defense', 'nb_voisins': 256}
+{'p.nom': 'EHPAD le Clos Besson', 'p.role': 'defense', 'nb_voisins': 254}
+{'p.nom': 'EHPAD le Chant du Ravinson', 'p.role': 'defense', 'nb_voisins': 252}
+{'p.nom': 'Scierie Sillat', 'p.role': 'ravitaillement', 'nb_voisins': 251}
+{'p.nom': 'Zone Industrielle de Fontanil-Cornillon', 'p.role': 'ravitaillement', 'nb_voisins': 251}
+{'p.nom': 'Gare de Vif', 'p.role': 'ravitaillement', 'nb_voisins': 248}
+{'p.nom': 'Peloton Motorisé de Vif', 'p.role': 'defense', 'nb_voisins': 246}
+{'p.nom': 'EHPAD le Fontanil', 'p.role': 'defense', 'nb_voisins': 236}
+{'p.nom': 'Zone Industrielle du Domeyron', 'p.role': 'ravitaillement', 'nb_voisins': 227}
+{'p.nom': 'Innovallée', 'p.role': 'ravitaillement', 'nb_voisins': 226}
+{'p.nom': 'Zone Industrielle des Peupliers', 'p.role': 'ravitaillement', 'nb_voisins': 215}
+{'p.nom': "Zone d'Activités de la Metallurgie", 'p.role': 'ravitaillement', 'nb_voisins': 206}
+{'p.nom': 'Sobegal', 'p.role': 'ravitaillement', 'nb_voisins': 204}
+{'p.nom': 'Za les Violettes', 'p.role': 'ravitaillement', 'nb_voisins': 192}
+{'p.nom': 'EHPAD les Vergers Noyarey', 'p.role': 'defense', 'nb_voisins': 191}
+{'p.nom': 'Za des Colombiers', 'p.role': 'ravitaillement', 'nb_voisins': 186}
+{'p.nom': 'Pont des Moines', 'p.role': 'defense', 'nb_voisins': 175}
+{'p.nom': 'EHPAD Résidence du Parc', 'p.role': 'defense', 'nb_voisins': 171}
+{'p.nom': "Zone d'Activités le Ruisset", 'p.role': 'ravitaillement', 'nb_voisins': 170}
+{'p.nom': 'les Îles Cordées', 'p.role': 'ravitaillement', 'nb_voisins': 169}
+{'p.nom': 'Gendarmerie de Domène', 'p.role': 'defense', 'nb_voisins': 161}
+{'p.nom': 'Zone Industrielle des Bretonnières', 'p.role': 'ravitaillement', 'nb_voisins': 161}
+{'p.nom': 'Papeterie de la Gorge', 'p.role': 'ravitaillement', 'nb_voisins': 159}
+{'p.nom': "Zone d'Activités Malvaisin", 'p.role': 'ravitaillement', 'nb_voisins': 127}
+{'p.nom': 'Aérodrome de Grenoble-le Versoud', 'p.role': 'attaque', 'nb_voisins': 122}

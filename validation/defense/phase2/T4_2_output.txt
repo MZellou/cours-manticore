@@ -1,0 +1,2 @@
+nb_relations, avg_dist, min_dist, max_dist
+146768, 5582.134736454697, 0, 9999

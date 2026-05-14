@@ -1,0 +1,7 @@
+          nature           | nb  
+---------------------------+-----
+ Maison de retraite        | 692
+ Hôpital                   | 619
+ Etablissement hospitalier |  51
+(3 rows)
+

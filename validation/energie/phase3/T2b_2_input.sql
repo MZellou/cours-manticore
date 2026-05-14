@@ -1,0 +1,1 @@
+SELECT * FROM pgr_dijkstra('SELECT id, source, target, CASE WHEN importance IN (''1'',''2'',''3'',''4'') THEN cost ELSE -1 END AS cost, CASE WHEN importance IN (''1'',''2'',''3'',''4'') THEN reverse_cost ELSE -1 END AS reverse_cost FROM ways', (SELECT MIN(id) FROM ways_vertices_pgr), (SELECT MIN(id)+100 FROM ways_vertices_pgr), directed := true) LIMIT 5;

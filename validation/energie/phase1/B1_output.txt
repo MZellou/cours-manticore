@@ -1,0 +1,5 @@
+ nature  | count 
+---------+-------
+ Antenne |    79
+(1 row)
+

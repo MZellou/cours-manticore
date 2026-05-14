@@ -1,0 +1,1 @@
+{'a.nom': 'Gendarmerie de Vizille', 'b.nom': 'Clinique Mutualiste', 'distance_m': 9884.0}

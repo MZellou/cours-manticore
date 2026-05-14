@@ -1,0 +1,4 @@
+ source1 | source2 | paires_proches 
+---------+---------+----------------
+(0 rows)
+

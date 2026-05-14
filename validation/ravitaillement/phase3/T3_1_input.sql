@@ -1,0 +1,1 @@
+WITH start_v AS (SELECT v.id FROM ways_vertices_pgr v ORDER BY (SELECT geom FROM mission_pois WHERE role = 'ravitaillement' LIMIT 1) <-> v.geom LIMIT 1) SELECT * FROM pgr_drivingdistance('SELECT id, source, target, cost, reverse_cost FROM ways', (SELECT id FROM start_v), 300, directed := true) LIMIT 20;

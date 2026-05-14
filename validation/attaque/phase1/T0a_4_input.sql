@@ -1,0 +1,1 @@
+SELECT nature, count(*) AS nb FROM read_parquet('data/poi_source/zone_d_activite_ou_d_interet.parquet') WHERE categorie = 'Administratif ou militaire' AND nature IN ('Gendarmerie', 'Caserne', 'Camp militaire non clos') GROUP BY nature;

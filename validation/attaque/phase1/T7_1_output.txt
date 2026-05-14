@@ -1,0 +1,4 @@
+ importance | hopital | dist_m 
+------------+---------+--------
+(0 rows)
+

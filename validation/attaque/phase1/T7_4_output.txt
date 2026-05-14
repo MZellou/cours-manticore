@@ -1,0 +1,11 @@
+                zone                |               aero               |       dist_m       
+------------------------------------+----------------------------------+--------------------
+ Zone d'Activités Malvaisin         | Aérodrome de Grenoble-le Versoud |  284.3931480505195
+ Za les Violettes                   | Aérodrome de Grenoble-le Versoud | 1629.9087397757983
+ Za des Colombiers                  | Aérodrome de Grenoble-le Versoud | 1657.5872978513194
+ Zone Industrielle des Peupliers    | Aérodrome de Grenoble-le Versoud | 1791.5230239509315
+ Innovallée                         | Aérodrome de Grenoble-le Versoud | 2048.4313827903998
+ Zone d'Activités de la Metallurgie | Aérodrome de Grenoble-le Versoud | 2053.5660934080756
+ Zone Industrielle du Domeyron      | Aérodrome de Grenoble-le Versoud |  2426.843291191169
+(7 rows)
+

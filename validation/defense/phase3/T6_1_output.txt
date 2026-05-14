@@ -1,0 +1,9 @@
+ from_name |                  to_name                   |      dist_m       
+-----------+--------------------------------------------+-------------------
+           | Belledonne                                 | 6520.324361371589
+           | Logement-Foyer le Pré Blanc                | 8191.557902356327
+           | EHPAD la Providence                        | 8460.195166931273
+           | EHPAD Maison Cantonale des Personnes Âgées | 8861.957279338134
+           | Logement-Foyer Résidence Roger Meffreys    | 9574.766904230513
+(5 rows)
+
