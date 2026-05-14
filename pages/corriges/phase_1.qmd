@@ -202,8 +202,7 @@ FROM construction_ponctuelle WHERE nature = 'Antenne'
 Consultez votre page rôle pour les tables et filtres spécifiques :
 [Attaque](../roles/attaque.qmd),
 [Défense](../roles/defense.qmd),
-[Ravitaillement](../roles/ravitaillement.qmd),
-[Énergie](../roles/energie.qmd).
+[Logistique](../roles/logistique.qmd).
 
 ---
 
@@ -212,7 +211,7 @@ Consultez votre page rôle pour les tables et filtres spécifiques :
 ```sql
 -- Postes électriques critiques
 UPDATE mission_pois SET categorie = 'critique'
-WHERE role = 'energie' AND source = 'poste_ht'
+WHERE role = 'logistique' AND source = 'poste_ht'
   AND CAST(nature AS INTEGER) <= 3;
 
 -- Aérodromes majeurs (déjà filtré à l'insertion)
@@ -235,7 +234,7 @@ ORDER BY role, source;
 **Interprétation des résultats** :
 
 - La vérification montre combien de POIs chaque rôle a marqués 'critique' vs les autres.
-- Si le rôle Énergie a peu de POIs critiques : peu de postes haute tension dans l'EPCI, ou leur importance est > 3 (postes secondaires).
+- Si le rôle Logistique a peu de POIs critiques : peu de postes haute tension dans l'EPCI, ou leur importance est > 3 (postes secondaires).
 - La colonne `categorie` sert ensuite dans les analyses de vulnérabilité et de priorisation.
 
 ## T4 — Clusteriser les POIs (ST_ClusterDBSCAN)
@@ -287,7 +286,7 @@ WHERE cid IS NOT NULL;
 
 ## T5 — Partager vos POIs
 
-> **Problème** : chaque étudiant a son propre PostGIS Docker (`localhost:5432`) → sa table `mission_pois` ne contient que SON rôle. Pourtant la Phase 2 a besoin des 4 rôles fusionnés. Pas de réseau entre les containers. Solution : CSV.
+> **Problème** : chaque étudiant a son propre PostGIS Docker (`localhost:5432`) → sa table `mission_pois` ne contient que SON rôle. Pourtant la Phase 2 a besoin des 3 rôles fusionnés. Pas de réseau entre les containers. Solution : CSV.
 
 ### 1. Export — chaque rôle, sur son PC
 
@@ -301,18 +300,17 @@ Le fichier fait quelques kilo-octets (la géométrie est encodée en hex WKB —
 
 ### 2. Partage
 
-Transférez les 4 CSV vers la machine d'un même étudiant : clé USB, dossier partagé, `scp` dans le LAN de la salle.
+Transférez les 3 CSV vers la machine d'un même étudiant : clé USB, dossier partagé, `scp` dans le LAN de la salle.
 
 ### 3. Fusion — un étudiant désigné
 
 ```bash
-# Copier les 4 CSV dans le même dossier, puis :
+# Copier les 3 CSV dans le même dossier, puis :
 psql -h localhost -U postgres -d bdtopo_manticore <<'EOF'
 TRUNCATE mission_pois RESTART IDENTITY;
 \copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_attaque.csv' CSV HEADER;
 \copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_defense.csv' CSV HEADER;
-\copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_ravitaillement.csv' CSV HEADER;
-\copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_energie.csv' CSV HEADER;
+\copy mission_pois (role, source, cleabs, categorie, nature, nom, geom) FROM 'pois_logistique.csv' CSV HEADER;
 EOF
 ```
 
@@ -324,7 +322,7 @@ EOF
 SELECT role, source, count(*) FROM mission_pois GROUP BY role, source ORDER BY role, count DESC;
 ```
 
-**Attendu** : 4 rôles, chacun avec ≥ 1 source. Si un rôle manque → l'agent concerné n'a pas partagé son CSV.
+**Attendu** : 3 rôles, chacun avec ≥ 1 source. Si un rôle manque → l'agent concerné n'a pas partagé son CSV.
 
 ---
 
@@ -336,7 +334,7 @@ SELECT role, source, count(*) FROM mission_pois GROUP BY role, source ORDER BY r
 
 ## T7 — Cross-rôle
 
-**Défense → Énergie** : postes HT à < 1 km d'un hôpital
+**Défense ↔ Logistique** : postes HT à < 1 km d'un hôpital
 
 ```sql
 SELECT pt.importance, h.toponyme AS hopital,
@@ -348,11 +346,36 @@ WHERE CAST(pt.importance AS INTEGER) <= 3
   AND h.nature IN ('Hôpital', 'Établissement hospitalier');
 ```
 
-**Explication** (cf. T0b pour `ST_DWithin`, cf. T3 pour `CAST`) : Un poste HT critique à ≤ 1 km d'un hôpital = vulnérabilité croisée Défense ↔ Énergie. Si le poste tombe (sabotage, panne), l'hôpital perd sa source d'alimentation prioritaire. Les hôpitaux sont des POI Défense, les postes HT des POI Énergie — la jointure spatiale révèle les dépendances inter-rôles.
+**Explication** (cf. T0b pour `ST_DWithin`, cf. T3 pour `CAST`) : Un poste HT critique à ≤ 1 km d'un hôpital = vulnérabilité croisée Défense ↔ Logistique. Si le poste tombe (sabotage, panne), l'hôpital perd sa source d'alimentation prioritaire. Les hôpitaux sont des POI Défense, les postes HT des POI Logistique — la jointure spatiale révèle les dépendances inter-rôles.
 
-**Attaque → Ravitaillement** : ports proches de casernes
+**Attaque ↔ Logistique** : aérodromes proches de ports / zones industrielles
 
 ```sql
+SELECT a.toponyme AS aero, z.toponyme AS zone,
+       ST_Distance(a.geometrie, z.geometrie) AS dist_m
+FROM aerodrome a
+JOIN zone_d_activite_ou_d_interet z
+  ON ST_DWithin(a.geometrie, z.geometrie, 3000)
+WHERE a.categorie IN ('Internationale', 'Nationale')
+  AND z.nature IN ('Zone industrielle', 'Zone d''activités', 'Port')
+ORDER BY dist_m;
+```
+
+**Explication** (cf. T0b pour `ST_DWithin`) : 3000 m = distance de transbordement aérien tactique. Une zone industrielle ou un port près d'un aérodrome international = hub logistique potentiel pour Logistique (ravitaillement / énergie), mais aussi une cible prioritaire pour l'Attaque.
+
+**Attaque ↔ Défense** : ponts sur lignes THT et casernes proches de ports
+
+```sql
+-- Ponts croisant des lignes THT (vulnérabilité Attaque → réseau électrique Logistique / Défense)
+SELECT l.voltage, count(*) AS ponts_fragiles
+FROM ligne_electrique l
+JOIN construction_surfacique c
+  ON ST_Intersects(l.geometrie, c.geometrie)
+WHERE l.voltage IN ('400 kV', '225 kV')
+  AND c.nature = 'Pont'
+GROUP BY l.voltage;
+
+-- Casernes proches de ports (cibles Attaque / actifs Défense)
 SELECT p.toponyme AS port, z.toponyme AS caserne,
        ST_Distance(p.geometrie, z.geometrie) AS dist_m
 FROM equipement_de_transport p
@@ -363,36 +386,6 @@ WHERE p.nature = 'Port'
 ORDER BY dist_m;
 ```
 
-**Explication** (cf. T0b pour `ST_DWithin`) : 5000 m = distance de projection terrestre d'un commando débarqué depuis un port. Une caserne à ≤ 5 km d'un port = cible prioritaire pour l'Attaque (neutraliser les forces de l'ordre avant un débarquement). `ORDER BY dist_m` classe du plus proche au plus éloigné.
+**Explication** (cf. T0b pour `ST_Intersects`, `ST_DWithin`) : Un pont portant une ligne THT = double vulnérabilité (infrastructure routière + réseau électrique). Une caserne à ≤ 5 km d'un port = cible prioritaire pour l'Attaque (neutraliser les forces de l'ordre avant un débarquement), actif clé pour la Défense.
 
-**Énergie → Défense** : ponts croisant des lignes THT
-
-```sql
-SELECT l.voltage, count(*) AS ponts_fragiles
-FROM ligne_electrique l
-JOIN construction_surfacique c
-  ON ST_Intersects(l.geometrie, c.geometrie)
-WHERE l.voltage IN ('400 kV', '225 kV')
-  AND c.nature = 'Pont'
-GROUP BY l.voltage;
-```
-
-**Explication** (cf. T0b pour `ST_Intersects`) : On cherche les ponts (`construction_surfacique`) qui portent des lignes THT (400 kV ou 225 kV). Un pont détruit = une ligne THT coupée = blackout régional. `GROUP BY voltage` distingue l'impact : 400 kV est plus critique que 225 kV.
-
-**Ravitaillement → Attaque** : zones industrielles proches d'aérodromes
-
-```sql
-SELECT z.toponyme AS zone, a.toponyme AS aero,
-       ST_Distance(z.geometrie, a.geometrie) AS dist_m
-FROM zone_d_activite_ou_d_interet z
-JOIN aerodrome a
-  ON ST_DWithin(z.geometrie, a.geometrie, 3000)
-WHERE z.nature IN ('Zone industrielle', 'Zone d''activités')
-  AND a.categorie IN ('Internationale', 'Nationale')
-ORDER BY dist_m;
-```
-
-**Explication** (cf. T0b pour `ST_DWithin`) : 3000 m = distance de transbordement aérien tactique. Une zone industrielle près d'un aérodrome international = hub logistique potentiel pour le Ravitaillement, mais aussi une cible prioritaire pour l'Attaque.
-
-**Interprétation globale T7** : Les 4 requêtes révèlent les **intersections spatiales entre les domaines des rôles**. Un résultat vide n'est pas un bug — il signifie simplement qu'aucune vulnérabilité croisée n'existe dans votre EPCI pour ce couple. Ces dépendances seront critiques en Phase 3 (simulation) : si un acteur neutralise un POI, quels autres rôles sont impactés en cascade ?
-```
+**Interprétation globale T7** : Les 3 couples révèlent les **intersections spatiales entre les domaines des rôles**. Un résultat vide n'est pas un bug — il signifie simplement qu'aucune vulnérabilité croisée n'existe dans votre EPCI pour ce couple. Ces dépendances seront critiques en Phase 3 (simulation) : si un acteur neutralise un POI, quels autres rôles sont impactés en cascade ?

@@ -10,7 +10,7 @@ order: 9
 ## Livrables par groupe
 
 ### 1. Carte PNG (`data/carte_situation.png`)
-- POIs des 4 rôles superposés (couleurs : rouge=attaque, bleu=défense, vert=ravitaillement, orange=énergie)
+- POIs des 3 rôles superposés (couleurs : rouge=attaque, bleu=défense, vert=logistique)
 - Choke points identifiés
 - Routes calculées (normal + contraint)
 - Impact de la destruction simulée

@@ -76,7 +76,7 @@ FROM pair, pgr_dijkstra(
 
 ---
 
-## 4. Neo4j contient les POIs des 4 rôles
+## 4. Neo4j contient les POIs des 3 rôles
 
 Dans Neo4j Browser :
 
@@ -86,7 +86,7 @@ RETURN p.role AS role, count(*) AS nb
 ORDER BY role;
 ```
 
-→ 4 lignes, chacune `nb > 0`. Si manquant, relancer `python scripts/02_migrate_to_neo4j.py`.
+→ 3 lignes, chacune `nb > 0`. Si manquant, relancer `python scripts/02_migrate_to_neo4j.py`.
 
 ---
 

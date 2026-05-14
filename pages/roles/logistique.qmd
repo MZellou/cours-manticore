@@ -1,0 +1,214 @@
+---
+title: "Logistique"
+order: 3
+---
+# 🔧 Rôle LOGISTIQUE
+
+> *"Soutenir les opérations : maîtriser les flux d'approvisionnement et sécuriser le réseau énergétique."*
+
+## Objectif
+
+Localiser les nœuds logistiques critiques (ports, gares fret, zones industrielles, stockage, voies ferrées, canaux) **et** les infrastructures de production/transport d'énergie (postes HT, lignes THT, éoliennes, barrages, canalisations, pylônes, centrales).
+
+Le rôle Logistique joue le **soutien tactique** : sans carburant, électricité et chaînes d'approvisionnement, aucune manœuvre n'est possible.
+
+## Tables BDTOPO à interroger
+
+| Table | Filtre | Raison tactique |
+|-------|--------|-----------------|
+| `equipement_de_transport` | `nature = 'Port' AND nature_detaillee IN ('Port de commerce', 'Port de pêche', 'Halte fluviale')` | Ports d'entrée de ressources |
+| `equipement_de_transport` | `nature IN ('Gare fret uniquement', 'Gare voyageurs et fret')` | Hubs fret ferroviaires |
+| `equipement_de_transport` | `nature IN ('Gare routière', 'Aire de repos ou de service', 'Parking')` | Hubs logistiques routiers |
+| `zone_d_activite_ou_d_interet` | `nature IN ('Zone industrielle', 'Usine', 'Marché')` | Zones logistiques |
+| `zone_d_activite_ou_d_interet` | `nature IN ('Divers commercial', 'Carrière', 'Déchèterie')` | Ressources / matériaux |
+| `zone_d_activite_ou_d_interet` | `nature = 'Centrale électrique'` | Centrales électriques |
+| `reservoir` | `nature = 'Réservoir industriel'` | Stockage industriel / carburant |
+| `reservoir` | `nature IN ('Réservoir d''eau ou château d''eau au sol', 'Château d''eau')` | Stockage eau |
+| `troncon_de_voie_ferree` | `usage IN ('Fret', 'Voyageur et fret') AND nature IN ('Voie ferrée principale', 'LGV')` | Fret ferroviaire |
+| `cours_d_eau` | `caractere_permanent = TRUE` | Transport fluvial |
+| `surface_hydrographique` | `nature = 'Canal'` | Canaux de navigation |
+| `surface_hydrographique` | `nature = 'Retenue-barrage'` | Retenues hydroélectriques |
+| `poste_de_transformation` | `CAST(importance AS INTEGER) <= 3` | Postes haute tension |
+| `ligne_electrique` | `voltage IN ('400 kV', '225 kV')` | Lignes THT |
+| `construction_ponctuelle` | `nature IN ('Éolienne', 'Transformateur', 'Cheminée')` | Sources d'énergie décentralisées |
+| `construction_ponctuelle` | `nature IN ('Puits d''hydrocarbures', 'Torchère')` | Sources hydrocarbures |
+| `construction_surfacique` | `nature = 'Barrage'` | Barrages |
+| `construction_surfacique` | `nature = 'Ecluse'` | Écluses |
+| `canalisation` | `nature = 'Hydrocarbures'` | Oléoducs |
+| `canalisation` | `nature = 'Autres matières premières'` | Pipelines divers |
+| `pylone` | (tous) | Pylônes électriques |
+
+## Requête de base
+
+```sql
+-- Insertion combinée : noeuds logistiques + réseau énergétique
+INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
+
+-- Ports
+SELECT 'logistique', 'port', cleabs, nature, nature_detaillee, toponyme, ST_Force2D(geometrie)
+FROM equipement_de_transport
+WHERE nature = 'Port' AND nature_detaillee IN ('Port de commerce', 'Port de pêche', 'Halte fluviale')
+
+UNION ALL
+-- Voies ferrées fret
+SELECT 'logistique', 'voie_ferree_fret', cleabs, usage, nature, NULL, ST_Force2D(geometrie)
+FROM troncon_de_voie_ferree
+WHERE usage IN ('Fret', 'Voyageur et fret')
+  AND nature IN ('Voie ferrée principale', 'LGV')
+
+UNION ALL
+-- Postes haute tension
+SELECT 'logistique', 'poste_ht', cleabs, importance, 'Poste de transformation', NULL, ST_Force2D(geometrie)
+FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3
+
+UNION ALL
+-- Pylônes (maille fine du réseau)
+SELECT 'logistique', 'pylone', cleabs, NULL, NULL, NULL, ST_Force2D(geometrie)
+FROM pylone;
+```
+
+> 💡 **Astuce** : `UNION ALL` combine sources ponctuelles (ports, postes, pylônes, centrales) et linéaires (voies ferrées, canalisations). Chaque bloc conserve le tag `source` pour identifier l'origine lors des analyses Phase 2.
+
+## Contrainte routage (Phase 2)
+
+**Convois exceptionnels + poids lourds** : exclure les routes étroites ET les routes avec restrictions de poids.
+
+```sql
+CASE
+  WHEN largeur_de_chaussee < 4 THEN -1
+  WHEN restriction_de_poids_total IS NOT NULL THEN -1
+  ELSE cost
+END
+```
+
+## Clustering DBSCAN (Phase 2)
+
+Identifiez les **zones de concentration logistico-énergétique** — les clusters mixtes (port + poste HT, zone industrielle + canalisation) sont des cibles prioritaires.
+
+```sql
+SELECT source, ST_ClusterDBSCAN(geom, eps := 2000, minpoints := 3) OVER () AS cluster_id, geom
+FROM mission_pois
+WHERE role = 'logistique';
+```
+
+> Utilisez `eps = 2000` (2 km) pour agréger les infrastructures de même zone industrialo-portuaire. Filtrez ensuite `cluster_id IS NOT NULL` pour ne garder que les clusters denses.
+
+## Questions bonus (Phase 1 — Exploration libre)
+
+Résolvez au moins 3 de ces questions. Documentez vos requêtes.
+
+### B1 — Ports et zones industrielles : chaîne logistique
+
+> Quels ports de commerce sont à moins de 3 km d'une zone industrielle ?
+
+*Indice : joignez `equipement_de_transport` (ports) et `zone_d_activite_ou_d_interet` (zones) avec `ST_DWithin`, rayon 3000m.*
+
+### B2 — Voies ferrées fret : accessibilité
+
+> Combien de tronçons de voie ferrée "Fret" croisent votre EPCI ? Quelle est leur longueur totale ?
+
+*Indice : `troncon_de_voie_ferree` avec `usage = 'Fret'`, filtrez par `ST_Intersects` avec l'EPCI, et `sum(ST_Length(...))`.*
+
+**Variante** : combien de gares fret sont sur ces voies ?
+
+### B3 — Capacité de stockage
+
+> Quel est le volume total de réservoirs industriels dans votre EPCI ?
+
+*Indice : `reservoir` avec `nature = 'Réservoir industriel'`, filtrez par EPCI, et `sum(volume)`.*
+
+### B4 — Matrice port ↔ gare fret
+
+> Pour chaque port de commerce, quelle est la gare fret la plus proche ?
+
+*Indice : `CROSS JOIN LATERAL` + `ORDER BY geom <-> ... LIMIT 1`.*
+
+### B5 — Réseau fluvial pour le transport de masse
+
+> Quels tronçons de cours d'eau permanents traversent ou bordent une zone industrielle ?
+
+*Indice : joignez `cours_d_eau` (caractere_permanent) avec `zone_d_activite_ou_d_interet` (nature='Zone industrielle') via `ST_Intersects`.*
+
+### B6 — Hubs logistiques combinés
+
+> Quelles aires de repos sont à moins de 1 km d'une zone industrielle ?
+
+*Indice : `ST_DWithin` entre `equipement_de_transport` (nature='Aire de repos ou de service') et `zone_d_activite_ou_d_interet` (nature='Zone industrielle').*
+
+### B7 — Postes HT et hôpitaux : qui dépend de qui ?
+
+> Quels postes de transformation critiques (importance ≤ 3) sont à moins de 1 km d'un hôpital ?
+
+*Indice : joignez `poste_de_transformation` et `zone_d_activite_ou_d_interet` avec `ST_DWithin`, rayon 1000m, filtrez `CAST(importance AS INTEGER) <= 3`.*
+
+**Question** : si ce poste tombe, quel hôpital est touché ? (début de la simulation Phase 3).
+
+### B8 — Lignes THT : quelles routes croisent-elles ?
+
+> Combien de routes sont croisées par une ligne 400 kV ? Ce sont des points de fragilité.
+
+*Indice : joignez `ligne_electrique` et `troncon_de_route` via `ST_Intersects`, filtrez `voltage IN ('400 kV', '225 kV')`.*
+
+**Variante** : parmi ces routes, combien sont d'importance ≤ 2 ?
+
+### B9 — Centrales nucléaires : rayon d'influence
+
+> Dans un rayon de 20 km autour de chaque centrale, combien de POIs de chaque rôle ?
+
+*Indice : joignez `zone_d_activite_ou_d_interet` (filtré `nature = 'Centrale électrique'`) et `mission_pois` avec `ST_DWithin`, rayon 20000m.*
+
+### B10 — Mix énergétique de l'EPCI
+
+> Comptez les éoliennes, barrages, transformateurs et centrales. Quelle est la répartition ?
+
+*Indice : 4 `SELECT ... UNION ALL` — un par source (`construction_ponctuelle`, `construction_surfacique`, `poste_de_transformation`, `zone_d_activite_ou_d_interet`).*
+
+### B11 — Pylônes et postes : complétude du réseau
+
+> Quel est le ratio pylônes / postes haute tension dans votre EPCI ? Observez-vous des disparités territoriales ?
+
+*Indice : comptez `pylone` vs `poste_ht` dans `mission_pois`. Regroupez par secteur (grille 5 km × 5 km avec `ST_SnapToGrid`).*
+
+### B12 — Risque cascade : postes HT et inondations
+
+> Quels postes HT sont dans un rayon de 1 km d'un cours d'eau permanent (risque inondation) ?
+
+*Indice : joignez `mission_pois` (source='poste_ht') avec `cours_d_eau` (caractere_permanent) via `ST_DWithin`.*
+
+### B13 — Interdépendances : barrages et écluses
+
+> Quels barrages ont une écluse à moins de 1 km ? Ces ouvrages mixtes sont des points de vulnérabilité critiques.
+
+*Indice : jointure spatiale entre `construction_surfacique` (nature='Barrage') et `construction_surfacique` (nature='Ecluse').*
+
+### B14 — Postes HT et zones industrielles : dépendance énergétique
+
+> Quels postes de transformation (importance ≤ 3) sont à moins de 2 km d'une zone industrielle ?
+
+*Indice : `ST_DWithin` entre `poste_de_transformation` et `zone_d_activite_ou_d_interet` (nature='Zone industrielle'), rayon 2000m.*
+
+**Question** : si ce poste tombe, quelles zones industrielles perdent leur alimentation ? Croisez avec les données logistiques (ports, gares fret) pour évaluer l'impact sur la chaîne d'approvisionnement.
+
+### B15 — Ports et canalisations hydrocarbures : import de carburant
+
+> Quels ports de commerce ont une canalisation d'hydrocarbures dans un rayon de 5 km ?
+
+*Indice : joignez `equipement_de_transport` (ports de commerce) et `canalisation` (nature='Hydrocarbures') via `ST_DWithin`, rayon 5000m.*
+
+**Question** : ces ports sont-ils aussi proches d'une zone de stockage (`reservoir` nature='Réservoir industriel') ? Ce triplet port + canalisation + réservoir identifie un hub d'import carburant stratégique.
+
+→ [Corrigé](../corriges/bonus.qmd#-logistique)
+
+---
+
+## Indice Codestral
+
+```
+"Trouve les ports, gares fret, zones industrielles, réservoirs,
+gares routières, aires de repos, voies ferrées fret, cours d'eau
+permanents, canaux, carrières, châteaux d'eau, postes haute tension,
+lignes THT (400/225kV), éoliennes, barrages, oléoducs, centrales
+électriques, pylônes, puits d'hydrocarbures, retenues-barrage et
+écluses dans l'EPCI. Exclus les routes étroites (< 4m) et celles
+avec restriction_de_poids_total pour le routage."
+```

@@ -164,7 +164,7 @@ ORDER BY nb_voisins ASC;
 ## `UNWIND` — aplatir une liste en lignes
 
 ```sql
-UNWIND ['attaque', 'défense', 'énergie', 'ravitaillement'] AS r
+UNWIND ['attaque', 'défense', 'logistique'] AS r
 MATCH (p:POI {role: r})
 RETURN r, count(p) AS nb;
 ```

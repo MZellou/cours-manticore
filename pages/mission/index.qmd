@@ -7,7 +7,7 @@ order: 1
 
 > Vous êtes agents de renseignement. Votre mission : cartographier les infrastructures critiques d'une zone EPCI et évaluer la résilience de son réseau routier face à une simulation d'attaque.
 
-**Format :** 0.5J théorie + 2J hands-on — 52 étudiants / 13 groupes × 4 rôles.
+**Format :** 0.5J théorie + 2J hands-on — 35 étudiants / ~12 groupes × 3 rôles.
 
 ---
 
@@ -21,7 +21,7 @@ Lisez le [Briefing général](briefing.qmd) : composition des groupes, rôles, l
 
 | Phase | Intitulé | Mode | Durée |
 |-------|----------|------|-------|
-| [Phase 1 — Reconnaissance](phase_1.qmd) | POIs critiques par rôle (SQL + PostGIS) | Solo | 4h |
+| [Phase 1 — Reconnaissance](phase_1.qmd) | POIs critiques par rôle (SQL + PostGIS) | Solo | 6h |
 | [Phase 2 — Cartographie](phase_2.qmd) | Graphe routier + Neo4j (pgRouting + Cypher) | Groupe | 5h |
 | [Phase 3 — Simulation](phase_3.qmd) | Attaque / benchmark SQL vs Cypher | Groupe | 5h |
 

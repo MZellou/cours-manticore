@@ -35,7 +35,7 @@ order: 9
 | 9 | Métropole Rouen Normandie | Vallée Seine |
 | 10 | Bordeaux Métropole | Estuaire Gironde |
 
-Chaque groupe de 4 étudiants : 1 Attaque, 1 Défense, 1 Ravitaillement, 1 Énergie.
+Chaque groupe de 3 étudiants : 1 Attaque, 1 Défense, 1 Logistique.
 
 ## 3. Timing suggéré (2.5 jours)
 
@@ -337,7 +337,7 @@ Checklist exhaustive à exécuter avant chaque session sur **3 EPCIs représenta
 
 ::: {.callout-tip}
 **`01_explore_postgis.py` est idempotent depuis 2026-05.**
-Le script utilise désormais `DELETE FROM mission_pois WHERE role = '<role>'` puis `INSERT` — chaque rôle écrase uniquement sa tranche. Lancer les 4 rôles séquentiellement accumule donc les POIs sans perte. Le bloc d'accumulation SQL en §11.2 reste utile pour reproduire pas-à-pas en cours sans dépendre du script.
+Le script utilise désormais `DELETE FROM mission_pois WHERE role = '<role>'` puis `INSERT` — chaque rôle écrase uniquement sa tranche. Lancer les 3 rôles séquentiellement accumule donc les POIs sans perte. Le bloc d'accumulation SQL en §11.2 reste utile pour reproduire pas-à-pas en cours sans dépendre du script.
 :::
 
 ---
@@ -400,18 +400,17 @@ RETURN count(d) AS nb_sous_types;
 
 ### 11.2 Phase 1 — Reconnaissance {#sec-phase1}
 
-**Étape 1 — Tester les 4 rôles individuellement** (chaque appel reset `mission_pois`) :
+**Étape 1 — Tester les 3 rôles individuellement** (chaque appel reset `mission_pois`) :
 
 ```bash
 python scripts/01_explore_postgis.py --role attaque
 python scripts/01_explore_postgis.py --role defense
-python scripts/01_explore_postgis.py --role ravitaillement
-python scripts/01_explore_postgis.py --role energie
+python scripts/01_explore_postgis.py --role logistique
 ```
 
 Vérifier dans la sortie console : pour **chaque rôle**, `Total POIs identifiés > 0` et `Top 10 grappes` non vide (sauf EPCI très petit).
 
-**Étape 2 — Bloc d'accumulation des 4 rôles** (workaround au truncate) :
+**Étape 2 — Bloc d'accumulation des 3 rôles** (workaround au truncate) :
 
 ```sql
 DROP TABLE IF EXISTS mission_pois CASCADE;
@@ -433,31 +432,30 @@ SELECT 'defense', 'hopital', cleabs, categorie, nature, toponyme, ST_Force2D(geo
 FROM zone_d_activite_ou_d_interet
 WHERE nature IN ('Hôpital', 'Établissement hospitalier');
 
--- Ravitaillement
+-- Logistique (ports + postes HT + centrales électriques BDTOPO)
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
-SELECT 'ravitaillement', 'port', cleabs, nature, nature_detaillee, toponyme, ST_Force2D(geometrie)
+SELECT 'logistique', 'port', cleabs, nature, nature_detaillee, toponyme, ST_Force2D(geometrie)
 FROM equipement_de_transport WHERE nature = 'Port';
 
--- Énergie (poste HT + centrales électriques BDTOPO)
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
-SELECT 'energie', 'poste_ht', cleabs, nature, CAST(importance AS INTEGER)::TEXT, NULL, ST_Force2D(geometrie)
+SELECT 'logistique', 'poste_ht', cleabs, nature, CAST(importance AS INTEGER)::TEXT, NULL, ST_Force2D(geometrie)
 FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3;
 
 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
-SELECT 'energie', 'centrale', cleabs, 'Centrale électrique', nature, toponyme, ST_Force2D(geometrie)
+SELECT 'logistique', 'centrale', cleabs, 'Centrale électrique', nature, toponyme, ST_Force2D(geometrie)
 FROM zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique';
 
 CREATE INDEX ON mission_pois USING GIST (geom);
 ```
 
-> Ce bloc est volontairement **réduit** (1–2 sources par rôle) — il sert uniquement à valider que les 4 rôles peuvent coexister pour la migration Neo4j. Pour le pipeline réel des étudiants, ils écrivent leurs propres `INSERT` (voir corrigés Phase 1 T2).
+> Ce bloc est volontairement **réduit** (1–3 sources par rôle) — il sert uniquement à valider que les 3 rôles peuvent coexister pour la migration Neo4j. Pour le pipeline réel des étudiants, ils écrivent leurs propres `INSERT` (voir corrigés Phase 1 T2).
 
 **Checkpoint 1 — validations SQL :**
 
 ```sql
--- 4 rôles présents, tous non vides
+-- 3 rôles présents, tous non vides
 SELECT role, count(*) FROM mission_pois GROUP BY role ORDER BY role;
--- Attendu : 4 lignes (attaque, defense, energie, ravitaillement), toutes count > 0
+-- Attendu : 3 lignes (attaque, defense, logistique), toutes count > 0
 
 -- SRID = 2154 (Lambert-93)
 SELECT DISTINCT ST_SRID(geom) FROM mission_pois;
@@ -489,7 +487,7 @@ python scripts/02_migrate_to_neo4j.py
 **Checkpoint 2a — Neo4j browser :**
 
 ```cypher
-// 4 rôles dans Neo4j (égaux au count PostGIS)
+// 3 rôles dans Neo4j (égaux au count PostGIS)
 MATCH (p:POI) RETURN p.role, count(*) ORDER BY p.role;
 
 // Hiérarchie ontologique chargée
@@ -499,13 +497,12 @@ MATCH (d:ClasseOntologie)-[:EST_SOUS_TYPE_DE]->(o:ClasseOntologie) RETURN count(
 MATCH ()-[r:DISTANCE]->() RETURN count(r);
 ```
 
-**Étape 2 — Routage pgRouting (4 rôles)** :
+**Étape 2 — Routage pgRouting (3 rôles)** :
 
 ```bash
 python scripts/03_routing_pgrouting.py --role attaque
 python scripts/03_routing_pgrouting.py --role defense
-python scripts/03_routing_pgrouting.py --role ravitaillement
-python scripts/03_routing_pgrouting.py --role energie
+python scripts/03_routing_pgrouting.py --role logistique
 ```
 
 Sortie attendue par rôle : `ex1_dijkstra` retourne un chemin non vide, `ex2_choke_points` calcule un delta, `ex3_constrained_routing` produit un coût différent du Dijkstra non contraint.
@@ -534,8 +531,8 @@ FROM (
 // POIs isolés (T8) — devrait être faible (< 10 % des POIs)
 MATCH (p:POI) WHERE NOT (p)-[:DISTANCE]-() RETURN count(p);
 
-// Pattern multi-hop attaque → énergie → défense (T9)
-MATCH path = (a:POI {role:'attaque'})-[:DISTANCE*..3]-(e:POI {role:'energie'})-[:DISTANCE*..3]-(d:POI {role:'defense'})
+// Pattern multi-hop attaque → logistique → défense (T9)
+MATCH path = (a:POI {role:'attaque'})-[:DISTANCE*..3]-(e:POI {role:'logistique'})-[:DISTANCE*..3]-(d:POI {role:'defense'})
 RETURN length(path) ORDER BY length(path) LIMIT 5;
 ```
 
@@ -574,8 +571,7 @@ FROM pgr_drivingDistance(
 ```bash
 python scripts/04_benchmark_comparison.py --role attaque
 python scripts/04_benchmark_comparison.py --role defense
-python scripts/04_benchmark_comparison.py --role ravitaillement
-python scripts/04_benchmark_comparison.py --role energie
+python scripts/04_benchmark_comparison.py --role logistique
 
 ls -lh data/carte_situation*.png
 ```
@@ -635,19 +631,19 @@ SELECT count(*) FROM construction_surfacique c
 JOIN troncon_de_route r ON ST_Intersects(c.geometrie, r.geometrie)
 WHERE c.nature = 'Pont' AND CAST(r.importance AS INTEGER) <= 2;
 
--- Ravitaillement B1 : ports ↔ zones industrielles
+-- Logistique B1 : ports ↔ zones industrielles
 SELECT count(*) FROM equipement_de_transport p
 JOIN zone_d_activite_ou_d_interet z ON ST_DWithin(p.geometrie, z.geometrie, 3000)
 WHERE p.nature = 'Port' AND z.nature IN ('Zone industrielle', 'Zone d''activités');
 
--- Énergie B3 : rayon d'influence des centrales électriques
+-- Logistique B3 : rayon d'influence des centrales électriques
 SELECT c.toponyme, p.role, count(*) FROM zone_d_activite_ou_d_interet c
 JOIN mission_pois p ON ST_DWithin(c.geometrie, p.geom, 20000)
 WHERE c.nature = 'Centrale électrique'
 GROUP BY c.toponyme, p.role;
 ```
 
-> **Énergie B3 ne retourne 0 que pour les EPCIs sans centrale électrique dans la BBOX** (Brest, Grenoble). C'est le résultat attendu — la requête doit néanmoins s'exécuter sans erreur.
+> **Logistique B3 ne retourne 0 que pour les EPCIs sans centrale électrique dans la BBOX** (Brest, Grenoble). C'est le résultat attendu — la requête doit néanmoins s'exécuter sans erreur.
 
 ---
 
@@ -662,18 +658,18 @@ Les Gold Dumps héritent de la convention pgRouting : `cost = -1` signifie "arê
 La même requête "tous les sous-types de Tronçon de route" retourne **11** en SQL et **10** en Cypher — pas un bug. SQL ajoute la racine via le `UNION ALL` initial ; le pattern Cypher `(n)-[:EST_SOUS_TYPE_DE*1..3]->(root)` exige au moins 1 hop, donc la racine elle-même n'est pas un chemin. Pour matcher SQL : `*0..3`. À mentionner pendant le benchmark Phase 3.
 
 **C. `MERGE :POI {cleabs}` collapse les doublons inter-rôles.**
-Sur Cotentin, 314 POIs PostGIS → 255 nœuds Neo4j (59 collisions). Les ponts apparaissent à la fois en `defense` et `attaque`, les ports en `attaque` et `ravitaillement`. `MERGE (poi:POI {cleabs: …}) SET poi.role = …` écrase la dernière `role` rencontrée. Trois fixes possibles (cf. callout Phase 2) : clé composite `{cleabs, role}`, multi-label, ou modélisation `(:POI)-[:JOUE_ROLE]->(:Role)`.
+Sur Cotentin, 314 POIs PostGIS → 255 nœuds Neo4j (59 collisions). Les ponts apparaissent à la fois en `defense` et `attaque`, les ports en `attaque` et `logistique`. `MERGE (poi:POI {cleabs: …}) SET poi.role = …` écrase la dernière `role` rencontrée. Trois fixes possibles (cf. callout Phase 2) : clé composite `{cleabs, role}`, multi-label, ou modélisation `(:POI)-[:JOUE_ROLE]->(:Role)`.
 
 **D. `ways_vertices_pgr` doit être une TABLE matérialisée.**
 La tentation pédagogique (créer une vue `ways_vertices_pgr` qui projette `ST_Transform(the_geom, 2154)` à la volée) tue l'index GIST : KNN `<->` devient un Seq Scan O(n) sur 28k+ sommets, et la CTE `carrossables` (Phase 2) hange plusieurs minutes. `00_setup.py` matérialise la table + crée l'index GIST après chaque restauration de Gold Dump.
 
 **E. Pass criteria observés.**
 
-| EPCI | Routes | POIs (4 rôles) | Ways | Particularité Phase 3 |
+| EPCI | Routes | POIs (3 rôles) | Ways | Particularité Phase 3 |
 |------|--------|---------------:|-----:|----------------------|
 | Brest Métropole | 31 k | 296 | 37 974 | aéroport vertex isolé (cost=-1 partout) |
-| CA du Cotentin | 56 941 | 314 | 65 774 | Bonus B3 → 4 rôles × 20 km (Flamanville) |
-| Grenoble-Alpes-Métropole | 48 436 | 848 | 69 692 | Énergie sans chemin contraint (vallées); choke point alpin Δ=+12.8 % |
+| CA du Cotentin | 56 941 | 314 | 65 774 | Bonus B3 → 3 rôles × 20 km (Flamanville) |
+| Grenoble-Alpes-Métropole | 48 436 | 848 | 69 692 | Logistique sans chemin contraint (vallées); choke point alpin Δ=+12.8 % |
 
 ---
 
@@ -705,11 +701,11 @@ python scripts/00_setup.py --epci "Grenoble-Alpes-Métropole"
 | 1 | Extensions PostGIS | `pgr_version()` + `vector` chargés |
 | 2 | APOC Neo4j | `count(*) > 200` procédures |
 | 3 | T0a/b/c warm-ups | Tous retournent ≥ 1 ligne |
-| 4 | `mission_pois` rôles (après accumulation §11.2) | 4 rôles distincts, tous `count > 0` |
+| 4 | `mission_pois` rôles (après accumulation §11.2) | 3 rôles distincts, tous `count > 0` |
 | 5 | `ST_SRID(geom)` | 2154 (Lambert-93) |
 | 6 | Index GIST sur `mission_pois.geom` | présent |
 | 7 | DBSCAN clusters | 1 ≤ N ≤ 10 |
-| 8 | Nœuds Neo4j `POI` | = count `mission_pois` PostGIS |
+| 8 | Nœuds Neo4j `POI` | ≈ count `mission_pois` PostGIS (doublons inter-rôles possibles) |
 | 9 | Relations `EST_SOUS_TYPE_DE` | > 50 |
 | 10 | Relations `DISTANCE` | > 0 |
 | 11 | `ways` count | Brest > 30k, Cotentin > 60k, Grenoble > 80k |
@@ -720,5 +716,5 @@ python scripts/00_setup.py --epci "Grenoble-Alpes-Métropole"
 | 16 | Composantes connexes | ≥ 1 |
 | 17 | Cut / restore arête | Distance change puis revient à la ref |
 | 18 | Cartes PNG | 4 fichiers `data/carte_situation*.png` |
-| 19 | Bonus 4 rôles | Tous s'exécutent (Énergie B3 : 0 lignes pour Brest/Grenoble, 4 rôles × N pour Cotentin) |
+| 19 | Bonus 3 rôles | Tous s'exécutent (Logistique B3 : 0 lignes pour Brest/Grenoble, 3 rôles × N pour Cotentin) |
 | 20 | Cotentin uniquement | `zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique'` ≥ 1 (Flamanville) |

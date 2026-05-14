@@ -79,8 +79,7 @@ website:
       contents:
         - pages/roles/attaque.qmd
         - pages/roles/defense.qmd
-        - pages/roles/ravitaillement.qmd
-        - pages/roles/energie.qmd
+        - pages/roles/logistique.qmd
 
     - title: "Corrigés"
       style: docked

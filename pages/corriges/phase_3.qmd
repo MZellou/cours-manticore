@@ -130,14 +130,14 @@ ORDER BY cost LIMIT 5;
 
 ## T2b — Plus court chemin avec nœud intermédiaire
 
-**Objectif** : trouver le plus court chemin qui passe par un nœud obligatoire — ici, Attaque → Ravitaillement → Énergie. Scénario : convoi qui doit se réapprovisionner avant d'atteindre sa cible.
+**Objectif** : trouver le plus court chemin qui passe par un nœud obligatoire — ici, Attaque → Logistique (point de ravitaillement) → Défense. Scénario : convoi qui doit se réapprovisionner avant d'atteindre sa cible.
 
 ```sql
 MATCH (a:POI {role: 'attaque'})
-MATCH (e:POI {role: 'energie'})
-MATCH (r:POI {role: 'ravitaillement'})
-MATCH path = shortestPath((a)-[:DISTANCE*]-(r))
-MATCH path2 = shortestPath((r)-[:DISTANCE*]-(e))
+MATCH (d:POI {role: 'defense'})
+MATCH (l:POI {role: 'logistique'})
+MATCH path = shortestPath((a)-[:DISTANCE*]-(l))
+MATCH path2 = shortestPath((l)-[:DISTANCE*]-(d))
 RETURN
     [n IN nodes(path) | n.nom] AS leg1,
     [n IN nodes(path2) | n.nom] AS leg2,
@@ -149,12 +149,12 @@ ORDER BY total_m LIMIT 1;
 **Explication des concepts** :
 
 - **`shortestPath()`** : fonction Cypher native qui calcule le plus court chemin entre deux nœuds en utilisant un BFS (Breadth-First Search) — **non pondéré**. Elle trouve le chemin avec le **moins de sauts**, PAS le moins de mètres. C'est différent de `apoc.algo.dijkstra` (cf. Phase 2 T5) qui tient compte du poids `meters`. Ici, le résultat est ensuite pondéré manuellement pour le classement final.
-- **Deux legs séparés** : le chemin total est la concaténation de deux plus courts chemins (attaque → ravitaillement, puis ravitaillement → énergie) qui partagent le nœud `r` comme point de jonction.
-- **`LIMIT 1`** : on ne garde que la meilleure combinaison (triée par `total_m`). La requête teste toutes les combinaisons de POIs (tous les a, r, e) avant de choisir le meilleur total.
+- **Deux legs séparés** : le chemin total est la concaténation de deux plus courts chemins (attaque → logistique, puis logistique → défense) qui partagent le nœud `l` comme point de jonction.
+- **`LIMIT 1`** : on ne garde que la meilleure combinaison (triée par `total_m`). La requête teste toutes les combinaisons de POIs (tous les a, l, d) avant de choisir le meilleur total.
 
 **Interprétation des résultats** :
 
-- `leg1` = chemin du POI Attaque au POI Ravitaillement le plus proche. `leg2` = du même POI Ravitaillement au POI Énergie le plus proche.
+- `leg1` = chemin du POI Attaque au POI Logistique le plus proche. `leg2` = du même POI Logistique au POI Défense le plus proche.
 - Ce type de requête est utile pour planifier des **itinéraires contraints** : le convoi ne peut se ravitailler qu'à certains points de passage.
 - Comparez avec la requête T9 de la Phase 2 (une seule ligne `MATCH` avec deux `*` consécutifs) — le résultat diffère car `shortestPath` n'optimise pas globalement.
 
@@ -492,7 +492,7 @@ RETURN EXISTS { (a)-[:DISTANCE*]-(b) } AS connectes,
 - **Questions à analyser** :
   1. Delta T0 → T8 : combien de nouvelles composantes sont apparues ?
   2. Y a-t-il une coupure qui a créé une **nouvelle** composante (= pont stratégique) ? Ou des coupes "à vide" sans effet ?
-  3. Combien de nouveaux POIs sont devenus isolés ? Quel est leur rôle dominant (attaque/défense/ravitaillement/énergie) ?
+  3. Combien de nouveaux POIs sont devenus isolés ? Quel est leur rôle dominant (attaque/défense/logistique) ?
 - Si une seule coupure crée une composante : cette arête est un **pont critique**. Si plusieurs coupures sont nécessaires : le réseau avait de la redondance.
 
 ---

@@ -6,7 +6,7 @@ order: 1
 
 > **Vous êtes agents de renseignement. Votre mission : cartographier les infrastructures critiques d'une zone EPCI et évaluer la résilience de son réseau routier face à une simulation d'attaque.**
 
-## Composition (52 étudiants / 13 groupes × 4 agents)
+## Composition (35 étudiants / ~12 groupes × 3 agents)
 
 | Groupe | EPCI assigné | Profil tactique |
 |--------|-------------|-----------------|
@@ -24,7 +24,7 @@ order: 1
 | 12 | Métropole de Lyon | Plaine + nœud logistique |
 | 13 | Tours Métropole Val de Loire | Vallée Loire + carrefour |
 
-### Rôles (4 par groupe)
+### Rôles (3 par groupe)
 
 Chaque membre du groupe adopte un rôle spécifique :
 
@@ -32,15 +32,14 @@ Chaque membre du groupe adopte un rôle spécifique :
 |-------|------|---------|
 | ⚔️ | **ATTAQUE** | Identifier les cibles stratégiques (aérodromes, ports, casernes) |
 | 🛡️ | **DÉFENSE** | Identifier les points à protéger (hôpitaux, ponts, gares) |
-| 📦 | **RAVITAILLEMENT** | Optimiser les flux logistiques (ports fret, zones industrielles) |
-| ⚡ | **ÉNERGIE** | Sécuriser le réseau énergétique (postes HT, lignes THT, centrales) |
+| 🔧 | **LOGISTIQUE** | Réseaux énergétiques et chaînes logistiques — soutien stratégique |
 
 ## 3 phases de la mission
 
 | Phase | Intitulé | Solo/Groupe | Durée | Livrable |
 |-------|----------|-------------|-------|----------|
-| 🔍 Phase 1 | Reconnaissance | Solo (par rôle) | 4h | Requêtes SQL + table `mission_pois` + questions bonus |
-| 🗺️ Phase 2 | Cartographie | Groupe (4 rôles fusionnés) | 5h | Graphe Neo4j + routes pgRouting + Cypher avancé |
+| 🔍 Phase 1 | Reconnaissance | Solo (par rôle) | 6h | Requêtes SQL + table `mission_pois` + questions bonus |
+| 🗺️ Phase 2 | Cartographie | Groupe (3 rôles fusionnés) | 5h | Graphe Neo4j + routes pgRouting + Cypher avancé |
 | 📊 Phase 3 | Simulation | Groupe | 5h | Benchmark SQL/Cypher + simulation destructive + carte PNG |
 
 ## Prérequis
@@ -51,7 +50,7 @@ Chaque membre du groupe adopte un rôle spécifique :
 
 ## Livrable final (par groupe)
 
-- **Carte PNG** : situation tactique consolidée (4 rôles superposés)
+- **Carte PNG** : situation tactique consolidée (3 rôles superposés)
 - **Rapport markdown** : analyse critique (2-3 pages)
 - **Présentation orale** : 10 min (structure libre, mappez vos résultats)
 

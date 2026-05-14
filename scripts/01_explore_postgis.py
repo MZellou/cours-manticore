@@ -1,7 +1,7 @@
 """
 Phase 1 — Reconnaissance : Identifier les POIs critiques
 ========================================================
-Pour chaque rôle (Attaque/Défense/Ravitaillement/Énergie), exécute les requêtes
+Pour chaque rôle (Attaque/Défense/Logistique), exécute les requêtes
 SQL de sélection des POIs stratégiques dans l'EPCI, puis les clusterise.
 
 Usage : python scripts/01_explore_postgis.py --role attaque
@@ -19,7 +19,7 @@ load_dotenv()
 # CONFIG
 # =============================================================================
 
-ROLES = ["attaque", "defense", "ravitaillement", "energie"]
+ROLES = ["attaque", "defense", "logistique"]
 
 ROLE_QUERIES = {
     "attaque": """
@@ -180,7 +180,12 @@ ROLE_QUERIES = {
         FROM construction_ponctuelle
         WHERE nature = 'Antenne'
     """,
-    "ravitaillement": """
+    "logistique": """
+        -- Logistique & énergie : flux (ports, fret, fluvial), stockage, réseau énergétique
+        -- Déduplication sur cleabs (un POI présent dans plusieurs sous-requêtes n'est gardé qu'une fois)
+        SELECT DISTINCT ON (cleabs) source, cleabs, categorie, nature, toponyme, geom
+        FROM (
+
         -- Flux logistiques : ports, gares fret, zones industrielles, stockage, fluvial
         SELECT 'port' AS source, cleabs, nature AS categorie, nature_detaillee AS nature, toponyme,
                ST_Force2D(geometrie) AS geom
@@ -211,7 +216,6 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Hubs logistiques terrestres
         SELECT 'hub_logistique', cleabs, nature, nature_detaillee, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM equipement_de_transport
@@ -219,7 +223,6 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Ressources / matériaux
         SELECT 'ressource', cleabs, categorie, nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM zone_d_activite_ou_d_interet
@@ -227,7 +230,6 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Fret ferroviaire
         SELECT 'voie_ferree_fret', cleabs, usage, nature, NULL,
                ST_Force2D(geometrie) AS geom
         FROM troncon_de_voie_ferree
@@ -236,7 +238,6 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Transport fluvial (cours d'eau permanents)
         SELECT 'voie_fluviale', cleabs, NULL, NULL, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM cours_d_eau
@@ -244,7 +245,6 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Canaux de navigation
         SELECT 'canal', cleabs, nature, NULL, NULL,
                ST_Force2D(geometrie) AS geom
         FROM surface_hydrographique
@@ -252,15 +252,15 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Stockage eau
         SELECT 'stockage_eau', cleabs, nature, NULL, NULL,
                ST_Force2D(geometrie) AS geom
         FROM reservoir
         WHERE nature IN ('Réservoir d''eau ou château d''eau au sol', 'Château d''eau')
-    """,
-    "energie": """
+
         -- Réseau énergétique : production, transport, stockage
-        SELECT 'poste_ht' AS source, cleabs, importance AS categorie,
+        UNION ALL
+
+        SELECT 'poste_ht', cleabs, importance AS categorie,
                'Poste de transformation' AS nature, NULL AS toponyme,
                ST_Force2D(geometrie) AS geom
         FROM poste_de_transformation
@@ -296,13 +296,6 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        SELECT 'stockage', cleabs, nature, NULL, NULL,
-               ST_Force2D(geometrie) AS geom
-        FROM reservoir
-        WHERE nature = 'Réservoir industriel'
-
-        UNION ALL
-
         SELECT 'centrale', cleabs, 'Centrale électrique', nature, toponyme,
                ST_Force2D(geometrie) AS geom
         FROM zone_d_activite_ou_d_interet
@@ -310,14 +303,12 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Pylônes (complète la carte du réseau électrique)
         SELECT 'pylone', cleabs, NULL, NULL, NULL,
                ST_Force2D(geometrie) AS geom
         FROM pylone
 
         UNION ALL
 
-        -- Autres sources / consommation d'énergie
         SELECT 'source_hydrocarbure', cleabs, nature, nature_detaillee, NULL,
                ST_Force2D(geometrie) AS geom
         FROM construction_ponctuelle
@@ -325,7 +316,6 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Autres pipelines (gaz, chimique)
         SELECT 'autre_pipeline', cleabs, nature, NULL, NULL,
                ST_Force2D(geometrie) AS geom
         FROM canalisation
@@ -333,7 +323,6 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Retenues hydroélectriques
         SELECT 'retenue_hydro', cleabs, nature, NULL, NULL,
                ST_Force2D(geometrie) AS geom
         FROM surface_hydrographique
@@ -341,11 +330,13 @@ ROLE_QUERIES = {
 
         UNION ALL
 
-        -- Écluses (consommatrices / points de vulnérabilité)
         SELECT 'ecluse', cleabs, nature, nature_detaillee, NULL,
                ST_Force2D(geometrie) AS geom
         FROM construction_surfacique
         WHERE nature = 'Ecluse'
+
+        ) AS all_pois
+        ORDER BY cleabs
     """,
 }
 
@@ -411,7 +402,7 @@ def ex2_poi_by_role(conn, role):
     t0 = time.time()
     try:
         with conn.cursor() as cur:
-            # Idempotent : table partagée entre les 4 rôles (pattern "fusion")
+            # Idempotent : table partagée entre les 3 rôles (pattern "fusion")
             # Chaque relance d'un rôle écrase uniquement SES POIs.
             cur.execute(f"""
                 CREATE TABLE IF NOT EXISTS mission_pois (
@@ -496,7 +487,7 @@ def ex3_clustering(conn):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--role", choices=ROLES, required=True,
-                        help="Rôle de l'agent (attaque/defense/ravitaillement/energie)")
+                        help="Rôle de l'agent (attaque/defense/logistique)")
     args = parser.parse_args()
 
     print(f"""

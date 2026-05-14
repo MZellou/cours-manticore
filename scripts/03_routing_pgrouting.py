@@ -4,7 +4,7 @@ Phase 2/3 — Routage pgRouting : Dijkstra, Choke Points, Routage contraint
 Phase 2 : ex1 Dijkstra + ex3 routage contraint par rôle
 Phase 3 : ex2 Choke Points (destruction d'arêtes + recalcul)
 
-Usage : python scripts/03_routing_pgrouting.py --role ravitaillement
+Usage : python scripts/03_routing_pgrouting.py --role logistique
 """
 
 import argparse
@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ROLES = ["attaque", "defense", "ravitaillement", "energie"]
+ROLES = ["attaque", "defense", "logistique"]
 
 def get_conn():
     return psycopg2.connect(
@@ -203,16 +203,12 @@ def ex3_constrained_routing(conn, role):
     print_section(f"EXERCICE 3 — Routage contraint (rôle {role.upper()})")
 
     constraints = {
-        "ravitaillement": """SELECT id, source, target,
+        "logistique": """SELECT id, source, target,
                     CASE WHEN restriction_de_poids_total IS NULL
+                          AND (largeur_de_chaussee >= 4 OR largeur_de_chaussee IS NULL)
                          THEN cost ELSE -1 END AS cost,
                     CASE WHEN restriction_de_poids_total IS NULL
-                         THEN reverse_cost ELSE -1 END AS reverse_cost
-             FROM ways""",
-        "energie": """SELECT id, source, target,
-                    CASE WHEN largeur_de_chaussee >= 4 OR largeur_de_chaussee IS NULL
-                         THEN cost ELSE -1 END AS cost,
-                    CASE WHEN largeur_de_chaussee >= 4 OR largeur_de_chaussee IS NULL
+                          AND (largeur_de_chaussee >= 4 OR largeur_de_chaussee IS NULL)
                          THEN reverse_cost ELSE -1 END AS reverse_cost
              FROM ways""",
         "attaque": """SELECT id, source, target,

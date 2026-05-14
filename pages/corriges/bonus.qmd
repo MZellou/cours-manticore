@@ -2,9 +2,9 @@
 title: "Corrigé Rôles Bonus"
 order: 4
 ---
-# Corrigé — Questions bonus des 4 rôles
+# Corrigé — Questions bonus des 3 rôles
 
-> Solutions des 16 questions bonus. Cliquer sur "Copier" pour récupérer le code.
+> Solutions des questions bonus. Cliquer sur "Copier" pour récupérer le code.
 
 ---
 
@@ -323,7 +323,9 @@ ORDER BY distance_m;
 
 ---
 
-## 📦 Ravitaillement
+## 🔧 Logistique {#-logistique}
+
+> Rôle consolidé fusionnant Ravitaillement (flux logistiques) et Énergie (réseaux électriques). B1–B6 = anciens bonus Ravitaillement ; B7–B13 = anciens bonus Énergie ; B14–B15 = nouvelles questions Logistique.
 
 ### B1 — Ports et zones industrielles
 
@@ -385,8 +387,6 @@ WHERE p.nature = 'Port' AND p.nature_detaillee = 'Port de commerce'
 ORDER BY dist_m;
 ```
 
-
-
 ### B5 — Réseau fluvial pour le transport de masse
 
 **Objectif** : identifier les cours d'eau permanents qui traversent ou bordent des zones industrielles. Ces voies d'eau sont des alternatives au transport routier pour le fret de masse (moins chères, moins congestionnées, mais plus lentes).
@@ -394,13 +394,13 @@ ORDER BY dist_m;
 **Requête** :
 
 ```sql
-SELECT 
+SELECT
     c.toponyme AS cours_eau,                     -- nom du cours d'eau
     c.caractere_permanent,                       -- 'Oui' = permanent (toute l'année)
     z.toponyme AS zone_industrielle,             -- nom de la zone d'activités
     z.nature AS type_zone                        -- type précis (Zone industrielle, etc.)
 FROM cours_d_eau c
-JOIN zone_d_activite_ou_d_interet z 
+JOIN zone_d_activite_ou_d_interet z
     ON ST_Intersects(c.geometrie, z.geometrie)
 WHERE c.caractere_permanent = 'Oui'              -- ne garder que les cours pérennes
   AND z.nature = 'Zone industrielle'
@@ -429,12 +429,12 @@ ORDER BY c.toponyme;
 **Requête** :
 
 ```sql
-SELECT 
+SELECT
     a.toponyme AS aire_repos,                    -- nom de l'aire de repos
     z.toponyme AS zone_industrielle,             -- nom de la zone industrielle
     round(ST_Distance(a.geometrie, z.geometrie)::numeric, 0) AS distance_m  -- distance entre elles
 FROM equipement_de_transport a
-JOIN zone_d_activite_ou_d_interet z 
+JOIN zone_d_activite_ou_d_interet z
     ON ST_DWithin(a.geometrie, z.geometrie, 1000)   -- à moins de 1 km
 WHERE a.nature = 'Aire de repos ou de service'
   AND z.nature = 'Zone industrielle'
@@ -453,11 +453,7 @@ ORDER BY distance_m;
 - Plus `distance_m` est faible, plus le hub est efficace (transbordement rapide).
 - En Phase 2 (routage contraint), ces hubs pourraient être les points d'entrée du ravitaillement si les poids lourds sont interdits dans certaines zones.
 
----
-
-## ⚡ Énergie
-
-### B1 — Postes HT et hôpitaux
+### B7 — Postes HT et hôpitaux
 
 ```sql
 SELECT pt.nature, pt.importance, h.toponyme AS hopital,
@@ -472,7 +468,7 @@ ORDER BY pt.importance, dist_m;
 
 **Lien Phase 3** : si ce poste tombe, l'hôpital identifié perd son alimentation électrique prioritaire.
 
-### B2 — Lignes THT et routes
+### B8 — Lignes THT et routes
 
 ```sql
 SELECT l.voltage, count(*) AS routes_croisees
@@ -495,7 +491,7 @@ WHERE l.voltage IN ('400 kV', '225 kV')
 GROUP BY l.voltage;
 ```
 
-### B3 — Centrales nucléaires : rayon d'influence
+### B9 — Centrales nucléaires : rayon d'influence
 
 ```sql
 SELECT 'Centrale ' || c.toponyme AS centrale, p.role, count(*) AS pois
@@ -507,7 +503,7 @@ GROUP BY c.toponyme, p.role
 ORDER BY c.toponyme, pois DESC;
 ```
 
-### B4 — Mix énergétique
+### B10 — Mix énergétique
 
 ```sql
 SELECT 'Éolienne' AS source, count(*) FROM construction_ponctuelle WHERE nature = 'Éolienne'
@@ -519,27 +515,27 @@ UNION ALL
 SELECT 'Centrale électrique', count(*) FROM zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique';
 ```
 
-### B5 — Pylônes et postes : complétude du réseau
+### B11 — Pylônes et postes : complétude du réseau
 
 **Objectif** : comparer le nombre de pylônes (supports de ligne) et de postes de transformation (nœuds du réseau) par secteur géographique. Un secteur avec beaucoup de pylônes mais peu de postes a un réseau aérien mal maillé — donc plus fragile (une coupure de ligne isole une plus grande zone).
 
 **Requête** :
 
 ```sql
-SELECT 
+SELECT
     ST_SnapToGrid(p.geom, 5000) AS secteur,              -- carreau de 5 km × 5 km
     count(*) FILTER (WHERE p.source = 'pylone') AS nb_pylones,
     count(*) FILTER (WHERE p.source = 'poste_ht') AS nb_postes,
-    CASE 
-        WHEN count(*) FILTER (WHERE p.source = 'poste_ht') > 0 
+    CASE
+        WHEN count(*) FILTER (WHERE p.source = 'poste_ht') > 0
         THEN round(
-            count(*) FILTER (WHERE p.source = 'pylone')::numeric / 
+            count(*) FILTER (WHERE p.source = 'pylone')::numeric /
             count(*) FILTER (WHERE p.source = 'poste_ht')::numeric, 1
         )
-        ELSE NULL 
+        ELSE NULL
     END AS ratio_pylones_par_poste
 FROM mission_pois p
-WHERE p.role = 'energie' 
+WHERE p.role = 'logistique'
   AND p.source IN ('pylone', 'poste_ht')
 GROUP BY ST_SnapToGrid(p.geom, 5000)
 ORDER BY secteur;
@@ -560,22 +556,22 @@ ORDER BY secteur;
   - **NULL** : pas de poste dans ce secteur → le secteur dépend d'un poste distant (vulnérable).
 - Les secteurs avec `nb_postes = 0` mais `nb_pylones > 0` sont des zones où l'électricité transite mais n'est pas redistribuée localement — vulnérabilité.
 
-### B6 — Risque cascade
+### B12 — Risque cascade
 
 **Objectif** : identifier les postes haute tension situés à moins de 1 km d'un cours d'eau permanent. Ces postes sont exposés au **risque inondation** : une crue pourrait les endommager et provoquer un effet cascade (coupure en chaîne sur le réseau).
 
 **Requête** :
 
 ```sql
-SELECT 
+SELECT
     p.nom AS poste,                            -- nom du poste (peut être NULL)
     p.nature AS importance_poste,              -- importance du poste (1=critique...)
     c.toponyme AS cours_eau,                   -- nom du cours d'eau
     round(ST_Distance(p.geom, c.geometrie)::numeric, 0) AS distance_m  -- distance poste↔cours d'eau
 FROM mission_pois p
-JOIN cours_d_eau c 
+JOIN cours_d_eau c
     ON ST_DWithin(p.geom, c.geometrie, 1000)   -- dans un rayon de 1 km
-WHERE p.role = 'energie' 
+WHERE p.role = 'logistique'
   AND p.source = 'poste_ht'
   AND c.caractere_permanent = 'Oui'            -- cours d'eau permanent = risque permanent
 ORDER BY distance_m;
@@ -583,7 +579,7 @@ ORDER BY distance_m;
 
 **Explication des concepts** :
 
-- `mission_pois` filtré `source = 'poste_ht'` : ce sont les postes de transformation que vous avez identifiés comme POI Énergie en Phase 1. Leur `nature` correspond à la colonne `importance` de la table source `poste_de_transformation` (1 = poste le plus critique, 5 = poste secondaire).
+- `mission_pois` filtré `source = 'poste_ht'` : ce sont les postes de transformation que vous avez identifiés comme POI Logistique en Phase 1. Leur `nature` correspond à la colonne `importance` de la table source `poste_de_transformation` (1 = poste le plus critique, 5 = poste secondaire).
 - `cours_d_eau` : table BDTOPO des linéaires d'eau. `caractere_permanent = 'Oui'` filtre sur les cours pérennes — ceux qui coulent toute l'année. Un cours d'eau intermittent (sec l'été) ne présente pas de risque inondation permanent.
 - 1 km (1000 mètres) : distance d'impact typique d'une crue centennale ou d'un débordement majeur. Au-delà, le risque est faible.
 
@@ -594,19 +590,19 @@ ORDER BY distance_m;
 - En Phase 3 (simulation), ces postes devraient être prioritaires pour le rôle Défense (protection contre les coupes).
 - **Variante** : changez la distance (`500`, `2000`) pour voir la sensibilité.
 
-### B7 — Interdépendances : barrages et écluses
+### B13 — Interdépendances : barrages et écluses
 
-**Objectif** : identifier les barrages qui ont une écluse à moins de 1 km. Ces ouvrages mixtes sont des points de vulnérabilité critiques car ils combinent **deux** infrastructures sensibles : la production hydroélectrique (Énergie) et la navigation fluviale (Ravitaillement). Un incident sur l'un affecte l'autre.
+**Objectif** : identifier les barrages qui ont une écluse à moins de 1 km. Ces ouvrages mixtes sont des points de vulnérabilité critiques car ils combinent **deux** infrastructures sensibles : la production hydroélectrique et la navigation fluviale. Un incident sur l'un affecte l'autre.
 
 **Requête** :
 
 ```sql
-SELECT 
+SELECT
     b.toponyme AS barrage,             -- nom du barrage
     e.toponyme AS ecluse,              -- nom de l'écluse (peut être NULL)
     round(ST_Distance(b.geometrie, e.geometrie)::numeric, 0) AS distance_m
 FROM construction_surfacique b
-JOIN construction_surfacique e 
+JOIN construction_surfacique e
     ON ST_DWithin(b.geometrie, e.geometrie, 1000)   -- à moins de 1 km
 WHERE b.nature = 'Barrage'
   AND e.nature = 'Ecluse'
@@ -624,7 +620,58 @@ ORDER BY distance_m;
 
 **Interprétation des résultats** :
 
-- Chaque ligne = un point de vulnérabilité **inter-rôle** : le barrage intéresse l'Énergie, l'écluse intéresse le Ravitaillement.
-- Si un barrage est saboté (Phase 3 — simulation), l'écluse est exposée aux conséquences (vague, débris, variation du niveau d'eau). Et inversement : une écluse bloquée peut gêner l'accès au barrage pour maintenance.
+- Chaque ligne = un point de vulnérabilité inter-domaine : le barrage concerne la production, l'écluse le transport fluvial.
 - Ces ouvrages sont des candidats naturels pour la **protection prioritaire** par le rôle Défense (Phase 3 — T7).
-- **Variante** : inversez la requête (écluses proches de barrages) — le résultat est le même (la jointure est commutative). Intéressez-vous aussi aux écluses SANS barrage proche (ouvrage indépendant, vulnérabilité moindre).
+- **Variante** : inversez la requête (écluses proches de barrages) — le résultat est le même (la jointure est commutative).
+
+### B14 — Postes HT alimentant une zone industrielle
+
+**Objectif** : identifier les postes de transformation haute tension situés dans un rayon de 2 km d'une zone industrielle. Ces postes sont les points d'alimentation électrique des industries — leur perte provoquerait un arrêt de production.
+
+**Requête** :
+
+```sql
+SELECT
+    pt.toponyme AS poste_ht,
+    CAST(pt.importance AS INTEGER) AS importance,
+    z.toponyme AS zone_industrielle,
+    round(ST_Distance(pt.geometrie, z.geometrie)::numeric, 0) AS distance_m
+FROM poste_de_transformation pt
+JOIN zone_d_activite_ou_d_interet z
+    ON ST_DWithin(pt.geometrie, z.geometrie, 2000)
+WHERE z.nature = 'Zone industrielle'
+  AND CAST(pt.importance AS INTEGER) <= 3   -- postes d'importance nationale/régionale
+ORDER BY importance, distance_m;
+```
+
+**Interprétation** :
+
+- Les postes d'importance 1–2 (très haute tension) qui alimentent une zone industrielle sont des cibles critiques : couper un tel poste isole simultanément plusieurs entreprises.
+- En Phase 3, ces couples (poste, zone) permettent de simuler l'effet domino : destruction du poste → arrêt industriel → rupture de la chaîne logistique.
+
+### B15 — Canalisations hydrocarbure proches d'un port de commerce
+
+**Objectif** : détecter les canalisations d'hydrocarbures qui passent à moins de 500 m d'un port de commerce. Ces infrastructures créent un risque d'accident industriel majeur et sont des cibles prioritaires pour une simulation d'attaque.
+
+**Requête** :
+
+```sql
+SELECT
+    c.toponyme AS canalisation,
+    c.nature AS type_canalisation,
+    p.toponyme AS port,
+    round(ST_Distance(c.geometrie, p.geometrie)::numeric, 0) AS distance_m
+FROM construction_lineaire c
+JOIN equipement_de_transport p
+    ON ST_DWithin(c.geometrie, p.geometrie, 500)
+WHERE c.nature IN ('Canalisation', 'Pipeline')
+  AND p.nature = 'Port'
+  AND p.nature_detaillee = 'Port de commerce'
+ORDER BY distance_m;
+```
+
+**Interprétation** :
+
+- Chaque ligne = un point de risque combiné : une infrastructure de transport d'hydrocarbures proche d'un port actif.
+- Distance < 100 m : risque immédiat (zone de sécurité réglementaire souvent non respectée en milieu portuaire historique).
+- Ces couples sont pertinents pour le rôle Attaque (cible à fort impact) et le rôle Défense (protection prioritaire).

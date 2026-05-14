@@ -105,16 +105,16 @@ Une arête avec `cost = -1` est **non traversable** dans pgRouting. r2gg utilise
 
 > **Sur Brest, ~28 % des arêtes du graphe `ways` ont `cost = -1` à l'origine.** Voir [Phase 2 §T2.5](../mission/phase_2.qmd#sec-reality-check) et [Phase 3 §T0](../mission/phase_3.qmd#sec-t0-etat-initial) pour les conséquences pédagogiques.
 
-### `mission_pois` (table partagée 4 rôles — pattern accumulation)
+### `mission_pois` (table partagée 3 rôles — pattern accumulation)
 
-`mission_pois` est la table **commune** où les 4 agents (Attaque, Défense, Ravitaillement, Énergie) déposent leurs POIs. Elle persiste entre les exécutions du script `01_explore_postgis.py`.
+`mission_pois` est la table **commune** où les 3 agents (Attaque, Défense, Logistique) déposent leurs POIs. Elle persiste entre les exécutions du script `01_explore_postgis.py`.
 
 **Schéma** :
 
 ```sql
 mission_pois (
     id SERIAL PRIMARY KEY,
-    role TEXT,           -- 'attaque' | 'defense' | 'ravitaillement' | 'energie'
+    role TEXT,           -- 'attaque' | 'defense' | 'logistique'
     source TEXT,         -- table BDTOPO d'origine (aerodrome, hopital, port...)
     cleabs TEXT, categorie TEXT, nature TEXT, nom TEXT,
     geom GEOMETRY(Geometry, 2154)
@@ -123,7 +123,7 @@ mission_pois (
 
 **Pattern idempotent** : à chaque relance d'un rôle, le script fait `DELETE FROM mission_pois WHERE role = '<role>'` puis `INSERT`. Conséquence :
 
-- Lancer les 4 rôles successivement → **tous les 4** coexistent dans la table.
+- Lancer les 3 rôles successivement → **tous les 3** coexistent dans la table.
 - Relancer un seul rôle → **seul ce rôle** est rafraîchi, les autres restent intacts.
 - Un index GIST sur `geom` est créé automatiquement (`CREATE INDEX IF NOT EXISTS`).
 

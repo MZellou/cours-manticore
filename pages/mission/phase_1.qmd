@@ -7,7 +7,7 @@ order: 2
 > *"Identifier les POIs critiques de votre EPCI selon votre assignation."*
 
 **Mode** : Solo (chaque agent travaille sur son rôle).
-**Durée estimée** : 4h (warm-up 1h + tâches 1h30 + exploration 1h30)
+**Durée estimée** : 6h (warm-up 1h30 + tâches 2h30 + exploration 2h)
 
 ::: {.callout-note title="📚 Théorie pré-requise"}
 - [Pourquoi ce cours](../theorie/fondements/pourquoi.qmd) — pose les fondations
@@ -15,7 +15,7 @@ order: 2
 - [Modèle BDTOPO](../theorie/fondements/modele_bdtopo.qmd) — quelles tables, quels champs
 - [SQL — limites & EXPLAIN](../theorie/outils/sql_recursion.qmd) — pour la T1 ontologique
 
-**Ton rôle** : [⚔️ Attaque](../roles/attaque.qmd) · [🛡️ Défense](../roles/defense.qmd) · [📦 Ravitaillement](../roles/ravitaillement.qmd) · [⚡ Énergie](../roles/energie.qmd)
+**Ton rôle** : [⚔️ Attaque](../roles/attaque.qmd) · [🛡️ Défense](../roles/defense.qmd) · [🔧 Logistique](../roles/logistique.qmd)
 :::
 
 ---
@@ -28,13 +28,31 @@ order: 2
 
 ---
 
-## Warm-up — Réactivation SQL & Découverte Cypher (1h)
+## Tableau récapitulatif des POIs par rôle
+
+| Rôle | Tables BDTOPO principales | Filtres clés | Nb POIs typiques |
+|------|--------------------------|--------------|-----------------|
+| ⚔️ **Attaque** | `zone_d_activite_ou_d_interet`, `aerodrome`, `construction_lineaire` | `categorie IN ('Administratif ou militaire', 'Transport')`, `nature = 'Aérodrome'` | 30–120 |
+| 🛡️ **Défense** | `zone_d_activite_ou_d_interet`, `construction_ponctuelle` | `nature IN ('Gendarmerie', 'Caserne', 'Hôpital')`, `importance <= 3` | 20–80 |
+| 🔧 **Logistique** | `zone_d_activite_ou_d_interet`, `troncon_de_route`, `construction_lineaire` | `categorie IN ('Industriel ou commercial', 'Transport')`, `nature IN ('Port', 'Entrepôt')` | 40–150 |
+
+---
+
+## Warm-up — Réactivation SQL & Découverte Cypher (1h30)
 
 > Avant d'attaquer les POIs, remettons les bases en main.
 
 ### T0a — Explorer les données sources avec DuckDB
 
 Avant de requêter PostGIS, explorons les fichiers Parquet source pour comprendre les colonnes et les valeurs disponibles.
+
+**Objectifs**
+
+1. Lister les colonnes de `zone_d_activite_ou_d_interet` et identifier le champ géométrique
+2. Compter les lignes par `categorie`, repérer les 3 catégories les plus représentées
+3. Filtrer sur `Santé`, explorer `nature` et `nature_detaillee`
+4. Croiser avec `bdtopo_objects.parquet` : combien de natures matchent ?
+5. (bonus) Comparer DuckDB vs PostGIS — y a-t-il un écart de lignes ?
 
 **Outil** : DuckDB (inlinable en CLI). Exemple pour `zone_d_activite_ou_d_interet` :
 
@@ -79,7 +97,27 @@ duckdb -c "
 
 > **Pourquoi DuckDB ?** Les fichiers Parquet sont les données brutes. PostGIS les charge avec une transformation. Explorer d'abord les Parquet vous permet de découvrir les colonnes et valeurs *avant* d'écrire des requêtes SQL complexes. C'est aussi un moyen de faire le lien avec l'ontologie BDTOPO (hiérarchie Database → Object → Detail).
 
-→ [Corrigé](../corriges/phase_1.qmd#t0a--explorer-les-donnes-sources-avec-duckdb)
+::: {.callout-tip title="🧠 Réflexion guidée"}
+**Questions à creuser**
+
+- Pourquoi explorer le Parquet *avant* de lancer PostGIS ? Que gagne-t-on en termes de compréhension des données ?
+- Quel est le rôle de l'ontologie BDTOPO ? En quoi la hiérarchie Database → Object → Detail est-elle différente d'une simple liste de colonnes ?
+- Si un `nature` du Parquet n'a pas de match dans `bdtopo_objects.parquet`, que peut-on en déduire ?
+- DuckDB lit les Parquet en mémoire locale ; PostGIS passe par le réseau Docker — dans quel cas préférer l'un ?
+
+**Prompts LLM suggérés**
+
+- *"Explique la hiérarchie BDTOPO Database → Object → Detail avec un exemple concret sur les équipements de santé."*
+- *"Quelle est la différence entre un fichier Parquet et une table PostGIS du point de vue des performances de lecture ?"*
+
+**Mini-défi**
+
+Listez toutes les tables Parquet disponibles dans `data/poi_source/`. Pour chacune, affichez le nombre total de lignes. Quelle est la table la plus volumineuse ? La plus légère ?
+:::
+
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t0a--explorer-les-donnes-sources-avec-duckdb)
+:::
 
 ### T0b — SQL : Jointures spatiales
 
@@ -87,39 +125,98 @@ Croisez deux tables avec une jointure spatiale (`ST_Intersects`, `ST_DWithin`).
 
 **Objectif** : quels équipements de transport sont dans une zone industrielle ?
 
+**Objectifs**
+
+1. Écrire une requête `ST_Intersects` entre `aerodrome` et `zone_d_activite_ou_d_interet`
+2. Réécrire avec `ST_DWithin` (rayon 2000 m) — comparer les résultats
+3. Vérifier que les deux tables sont dans le même SRID (2154)
+4. Ajouter un `EXPLAIN ANALYZE` et observer si un index GIST est utilisé
+5. (bonus) Calculer la distance exacte (`ST_Distance`) pour les paires trouvées et trier
+
 **Exercice** : combien d'aérodromes sont à moins de 2 km d'un hôpital ?
 *Indice : `ST_DWithin` avec un rayon de 2000m entre `aerodrome` et `zone_d_activite_ou_d_interet`.*
 
-→ [Corrigé](../corriges/phase_1.qmd#t0b--sql--jointures-spatiales)
+::: {.callout-tip title="🧠 Réflexion guidée"}
+**Questions à creuser**
+
+- Quelle différence sémantique entre `ST_Intersects`, `ST_DWithin` et `ST_Distance < N` ? Dans quels cas tactiques utiliser l'un ou l'autre ?
+- Pourquoi un index GIST change-t-il radicalement les performances ? Que se passe-t-il sans lui (testez avec `SET enable_indexscan = off`) ?
+- Pourquoi travailler en SRID 2154 (Lambert-93) et non 4326 (WGS84 degrés) pour les distances métriques ?
+- `ST_DWithin` peut utiliser un index GIST mais `ST_Distance(...) < N` ne le peut pas — pourquoi ?
+
+**Prompts LLM suggérés**
+
+- *"Explique la différence entre ST_Intersects, ST_DWithin et ST_Distance en PostGIS avec des exemples. Lequel utilise un index GIST ?"*
+- *"Pourquoi les calculs de distance PostGIS doivent utiliser un SRID projeté (mètres) et pas WGS84 (degrés) ?"*
+
+**Mini-défi**
+
+Créez un index GIST sur `geom` dans `zone_d_activite_ou_d_interet`, relancez votre requête avec `EXPLAIN ANALYZE`, et mesurez le gain de temps. L'index change-t-il le résultat ?
+:::
+
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t0b--sql--jointures-spatiales)
+:::
 
 ### T0c — Cypher : premiers pas dans Neo4j
 
 Ouvrez [http://localhost:7474](http://localhost:7474). L'ontologie est déjà chargée (si ce n'est pas le cas, les POIs seront migrés dans la Phase 2).
 
-**Objectifs** :
+**Objectifs**
 
-1. Lister les nœuds de l'ontologie (`MATCH`)
-2. Trouver les enfants de "Tronçon de route"
-3. Compter les nœuds par label
+1. Lister les nœuds de l'ontologie avec `MATCH` et observer les labels disponibles
+2. Trouver les enfants directs de "Tronçon de route" via `[:EST_SOUS_TYPE_DE]`
+3. Compter les nœuds par label (`MATCH (n) RETURN labels(n), count(n)`)
+4. Traverser 2 niveaux depuis un nœud racine (Database → Object → Detail)
+5. (bonus) Trouver tous les "Detail" sous "Construction ponctuelle" en une seule requête récursive `*`
 
 **Exercice** : trouvez tous les "Detail" qui sont des sous-types de "Construction ponctuelle". Combien y en a-t-il ?
 
 > **Note** : si les POIs ne sont pas encore dans Neo4j, vous les migrerez dans la Phase 2.
 
-→ [Corrigé](../corriges/phase_1.qmd#t0c--cypher--premiers-pas)
+::: {.callout-tip title="🧠 Réflexion guidée"}
+**Questions à creuser**
+
+- Modèle relationnel (PostGIS) vs graphe (Neo4j) : quand l'un est-il plus naturel que l'autre pour l'ontologie ?
+- Un label Neo4j (`ClasseOntologie`, `POI`) vs une colonne PostgreSQL (`categorie`) — quelle différence de flexibilité ?
+- Pourquoi `(a)-[:EST_SOUS_TYPE_DE*]->(b)` en Cypher est plus concis qu'un `WITH RECURSIVE` SQL ? (cf. [SQL — limites](../theorie/outils/sql_recursion.qmd))
+- Que se passerait-il si l'ontologie avait des **cycles** ? Neo4j et PostgreSQL gèrent-ils cela différemment ?
+
+**Prompts LLM suggérés**
+
+- *"Compare le modèle de données relationnel et le modèle graphe pour représenter une hiérarchie. Donne un exemple avec 3 niveaux."*
+- *"Explique la syntaxe Cypher pour traverser une relation récursive `[:R*]` vs `[:R*1..3]`. Quelle est la différence ?"*
+
+**Mini-défi**
+
+Comptez le nombre de nœuds à chaque profondeur de l'ontologie (niveau 1 = Database, niveau 2 = Object, niveau 3 = Detail). Affichez les résultats sous forme de tableau `profondeur | count`.
+:::
+
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t0c--cypher--premiers-pas)
+:::
 
 ---
 
-## Tâches principales (1h30)
+## Tâches principales (2h30)
 
 ### T1 — Explorer l'ontologie BDTOPO
 
 L'ontologie a 3 niveaux hiérarchiques : Database → Object → Detail.
 
-**Objectif** : traverser la hiérarchie depuis "Tronçon de route" vers ses sous-types.
+**Objectifs**
+
+1. Comprendre la structure `id / parent_id` dans `bdtopo_objects.parquet`
+2. Écrire un `WITH RECURSIVE` qui liste tous les descendants d'un nœud racine
+3. Afficher le niveau de profondeur de chaque nœud
+4. Identifier les nœuds feuilles (Detail) sans enfants
+5. (bonus) Reconstruire le chemin complet `Database → Object → Detail` avec `STRING_AGG`
+
 *Indice : `WITH RECURSIVE` + `parent_id`.*
 
-→ [Corrigé](../corriges/phase_1.qmd#t1--explorer-lontologie-bdtopo)
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t1--explorer-lontologie-bdtopo)
+:::
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
@@ -147,11 +244,36 @@ Consultez votre briefing rôle (`roles/<votre_role>.qmd`) pour connaître :
 - Les filtres (nature, catégorie, importance)
 - Les jointures spatiales à effectuer
 
+**Objectifs**
 
-**Objectif** : écrire vos requêtes et insérer les résultats dans `mission_pois`.
+1. Lire votre briefing rôle et lister les tables et filtres attendus
+2. Écrire une requête `SELECT` exploratoire pour chaque table de votre rôle
+3. Vérifier que les résultats correspondent aux valeurs de l'ontologie (croisement T0a)
+4. Insérer les POIs dans `mission_pois` avec `INSERT INTO ... SELECT`
+5. Vérifier l'idempotence : relancer 2× — les doublons sont-ils évités ?
+
 *Indice : `INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom) SELECT ...`*
 
-→ [Corrigé](../corriges/phase_1.qmd#t2--slectionner-les-pois-de-votre-rle)
+::: {.callout-tip title="🧠 Réflexion guidée"}
+**Questions à creuser**
+
+- Comment rendre un `INSERT INTO ... SELECT` idempotent (relancer 2× sans créer de doublons) ? Pensez à `ON CONFLICT` ou à une suppression préalable.
+- Le champ `cleabs` est censé être un identifiant unique BDTOPO — est-ce toujours le cas dans vos données ? Comment détecter les doublons ?
+- Vos filtres sont-ils "tactiques" ou arbitraires ? Comment justifier le choix d'un `nature` plutôt qu'un autre à votre groupe ?
+
+**Prompts LLM suggérés**
+
+- *"Comment écrire un INSERT INTO ... SELECT idempotent en PostgreSQL ? Montre avec ON CONFLICT DO NOTHING et avec DELETE préalable."*
+- *"Comment détecter les lignes dupliquées sur un champ cleabs dans une table PostgreSQL ?"*
+
+**Mini-défi**
+
+Après insertion, comparez le `count(*)` de vos POIs avec le nombre de lignes dans le Parquet source (filtré sur les mêmes critères). Y a-t-il un écart ? Si oui, pourquoi ?
+:::
+
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t2--slectionner-les-pois-de-votre-rle)
+:::
 
 ### T3 — Ajouter des critères de criticité
 
@@ -161,18 +283,52 @@ Enrichissez vos POIs avec des critères d'importance :
 - Aérodromes : `categorie IN ('Internationale', 'Nationale')`
 - Zones militaires : `categorie = 'Administratif ou militaire'`
 
-→ [Corrigé](../corriges/phase_1.qmd#t3--ajouter-des-critres-de-criticite)
+**Objectifs**
+
+1. Identifier le type de la colonne `importance` dans le Parquet (texte ou entier ?)
+2. Écrire un `CAST(importance AS INTEGER)` sécurisé (gestion des `NULL` et valeurs invalides)
+3. Appliquer le filtre de criticité adapté à votre rôle
+4. Ajouter une colonne `critique BOOLEAN` dans `mission_pois` et la mettre à jour
+5. (bonus) Définir un seuil "critique" différent pour chaque `nature` — est-ce justifiable ?
+
+::: {.callout-tip title="🧠 Réflexion guidée"}
+**Questions à creuser**
+
+- Pourquoi `CAST(importance AS INTEGER)` peut-il échouer sur certaines lignes ? Que faire des valeurs `NULL` ou non numériques (`TRY_CAST` en DuckDB, `NULLIF` en PostgreSQL) ?
+- Le seuil "critique" (`importance <= 3`) est-il universel ou dépend-il du contexte de l'EPCI ?
+- Un filtre sur `categorie` vs un filtre sur `importance` — lequel est plus fiable ? Pourquoi ?
+
+**Prompts LLM suggérés**
+
+- *"Comment gérer les erreurs de CAST en PostgreSQL (valeurs non numériques) ? Montre avec NULLIF et avec une fonction personnalisée."*
+- *"Explique pourquoi un champ 'importance' stocké en texte dans BDTOPO peut causer des problèmes de tri ou de filtre."*
+
+**Mini-défi**
+
+Comparez le nombre de POIs "critiques" pour chaque rôle (votre groupe). Quel rôle a le plus de POIs critiques dans votre EPCI ? Est-ce cohérent avec la géographie de votre territoire ?
+:::
+
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t3--ajouter-des-critres-de-criticite)
+:::
 
 ### T4 — Clusteriser les POIs (ST_ClusterDBSCAN)
 
 Détectez les grappes tactiques de POIs proches.
 
-**Objectif** : utiliser `ST_ClusterDBSCAN` avec `eps := 2000` et `minpoints := 2`.
+**Objectifs**
+
+1. Comprendre les paramètres `eps` (rayon en mètres) et `minpoints` de DBSCAN
+2. Lancer `ST_ClusterDBSCAN` avec `eps := 2000` et `minpoints := 2` sur vos POIs
+3. Compter le nombre de clusters non-NULL et le nombre de points "bruit" (`cluster_id IS NULL`)
+4. Varier `eps` (500, 2000, 5000) et observer l'évolution du nombre de clusters
+5. (bonus) Calculer l'enveloppe convexe de chaque cluster (`ST_ConvexHull`) et sa surface en km²
+
 Interprétez : où sont les zones de concentration stratégique ?
 
-**Exercice bonus** : variez `eps` (1000, 3000, 5000). Comment évolue le nombre de clusters ?
-
-→ [Corrigé](../corriges/phase_1.qmd#t4--clusteriser-les-pois-st_clusterdbscan)
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t4--clusteriser-les-pois-st_clusterdbscan)
+:::
 
 ::: {.callout-tip title="🧠 Réflexion guidée"}
 **Questions à creuser**
@@ -197,41 +353,90 @@ Interprétez : où sont les zones de concentration stratégique ?
 
 Chacun a ses POIs dans SA base Docker. Le groupe doit fusionner dans UNE base.
 
-**Protocole** : chaque rôle exporte ses POIs en CSV (`\copy`), partage le fichier (clé USB, scp), puis un étudiant importe les 4 CSV dans sa base.
+**Objectifs**
+
+1. Exporter vos POIs en CSV avec `\copy` depuis psql
+2. Vérifier que le CSV contient bien les colonnes `geom` (WKT ou WKB) et le SRID
+3. Partager le fichier avec votre groupe (clé USB, `scp`, ou dossier partagé)
+4. Importer les 3 CSV dans une base commune et vérifier l'absence de doublons
+5. Valider : `SELECT role, count(*) FROM mission_pois GROUP BY role` → 3 rôles présents
+
+**Protocole** : chaque rôle exporte ses POIs en CSV (`\copy`), partage le fichier (clé USB, scp), puis un étudiant importe les 3 CSV dans sa base.
 
 *Indice : `\copy (SELECT * FROM mission_pois WHERE role='votre_role') TO 'pois.csv' CSV HEADER`*
 
-**Vérifiez** : `SELECT role, source, count(*) FROM mission_pois GROUP BY role, source` → 4 rôles présents.
+**Vérifiez** : `SELECT role, source, count(*) FROM mission_pois GROUP BY role, source` → 3 rôles présents.
 
-→ [Corrigé](../corriges/phase_1.qmd#t5--partager-vos-pois)
+::: {.callout-tip title="🧠 Réflexion guidée"}
+**Questions à creuser**
+
+- Pourquoi exporter en CSV plutôt qu'un dump SQL (`pg_dump`) pour ce cas d'usage ? Quelles limites le CSV a-t-il pour les géométries ?
+- Comment s'assurer que le SRID 2154 est conservé lors de l'import dans une autre base ? Que se passe-t-il si les deux bases ont des SRID différents ?
+- Comment valider l'import après coup ? Quels contrôles faire (count, bbox, types de géométrie) ?
+
+**Prompts LLM suggérés**
+
+- *"Comment exporter et importer des géométries PostGIS en CSV en préservant le SRID ? Montre avec \\copy et ST_AsText / ST_GeomFromText."*
+- *"Quelles sont les limites d'un export CSV pour des données spatiales par rapport à un shapefile ou GeoJSON ?"*
+
+**Mini-défi**
+
+Après import, calculez la bounding box globale de chaque rôle (`ST_Extent(geom)`). Les 3 rôles couvrent-ils la même zone géographique ? Est-ce attendu pour votre EPCI ?
+:::
+
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t5--partager-vos-pois)
+:::
 
 ---
 
-## Exploration libre guidée (1h30)
+## Exploration libre guidée (2h)
 
 ### T6 — Questions bonus par rôle
 
 Chaque rôle a des **questions bonus** dans son briefing. Résolvez-en au moins 2.
-Voir votre page rôle : [Attaque](../roles/attaque.qmd), [Défense](../roles/defense.qmd), [Ravitaillement](../roles/ravitaillement.qmd), [Énergie](../roles/energie.qmd).
+Voir votre page rôle : [Attaque](../roles/attaque.qmd), [Défense](../roles/defense.qmd), [Logistique](../roles/logistique.qmd).
+
+**Objectifs**
+
+1. Lire les questions bonus de votre briefing rôle
+2. Identifier les fonctions SQL nécessaires (`ST_Buffer`, `ST_Union`, window functions, sous-requêtes)
+3. Résoudre au moins 2 questions bonus et documenter les requêtes
+4. Comparer vos résultats avec un coéquipier du même rôle (groupe)
+5. (bonus) Proposer une nouvelle question bonus non listée dans le briefing
 
 **Principe** : ces questions vous font croiser les tables et utiliser des fonctions SQL que vous n'avez pas encore pratiquées (`ST_Buffer`, `ST_Union`, window functions, sous-requêtes corrélées).
 
-→ [Corrigé Rôles bonus](../corriges/bonus.qmd)
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/bonus.qmd)
+:::
 
 ### T7 — Cross-rôle : échangez avec vos coéquipiers
 
 Chaque agent prépare **une question** pour un autre rôle et la lui transmet.
 
+**Objectifs**
+
+1. Formuler une question qui nécessite les données d'un autre rôle
+2. Transmettre la question et attendre la réponse de votre coéquipier
+3. Répondre à la question reçue (écrire et exécuter la requête SQL)
+4. Documenter la requête et le résultat dans le rapport (avec commentaires)
+5. (bonus) Identifier une dépendance mutuelle entre deux rôles non prévue dans le briefing
+
 | Demandeur | Question à poser à… | Exemple |
 |-----------|---------------------|---------|
-| **Défense** → Énergie | "Quels postes HT sont à moins de 1 km d'un hôpital ?" | Croisement santé + énergie |
-| **Attaque** → Ravitaillement | "Quels ports sont les plus proches d'une caserne ?" | Cibles logistiques |
-| **Énergie** → Défense | "Combien de ponts croisent une ligne THT ?" | Points fragiles |
-| **Ravitaillement** → Attaque | "Y a-t-il des zones industrielles à moins de 3 km d'un aérodrome ?" | Couverture aérienne |
+| **Défense** → Logistique | "Quels postes HT alimentent un hôpital à <1 km ?" | Croisement santé + énergie |
+| **Attaque** → Logistique | "Quels ports/usines/canalisations sont proches d'une caserne ?" | Cibles soutien |
+| **Logistique** → Défense | "Combien de ponts traversent une ligne THT ou un canal ?" | Points fragiles |
+| **Logistique** → Attaque | "Y a-t-il des zones industrielles à <3 km d'un aérodrome ?" | Couverture aérienne |
+| **Attaque** → Défense | "Quels aérodromes ont une caserne à <5 km ?" | Densité défensive |
+| **Défense** → Attaque | "Quels ports symboliques sont défendus par une gendarmerie ?" | Priorité protection |
 
 L'agent interrogé doit écrire et exécuter la requête SQL. Documentez la requête et le résultat dans le rapport.
 
-→ [Corrigé](../corriges/phase_1.qmd#t7--cross-rle)
+::: {.callout-note collapse=true title="💡 Voir le corrigé"}
+[Ouvrir le corrigé →](../corriges/phase_1.qmd#t7--cross-rle)
+:::
 
 ---
 
@@ -282,3 +487,6 @@ Cocher ce que vous savez **expliquer à un coéquipier** sans relire le corrigé
 - [ ] Cas de base et cas récursif d'un `WITH RECURSIVE`
 - [ ] Effet de `eps` et `minpoints` sur DBSCAN
 - [ ] Pourquoi `CAST(importance AS INTEGER)` est nécessaire (et risqué)
+- [ ] Pourquoi explorer le Parquet avant PostGIS pour comprendre les données sources
+- [ ] Différence entre un index GIST (spatial) et un index B-tree (scalaire) pour les géométries
+- [ ] Rôle de l'ontologie Database → Object → Detail dans le filtrage des POIs par rôle

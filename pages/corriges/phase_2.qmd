@@ -134,7 +134,7 @@ FROM pgr_dijkstra(
 
 **Objectif** : adapter l'algorithme de Dijkstra aux contraintes physiques et stratégiques de chaque rôle : interdire certaines routes (poids, largeur), en favoriser d'autres (chemins discrets, axes rapides). On modifie la **sous-requête SQL** passée à `pgr_dijkstra` pour changer le `cost` par arête.
 
-**Ravitaillement** (poids lourds) :
+**Logistique** (poids lourds — ravitaillement) :
 
 ```sql
 SELECT max(agg_cost) FROM pgr_dijkstra(
@@ -146,7 +146,7 @@ SELECT max(agg_cost) FROM pgr_dijkstra(
 );
 ```
 
-**Rôle Énergie** (convois exceptionnels) :
+**Rôle Logistique** (convois exceptionnels) :
 
 ```sql
 -- Coût dynamique : routes étroites bloquées
@@ -175,8 +175,8 @@ CASE WHEN importance >= 3 THEN cost*0.5 ELSE cost END
 
 **Interprétation des résultats** :
 
-- **Ravitaillement** : les routes avec restriction de poids sont bloquées (`-1`). Le détour peut être long si peu d'alternatives existent → surcoût potentiel de 50 % ou plus.
-- **Énergie** : les routes de largeur < 4 m sont infranchissables pour les convois exceptionnels. Même logique : ces arêtes disparaissent du graphe.
+- **Logistique (convois ravitaillement)** : les routes avec restriction de poids sont bloquées (`-1`). Le détour peut être long si peu d'alternatives existent → surcoût potentiel de 50 % ou plus.
+- **Logistique (convois exceptionnels)** : les routes de largeur < 4 m sont infranchissables pour les convois. Même logique : ces arêtes disparaissent du graphe.
 - **Attaque** : les chemins sont favorisés (coût * 0.7), les axes principaux pénalisés (coût * 1.3). L'itinéraire privilégie la **discrétion** au détriment de la vitesse.
 - **Défense** : les routes d'importance ≥ 3 (nationales, départementales) sont fortement favorisées (coût * 0.5) pour une **intervention rapide**, quitte à longer des zones habitées.
 
@@ -315,12 +315,12 @@ RETURN role, nom ORDER BY role, nom;
 
 ## T9 — Pattern matching avancé {#t9}
 
-**Objectif** : exploiter le pattern matching de Cypher sur des **chemins de longueur variable** pour trouver des routes complexes : transit par des POIs Énergie, cycles triangulaires, ou chemins qui évitent certains types de POIs. Ces motifs sont impossibles à exprimer simplement en SQL.
+**Objectif** : exploiter le pattern matching de Cypher sur des **chemins de longueur variable** pour trouver des routes complexes : transit par des POIs Logistique, cycles triangulaires, ou chemins qui évitent certains types de POIs. Ces motifs sont impossibles à exprimer simplement en SQL.
 
-**Chemins via énergie uniquement** :
+**Chemins via logistique uniquement** :
 
 ```sql
-MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*1..3]-(e:POI {role: 'energie'})-[:DISTANCE*1..3]-(d:POI {role: 'defense'})
+MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*1..3]-(e:POI {role: 'logistique'})-[:DISTANCE*1..3]-(d:POI {role: 'defense'})
 RETURN
     [n IN nodes(path) | n.nom] AS etapes,
     length(path) AS sauts,
@@ -338,11 +338,11 @@ WHERE id(a) < id(b) AND id(b) < id(c)
 RETURN a.nom, b.nom, c.nom LIMIT 10;
 ```
 
-**Défi — Chemin en évitant les POIs énergie** :
+**Défi — Chemin en évitant les POIs logistique** :
 
 ```sql
 MATCH path = (a:POI {role: 'attaque'})-[:DISTANCE*1..4]-(d:POI {role: 'defense'})
-WHERE ALL(n IN nodes(path) WHERE n.role IS NULL OR n.role <> 'energie')
+WHERE ALL(n IN nodes(path) WHERE n.role IS NULL OR n.role <> 'logistique')
 RETURN [n IN nodes(path) | n.nom] AS etapes,
        reduce(t=0, r IN relationships(path) | t+r.meters) AS distance_m
 ORDER BY distance_m LIMIT 5;
@@ -354,14 +354,14 @@ ORDER BY distance_m LIMIT 5;
 - **`nodes(path)`** : retourne la liste des nœuds du chemin. `[n IN nodes(path) | n.nom]` est une **compréhension de liste** Cypher (comme une list comprehension Python) : elle crée une nouvelle liste contenant seulement les `nom` de chaque nœud.
 - **`relationships(path)`** : retourne la liste des relations du chemin, utilisée par `reduce()`.
 - **`reduce(total = 0, r IN relationships(path) | total + r.meters)`** : fonction d'accumulation. Elle initialise `total` à 0, puis pour chaque relation `r` du chemin, ajoute `r.meters` à `total`. Résultat : la somme des distances de toutes les relations. Équivalent à `sum()` en SQL ou `functools.reduce()` en Python.
-- **`WHERE ALL(n IN nodes(path) WHERE n.role IS NULL OR n.role <> 'energie')`** : `ALL()` est un prédicat qui retourne `true` si la condition est vraie pour **tous** les éléments de la liste. Ici : aucun nœud du chemin (sauf le départ/arrivée) ne doit avoir `role = 'energie'`.
+- **`WHERE ALL(n IN nodes(path) WHERE n.role IS NULL OR n.role <> 'logistique')`** : `ALL()` est un prédicat qui retourne `true` si la condition est vraie pour **tous** les éléments de la liste. Ici : aucun nœud du chemin (sauf le départ/arrivée) ne doit avoir `role = 'logistique'`.
 - **Triangles** : `id(a) < id(b) < id(c)` évite les permutations redondantes du même cycle (a→b→c→a est le même triangle que b→c→a→b sans ce filtre).
 
 **Interprétation des résultats** :
 
-- **Chemins via énergie** : les itinéraires Attaque → Énergie → Défense, triés par distance. Montre comment les POIs Énergie servent d'intermédiaires dans le réseau. Plus la distance est faible, plus le chemin est direct.
+- **Chemins via logistique** : les itinéraires Attaque → Logistique → Défense, triés par distance. Montre comment les POIs Logistique servent d'intermédiaires dans le réseau. Plus la distance est faible, plus le chemin est direct.
 - **Triangles** : trois POIs connectés en cycle complet. Un triangle = **redondance** dans le réseau : si une liaison est coupée, les deux autres maintiennent la connexion entre les trois POIs. Plus il y a de triangles, plus le réseau est résilient.
-- **Défi — sans énergie** : chemins qui évitent tous les POIs Énergie. Comparez les distances avec la version "via énergie" : si les distances sans énergie sont beaucoup plus longues, c'est que le réseau Énergie est un hub critique. Si elles sont équivalentes, le réseau offre des alternatives.
+- **Défi — sans logistique** : chemins qui évitent tous les POIs Logistique. Comparez les distances avec la version "via logistique" : si les distances sans logistique sont beaucoup plus longues, c'est que le réseau Logistique est un hub critique. Si elles sont équivalentes, le réseau offre des alternatives.
 
 ---
 

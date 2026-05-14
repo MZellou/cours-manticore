@@ -4,7 +4,7 @@ Phase 3 — Benchmark SQL vs Cypher + Carte de situation
 Compare les performances de WITH RECURSIVE (SQL) vs Cypher (Neo4j)
 sur la même requête ontologique, puis génère la carte finale.
 
-Usage : python scripts/04_benchmark_comparison.py --role energie
+Usage : python scripts/04_benchmark_comparison.py --role logistique
 """
 
 import argparse
@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ROLES = ["attaque", "defense", "ravitaillement", "energie"]
+ROLES = ["attaque", "defense", "logistique"]
 
 def get_pg_conn():
     return psycopg2.connect(
@@ -184,7 +184,7 @@ def generate_situation_map(pg_conn, role, output_path="data/carte_situation.png"
 
         fig, ax = plt.subplots(1, 1, figsize=(14, 10))
 
-        colors = {"attaque": "red", "defense": "blue", "ravitaillement": "green", "energie": "orange"}
+        colors = {"attaque": "red", "defense": "blue", "logistique": "green"}
         for r, color in colors.items():
             mask = gdf["role"] == r
             if mask.any():

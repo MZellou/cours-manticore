@@ -10,7 +10,7 @@ order: 3
 
 ---
 
-## 1. La table `mission_pois` existe et a les 4 rôles
+## 1. La table `mission_pois` existe et a les 3 rôles
 
 ```sql
 SELECT role, count(*) AS nb_pois
@@ -23,8 +23,8 @@ ORDER BY role;
 
 | Symptôme | Diagnostic |
 |----------|------------|
-| 4 lignes (attaque, défense, énergie, ravitaillement), `nb_pois > 0` partout | ✅ OK, passez à la suite |
-| Moins de 4 rôles | ⚠️ Au moins un agent n'a pas exécuté son `INSERT INTO mission_pois`. Le récupérer. |
+| 3 lignes (attaque, défense, logistique), `nb_pois > 0` partout | ✅ OK, passez à la suite |
+| Moins de 3 rôles | ⚠️ Au moins un agent n'a pas exécuté son `INSERT INTO mission_pois`. Le récupérer. |
 | Tous les rôles à 0 | ❌ Aucun agent n'a inséré. Recommencez à T2. |
 
 ### Fourchettes attendues par rôle (ordre de grandeur)
@@ -35,8 +35,7 @@ Variable selon l'EPCI, mais **si vous êtes très en-dessous, il y a probablemen
 |------|---------------------------|---------------------------|----------------------------|
 | Attaque | 5–30 | 20–80 | 50–200 |
 | Défense | 10–50 | 30–150 | 80–300 |
-| Ravitaillement | 5–40 | 20–100 | 50–250 |
-| Énergie | 10–80 | 40–200 | 100–400 |
+| Logistique | 15–110 | 55–270 | 140–580 |
 
 > Si vous obtenez **0 ou très peu**, vérifiez :
 > - Le **SRID** des géométries (`SELECT ST_SRID(geom) FROM mission_pois LIMIT 1` → doit être `2154`).

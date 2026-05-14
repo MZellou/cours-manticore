@@ -6,7 +6,7 @@ order: 8
 
 > *"Simuler une attaque sur le réseau et comparer les approches SQL vs Graphe."*
 
-**Mode** : Groupe (les 4 rôles collaborent sur la simulation).
+**Mode** : Groupe (les 3 rôles collaborent sur la simulation).
 **Durée estimée** : 5h (benchmark 1h30 + simulation itérative 2h + analyse réseau 1h + rédaction 30min)
 
 ::: {.callout-note title="📚 Théorie pré-requise"}
@@ -138,7 +138,7 @@ Trouvez tous les chemins entre un POI attaque et un POI défense (Hôpital), ave
 
 #### 2b — Plus court chemin avec nœud intermédiaire obligatoire
 
-Trouvez le chemin attaque → ravitaillement → énergie le plus court.
+Trouvez le chemin attaque → logistique → défense le plus court.
 *Indice : deux `shortestPath` enchaînés.*
 
 #### 2c — Sous-graphe accessible depuis un POI
@@ -351,7 +351,7 @@ python scripts/04_benchmark_comparison.py --role <votre_role> --map data/carte_s
 
 La carte doit montrer :
 
-- POIs des 4 rôles (couleurs distinctes)
+- POIs des 3 rôles (couleurs distinctes)
 - Choke points identifiés
 - Routes normales vs contraintes
 - Impact de la destruction (routes coupées, POIs isolés)
