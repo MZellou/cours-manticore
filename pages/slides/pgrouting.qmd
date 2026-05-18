@@ -12,6 +12,7 @@ format:
     code-line-numbers: false
     code-overflow: wrap
     smaller: true
+    include-in-header: _mermaid-card.html
 ---
 
 {{< include ../theorie/outils/pgrouting.qmd >}}

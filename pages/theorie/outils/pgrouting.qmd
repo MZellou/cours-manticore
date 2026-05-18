@@ -73,6 +73,12 @@ Une arête routière peut avoir des coûts **asymétriques** :
 
 > ⚠️ Convention pgRouting : **`-1` = interdit** (pas zéro, pas `NULL`).
 
+#### Distribution réelle des coûts (Brest)
+
+![Cost histogram](../../assets/img/theory/chart_cost_histogram.png)
+
+**Histogramme log** des `cost_s_car` (temps de traversée en secondes par arête) du dump Brest. La majorité des arêtes coûtent quelques secondes — c'est ce que Dijkstra additionne le long du chemin. La queue à droite (axe log) correspond aux tronçons très longs ou lents (chemins forestiers, restrictions). Cette distribution gouverne directement la rapidité de l'algorithme : peu de très gros coûts = expansion régulière, queue épaisse = exploration plus chère.
+
 ::: {.callout-tip title="🎯 Une seule arête, deux directions possibles"}
 Chaque tronçon a **une géométrie** mais peut être parcouru dans les **deux sens**. `cost` est le prix du sens *source → target*, `reverse_cost` le prix du sens inverse. La convention `-1` est un drapeau : pgRouting le détecte comme "interdiction" et n'essaiera pas cette direction.
 :::

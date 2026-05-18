@@ -284,6 +284,30 @@ Les graphiques ci-dessous complètent les tableaux : ils permettent de comparer 
 
 **Totaux agrégés sur les 13 EPCIs** pour chaque table source. `troncon_de_route` domine (~1,5 million de segments routiers). `construction_lineaire` et `construction_ponctuelle` sont les deuxièmes postes. Utile pour comprendre le poids de chaque table dans les requêtes JOIN.
 
+#### Densité du réseau routier (tronçons / km²)
+
+![Road density](../../assets/img/theory/chart_road_density.png)
+
+**Normalisation par la surface** de l'EPCI : c'est elle qui révèle la vraie densité urbaine. Lille et Lyon écrasent les comptages bruts, mais une fois ramené au km² on voit que Brest, Le Havre et Dunkerque sont en réalité parmi les territoires les plus densément maillés. Les EPCIs étendus (Cotentin, Pays Basque) chutent fortement : leur grand volume de routes s'étale sur de grandes surfaces.
+
+#### Choke-points candidats (ponts, tunnels, barrages)
+
+![Choke points](../../assets/img/theory/chart_choke_points.png)
+
+**Ouvrages d'art = points uniques de défaillance.** Un pont coupé isole, un tunnel obstrué redirige tout le trafic. Cette barre cumulée prépare la Phase 3 : repérez les EPCIs riches en ouvrages (Lyon, Rouen, Strasbourg = nombreux ponts urbains) et ceux où chaque ouvrage est critique (Cotentin, Brest = peu d'ouvrages mais réseau péninsulaire). Utile pour scénariser des destructions Phase 3.
+
+#### Pyramide d'importance routière
+
+![Road importance](../../assets/img/theory/chart_road_importance.png)
+
+**Importance BDTOPO** = hiérarchie d'usage : 1-2 = national/régional, 3 = départemental, 4-6 = local/desserte. La majorité écrasante des EPCIs est composée de routes locales (gris). Les % de routes "stratégiques" (rouge/orange) sont faibles partout mais varient : Lille, Strasbourg, Bordeaux ont une bonne épine dorsale ; Pays Basque et Cotentin reposent surtout sur du desserte local. Complète la composition par *nature* : ici on lit la **fonction**, pas la qualité de chaussée.
+
+#### Réseau électrique : pylônes, postes HT, lignes THT
+
+![Electrical resilience](../../assets/img/theory/chart_electrical_resilience.png)
+
+**Trois indicateurs normalisés** (1 = max sur les 13 EPCIs) : pylônes (densité de support), postes de transformation (nœuds critiques basse-tension), lignes 225/400 kV (transport haute tension). Lyon et Strasbourg dominent les postes ; Lyon dépasse en lignes THT. Pour le rôle Logistique (volet énergie), ces ratios indiquent où le réseau est dense (et donc vulnérable à un point unique) versus distribué.
+
 ---
 
 ## 4. Mapping rôles → tables + filtres (validé)

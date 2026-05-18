@@ -41,6 +41,7 @@ C'est aussi le principe de la **poupée russe** : on ouvre une poupée, on trouv
 :::
 
 ```{mermaid}
+%%{init: {'theme': 'neutral', 'themeVariables': {'clusterBkg': '#f0f4ff', 'clusterBorder': '#8899cc', 'primaryTextColor': '#1a1a1a', 'lineColor': '#333366'}}}%%
 flowchart TD
   subgraph N0["Itération 0 — ancre"]
     A0[Tronçon de route]
@@ -63,6 +64,12 @@ flowchart TD
 ```
 
 À chaque tour, l'`UNION ALL` **empile une nouvelle génération** dans la table temporaire `hierarchy`. La récursion s'arrête quand l'itération produit zéro ligne — c'est le **point fixe**.
+
+#### Profondeur réelle de l'ontologie BDTOPO
+
+![Ontologie BDTOPO](../../assets/img/theory/chart_ontology.png)
+
+**Hiérarchie à 3 niveaux** : `Database` (ex. *Transport*, *Hydrographie*) → `Object` (ex. *Tronçon de route*) → `Detail` (ex. *Bretelle*, *Type autoroutier*). Le graphique montre, pour chaque Database, le nombre d'Objects (orange) et de Details feuilles (bleu) qui en dépendent. C'est exactement la structure parcourue par la CTE récursive : plus le tronc est ramifié, plus la récursion fait d'itérations avant d'atteindre le point fixe.
 
 ::: {.callout-note title="📦 Exemple BDTOPO — Domaine Bâti"}
 **Question** : "Lister tous les sous-types de bâtiments BDTOPO (à n'importe quelle profondeur)."

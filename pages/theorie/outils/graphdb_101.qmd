@@ -68,6 +68,12 @@ Neo4j   :  MATCH (n)-[r]->(m) WHERE id(n) = 42;     → pointeur direct O(1)
 
 **Conséquence** : la traversée de graphe ne ralentit pas avec la taille de la base. Seul le **degré** du nœud (nombre de voisins) compte.
 
+#### Distribution du degré sur le réseau réel (Brest)
+
+![Node degree distribution](../../assets/img/theory/chart_node_degree.png)
+
+**Échelle log-log** : sur le graphe routier de Brest, l'écrasante majorité des nœuds sont de degré 2 ou 3 (intersections classiques). La queue à droite — quelques nœuds très connectés — correspond aux **carrefours et ronds-points**. Conséquence pratique : `(a)-[:DISTANCE]->(b)` reste bon marché *partout* car le degré moyen reste petit ; le coût d'un saut est O(degré local), pas O(taille du graphe).
+
 **Sur BDTOPO (3 sauts)** :
 
 - SQL : 3 `JOIN` sur 20 millions de tronçons → secondes
