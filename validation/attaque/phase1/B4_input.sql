@@ -1,7 +1,1 @@
-SELECT p.nom AS cible, p.nature,
-       avg(r.vitesse_moyenne_vl) AS vitesse_moy_kmh
-FROM mission_pois p
-JOIN troncon_de_route r ON ST_DWithin(p.geom, r.geometrie, 2000)
-WHERE p.role = 'attaque'
-GROUP BY p.nom, p.nature
-ORDER BY vitesse_moy_kmh;
+SELECT z.nature, count(*) AS nb FROM zone_d_activite_ou_d_interet z JOIN mission_pois p ON ST_DWithin(z.geometrie, p.geom, 2000) WHERE p.role = 'attaque' AND z.categorie = 'Santé' GROUP BY z.nature ORDER BY nb DESC;

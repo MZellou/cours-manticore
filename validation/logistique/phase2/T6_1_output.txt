@@ -1,0 +1,11 @@
+p.source, nb
+"hub_logistique", 289
+"pylone", 274
+"source_hydrocarbure", 98
+"reservoir_industriel", 83
+"stockage_eau", 60
+"zone_logistique", 53
+"ressource", 33
+"source_energie", 23
+"autre_pipeline", 15
+"ligne_tht", 4

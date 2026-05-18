@@ -1,1 +1,0 @@
-(no hubs with degree > 2x average)

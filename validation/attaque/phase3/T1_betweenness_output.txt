@@ -1,1 +1,0 @@
-SKIPPED: GDS plugin not installed

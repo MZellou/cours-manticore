@@ -1,0 +1,14 @@
+Limit  (cost=11012.85..11012.90 rows=20 width=84) (actual time=321.976..321.979 rows=20 loops=1)
+  ->  Sort  (cost=11012.85..11013.34 rows=195 width=84) (actual time=321.974..321.976 rows=20 loops=1)
+        Sort Key: (round((st_distance(p1.geom, p2.geom))::numeric, 0))
+        Sort Method: top-N heapsort  Memory: 27kB
+        ->  Nested Loop  (cost=0.27..11007.67 rows=195 width=84) (actual time=0.290..314.525 rows=46336 loops=1)
+              ->  Seq Scan on mission_pois p1  (cost=0.00..94.80 rows=636 width=282) (actual time=0.012..0.208 rows=636 loops=1)
+                    Filter: (role = 'attaque'::text)
+                    Rows Removed by Filter: 1188
+              ->  Index Scan using mission_pois_geom_idx on mission_pois p2  (cost=0.27..13.31 rows=1 width=282) (actual time=0.021..0.325 rows=73 loops=636)
+                    Index Cond: (geom && st_expand(p1.geom, '5000'::double precision))
+                    Filter: ((role = 'attaque'::text) AND (p1.cleabs < cleabs) AND st_dwithin(p1.geom, geom, '5000'::double precision))
+                    Rows Removed by Filter: 466
+Planning Time: 7.831 ms
+Execution Time: 322.053 ms

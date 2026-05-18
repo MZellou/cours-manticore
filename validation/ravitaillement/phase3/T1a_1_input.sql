@@ -1,1 +1,0 @@
-SELECT * FROM pgr_dijkstra('SELECT id, source, target, cost, reverse_cost FROM ways', (SELECT source FROM ways ORDER BY random() LIMIT 1), (SELECT target FROM ways ORDER BY random() LIMIT 1), directed := true) LIMIT 5;

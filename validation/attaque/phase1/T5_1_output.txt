@@ -1,0 +1,15 @@
+fragilite|hub_logistique|1260
+fragilite|pylone|768
+communication|hub_logistique|490
+communication|pylone|414
+fragilite|reservoir_industriel|326
+fragilite|communication|309
+fragilite|source_hydrocarbure|309
+fragilite|zone_logistique|284
+fragilite|hopital|234
+fragilite|stockage_eau|204
+fragilite|pont|161
+fragilite|transport_public|149
+communication|reservoir_industriel|143
+communication|zone_logistique|124
+fragilite|ressource|123

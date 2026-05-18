@@ -1,3 +1,0 @@
-{'a.nom': 'Clinique Mutualiste', 'b.nom': 'Gendarmerie de Vizille', 'connectes': True}
-{'a.nom': 'Clinique Mutualiste', 'b.nom': None, 'connectes': True}
-{'a.nom': 'Clinique Mutualiste', 'b.nom': None, 'connectes': True}

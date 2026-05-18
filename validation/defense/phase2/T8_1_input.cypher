@@ -1,1 +1,1 @@
-MATCH (a:POI {role: 'defense'}), (b:POI {role: 'defense'}) WHERE id(a) < id(b) MATCH p = shortestPath((a)-[:DISTANCE*]-(b)) RETURN a.nom, b.nom, length(p) AS hops, reduce(t=0, r IN relationships(p) | t+r.meters) AS dist_m ORDER BY dist_m LIMIT 5;
+MATCH (a:POI {role: 'defense'}), (b:POI {role: 'defense'}) WHERE id(a) < id(b) WITH a, b LIMIT 50 MATCH p = shortestPath((a)-[:DISTANCE*1..5]-(b)) RETURN a.nom, b.nom, length(p) AS hops, reduce(t=0, r IN relationships(p) | t+r.meters) AS dist_m ORDER BY dist_m LIMIT 5;

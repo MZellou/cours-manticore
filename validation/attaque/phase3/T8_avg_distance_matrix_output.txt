@@ -1,1 +1,0 @@
-Replaced by T8_avg_distance_ref (10893.0m) and T8_avg_distance_after (all paths disconnected after 5 cuts)

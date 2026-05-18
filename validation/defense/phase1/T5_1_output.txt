@@ -1,19 +1,15 @@
-     source1      |     source2      | paires_proches 
-------------------+------------------+----------------
- communication    | communication    |            185
- communication    | retenue_eau      |            163
- transport_public | cible_symbolique |            150
- communication    | cible_symbolique |            117
- pont             | retenue_eau      |            107
- pont             | cible_symbolique |             74
- transport_public | retenue_eau      |             64
- communication    | zone_militaire   |             58
- transport_public | zone_militaire   |             51
- hopital          | retenue_eau      |             45
- etranglement     | communication    |             40
- etranglement     | retenue_eau      |             39
- hopital          | cible_symbolique |             38
- etranglement     | fragilite        |             37
- securite         | retenue_eau      |             36
-(15 rows)
-
+communication|hub_logistique|490
+communication|pylone|414
+pont|hub_logistique|257
+communication|retenue_eau|245
+pont|pylone|166
+communication|reservoir_industriel|143
+communication|zone_logistique|124
+etranglement|hub_logistique|115
+hopital|retenue_eau|105
+pont|retenue_eau|103
+communication|stockage_eau|90
+transport_public|zone_logistique|74
+transport_public|hub_logistique|68
+transport_public|cible_symbolique|66
+communication|source_hydrocarbure|64

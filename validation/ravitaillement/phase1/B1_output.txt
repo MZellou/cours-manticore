@@ -1,5 +1,0 @@
- nature  | count 
----------+-------
- Antenne |   117
-(1 row)
-

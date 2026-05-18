@@ -1,1 +1,0 @@
-// GDS not available — skipped

@@ -1,4 +1,0 @@
-{'p.role': 'energie', 'cnt': 379}
-{'p.role': 'defense', 'cnt': 160}
-{'p.role': 'ravitaillement', 'cnt': 113}
-{'p.role': 'attaque', 'cnt': 3}

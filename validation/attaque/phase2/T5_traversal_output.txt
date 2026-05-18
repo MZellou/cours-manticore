@@ -1,5 +1,0 @@
-{'hierarchy': ['Sentier', 'Tronçon de route']}
-{'hierarchy': ['Route à 1 chaussée', 'Tronçon de route']}
-{'hierarchy': ['Escalier', 'Tronçon de route']}
-{'hierarchy': ['Route à 2 chaussées', 'Tronçon de route']}
-{'hierarchy': ['Bretelle', 'Tronçon de route']}

@@ -1,0 +1,10 @@
+p.source, nb
+"retenue_eau", 263
+"fragilite", 226
+"communication", 98
+"cible_symbolique", 28
+"zone_militaire", 9
+"infra_critique", 9
+"aerodrome", 1
+"port_commerce", 1
+"tour_controle", 1

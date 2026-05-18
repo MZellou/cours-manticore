@@ -1,0 +1,1 @@
+SELECT p.source AS poi_source, count(*) AS nb_within_2km FROM mission_pois p JOIN zone_d_activite_ou_d_interet z ON ST_DWithin(p.geom, z.geometrie, 2000) WHERE p.role = 'attaque' AND z.nature = 'Zone industrielle' GROUP BY p.source ORDER BY nb_within_2km DESC;

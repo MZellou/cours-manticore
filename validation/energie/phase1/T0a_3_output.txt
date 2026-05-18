@@ -1,7 +1,0 @@
-          nature           | nb 
----------------------------+----
- Maison de retraite        | 14
- Hôpital                   |  8
- Etablissement hospitalier |  2
-(3 rows)
-

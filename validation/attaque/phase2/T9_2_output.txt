@@ -1,0 +1,11 @@
+a.nom, b.nom, c.nom
+"Aéroport de Brest-Bretagne", NULL, NULL
+"Aéroport de Brest-Bretagne", NULL, NULL
+"Aéroport de Brest-Bretagne", NULL, NULL
+"Aéroport de Brest-Bretagne", NULL, NULL
+"Aéroport de Brest-Bretagne", NULL, NULL
+"Aéroport de Brest-Bretagne", NULL, NULL
+"Aéroport de Brest-Bretagne", NULL, NULL
+"Aéroport de Brest-Bretagne", NULL, "Meunier S.A."
+"Aéroport de Brest-Bretagne", NULL, "Gare Routière de Brest"
+"Aéroport de Brest-Bretagne", NULL, "Centre Commercial Bellevue"

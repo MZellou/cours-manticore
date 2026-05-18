@@ -1,1 +1,0 @@
-WITH nearest AS (SELECT p.nom, (SELECT v.id FROM ways_vertices_pgr v ORDER BY v.geom <-> p.geom LIMIT 1) AS vid FROM mission_pois p WHERE p.role = 'ravitaillement' LIMIT 2) SELECT * FROM pgr_ksp('SELECT id, source, target, cost, reverse_cost FROM ways', (SELECT vid FROM nearest LIMIT 1), (SELECT vid FROM nearest OFFSET 1 LIMIT 1), 3, directed := true) LIMIT 10;

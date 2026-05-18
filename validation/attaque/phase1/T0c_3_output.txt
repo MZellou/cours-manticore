@@ -1,3 +1,0 @@
-{'label': 'ClasseOntologie', 'cnt': 988}
-{'label': 'POI', 'cnt': 655}
-{'label': 'Base', 'cnt': 2}

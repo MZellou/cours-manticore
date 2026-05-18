@@ -1,1 +1,0 @@
-EXPLAIN ANALYZE SELECT p1.nom, p2.nom, ROUND(ST_Distance(p1.geom, p2.geom)::numeric) AS dist_m FROM mission_pois p1 JOIN mission_pois p2 ON p1.role = 'energie' AND p2.role = 'energie' AND p1.cleabs < p2.cleabs AND ST_DWithin(p1.geom, p2.geom, 5000) ORDER BY dist_m LIMIT 20;

@@ -1,1 +1,0 @@
-MATCH (d:ClasseOntologie {obj_type: 'Detail'})-[:EST_SOUS_TYPE_DE]->(obj:ClasseOntologie {obj_type: 'Object'})-[:EST_SOUS_TYPE_DE]->(db:ClasseOntologie {name: 'Construction ponctuelle'}) RETURN count(d) AS nb_sous_types

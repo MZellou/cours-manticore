@@ -1,6 +1,1 @@
-SELECT a.toponyme, a.categorie,
-       (SELECT count(*) FROM equipement_de_transport e
-        WHERE e.nature = 'Tour de contrôle aérien'
-          AND ST_DWithin(e.geometrie, a.geometrie, 1000)) AS tours_proches
-FROM aerodrome a
-WHERE a.categorie IN ('Internationale', 'Nationale');
+SELECT count(*) FROM mission_pois p JOIN zone_d_activite_ou_d_interet z ON ST_DWithin(p.geom, z.geometrie, 5000) WHERE p.role = 'attaque' AND z.categorie = 'Enseignement';

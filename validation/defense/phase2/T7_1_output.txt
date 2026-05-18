@@ -1,2 +1,3 @@
 other_role, nb_links
-"attaque", 70371
+"logistique", 164300
+"attaque", 2715

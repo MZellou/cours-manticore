@@ -1,0 +1,6 @@
+a.nom, b.nom, hops, dist_m
+"Aéroport de Brest-Bretagne", NULL, 1, 475
+"Aéroport de Brest-Bretagne", "Brigade du Transport Aérien", 1, 514
+"Aéroport de Brest-Bretagne", NULL, 1, 2267
+"Aéroport de Brest-Bretagne", "Brigade Territoriale de Proximité de Guipavas", 1, 2275
+"Aéroport de Brest-Bretagne", NULL, 1, 2342

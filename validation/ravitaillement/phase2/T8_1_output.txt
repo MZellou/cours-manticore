@@ -1,6 +1,0 @@
-a.nom, b.nom, hops, dist_m
-NULL, NULL, 1, 0
-NULL, NULL, 1, 0
-NULL, NULL, 1, 0
-NULL, NULL, 1, 1
-NULL, NULL, 1, 1

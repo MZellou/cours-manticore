@@ -1,14 +1,9 @@
-           nature            |         nature_detaillee         |    zone_nature    
------------------------------+----------------------------------+-------------------
- Aire de repos ou de service | Aire de service                  | Zone industrielle
- Aire de triage              |                                  | Zone industrielle
- Carrefour                   | Rond-point                       | Zone industrielle
- Carrefour                   |                                  | Zone industrielle
- Gare voyageurs et fret      |                                  | Zone industrielle
- Parking                     | Parking relais                   | Zone industrielle
- Parking                     | Parking souterrain               | Zone industrielle
- Parking                     |                                  | Zone industrielle
- Service dédié aux véhicules | Borne de rechargement électrique | Zone industrielle
- Station de tramway          |                                  | Zone industrielle
-(10 rows)
-
+Aire de triage||Zone industrielle
+Carrefour|Echangeur complet|Zone industrielle
+Carrefour|Rond-point|Zone industrielle
+Carrefour||Zone industrielle
+Parking|Aire de covoiturage|Zone industrielle
+Parking|Parking relais|Zone industrielle
+Parking||Zone industrielle
+Service dédié aux véhicules|Borne de rechargement électrique|Zone industrielle
+Station de tramway||Zone industrielle

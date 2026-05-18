@@ -1,11 +1,1 @@
-SELECT
-    c.nature,
-    c.toponyme AS nom_ouvrage,
-    r.nature AS type_route,
-    r.importance
-FROM construction_lineaire c
-JOIN troncon_de_route r
-    ON ST_Intersects(c.geometrie, r.geometrie)
-WHERE c.nature IN ('Pont', 'Tunnel')
-  AND CAST(r.importance AS INTEGER) <= 2
-ORDER BY c.nature, r.importance;
+WITH clusters AS (SELECT *, ST_ClusterDBSCAN(geom, 1000, 2) OVER() AS cid FROM mission_pois WHERE role = 'attaque') SELECT cid, count(*) AS nb, ST_AsText(ST_Centroid(ST_Collect(geom))) AS centre FROM clusters WHERE cid IS NOT NULL GROUP BY cid ORDER BY nb DESC LIMIT 5;

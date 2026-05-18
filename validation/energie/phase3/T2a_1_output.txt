@@ -1,4 +1,0 @@
- seq | path_id | path_seq | start_vid | end_vid | node | edge | cost | agg_cost 
------+---------+----------+-----------+---------+------+------+------+----------
-(0 rows)
-

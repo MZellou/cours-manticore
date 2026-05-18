@@ -1,2 +1,0 @@
--- Replaced by T8_avg_distance_ref (intact: avg 10893.0m) and T8_avg_distance_after (all disconnected after 5 cuts)
--- Full cost matrix was too slow; used 3-path sampled approach instead

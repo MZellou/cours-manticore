@@ -1,7 +1,1 @@
-SELECT pt.importance, h.toponyme AS hopital,
-       ST_Distance(pt.geometrie, h.geometrie) AS dist_m
-FROM poste_de_transformation pt
-JOIN zone_d_activite_ou_d_interet h
-  ON ST_DWithin(pt.geometrie, h.geometrie, 1000)
-WHERE CAST(pt.importance AS INTEGER) <= 3
-  AND h.nature IN ('Hôpital', 'Établissement hospitalier');
+WITH clustered AS (SELECT role, source, ST_ClusterDBSCAN(geom, 500, 3) OVER() AS cid FROM mission_pois) SELECT cid, count(DISTINCT role) AS nb_roles, array_agg(DISTINCT role) AS roles FROM clustered WHERE cid IS NOT NULL GROUP BY cid HAVING count(DISTINCT role) > 1 ORDER BY nb_roles DESC LIMIT 10;

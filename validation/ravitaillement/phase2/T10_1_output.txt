@@ -1,8 +1,0 @@
-src, nb_voisins, dist_moy
-"reservoir_industriel", 1731880, 4078.3495623254735
-"zone_logistique", 123784, 5437.540699928902
-"hub_logistique", 63832, 5553.029123323681
-"gare_fret", 3651, 5231.728841413295
-"ressource", 1997, 5549.529293940915
-"stockage_eau", 1360, 5726.174264705882
-"canal", 269, 6140.356877323423

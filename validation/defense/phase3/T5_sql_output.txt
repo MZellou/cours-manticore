@@ -1,18 +1,14 @@
-                                                                          QUERY PLAN                                                                           
----------------------------------------------------------------------------------------------------------------------------------------------------------------
- Limit  (cost=12084.87..12084.92 rows=20 width=80) (actual time=205.882..205.886 rows=20 loops=1)
-   ->  Sort  (cost=12084.87..12085.92 rows=423 width=80) (actual time=205.880..205.883 rows=20 loops=1)
-         Sort Key: (round((st_distance(p1.geom, p2.geom))::numeric, 0))
-         Sort Method: top-N heapsort  Memory: 28kB
-         ->  Nested Loop  (cost=0.27..12073.61 rows=423 width=80) (actual time=0.480..198.013 rows=35810 loops=1)
-               ->  Seq Scan on mission_pois p1  (cost=0.00..116.38 rows=488 width=247) (actual time=0.295..0.383 rows=488 loops=1)
-                     Filter: (role = 'defense'::text)
-                     Rows Removed by Filter: 1782
-               ->  Index Scan using mission_pois_geom_idx on mission_pois p2  (cost=0.27..13.65 rows=1 width=247) (actual time=0.026..0.287 rows=73 loops=488)
-                     Index Cond: (geom && st_expand(p1.geom, '5000'::double precision))
-                     Filter: ((role = 'defense'::text) AND (p1.cleabs < cleabs) AND st_dwithin(p1.geom, geom, '5000'::double precision))
-                     Rows Removed by Filter: 529
- Planning Time: 9.575 ms
- Execution Time: 205.981 ms
-(14 rows)
-
+Limit  (cost=4003.31..4003.36 rows=20 width=84) (actual time=110.549..110.553 rows=20 loops=1)
+  ->  Sort  (cost=4003.31..4003.39 rows=30 width=84) (actual time=110.548..110.549 rows=20 loops=1)
+        Sort Key: (round((st_distance(p1.geom, p2.geom))::numeric, 0))
+        Sort Method: top-N heapsort  Memory: 27kB
+        ->  Nested Loop  (cost=0.27..4002.58 rows=30 width=84) (actual time=0.299..107.365 rows=11072 loops=1)
+              ->  Seq Scan on mission_pois p1  (cost=0.00..94.80 rows=250 width=282) (actual time=0.065..0.227 rows=250 loops=1)
+                    Filter: (role = 'defense'::text)
+                    Rows Removed by Filter: 1574
+              ->  Index Scan using mission_pois_geom_idx on mission_pois p2  (cost=0.27..14.12 rows=1 width=282) (actual time=0.036..0.328 rows=44 loops=250)
+                    Index Cond: (geom && st_expand(p1.geom, '5000'::double precision))
+                    Filter: ((role = 'defense'::text) AND (p1.cleabs < cleabs) AND st_dwithin(p1.geom, geom, '5000'::double precision))
+                    Rows Removed by Filter: 607
+Planning Time: 10.752 ms
+Execution Time: 110.647 ms

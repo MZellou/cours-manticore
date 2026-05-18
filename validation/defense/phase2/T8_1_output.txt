@@ -1,6 +1,6 @@
 a.nom, b.nom, hops, dist_m
-NULL, NULL, 1, 10
-NULL, NULL, 1, 11
-"Pont de l'Île Verte", "la Tronche-Hôpital", 1, 12
-"Caserne de Pompiers de Sassenage", NULL, 1, 13
-"Gare de Grenoble Universités Gières", NULL, 1, 15
+NULL, NULL, 1, 704
+NULL, NULL, 1, 2307
+NULL, NULL, 1, 2312
+NULL, "EHPAD Saint-Thomas de Villeneuve", 1, 3262
+NULL, NULL, 1, 3936

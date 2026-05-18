@@ -1,21 +1,21 @@
 a.nom, b.nom, d.meters
-NULL, NULL, 10
-NULL, NULL, 11
-"Pont de l'Île Verte", "la Tronche-Hôpital", 12
-"Caserne de Pompiers de Sassenage", NULL, 13
-"État Major", NULL, 15
-"Gare de Grenoble Universités Gières", NULL, 15
-NULL, NULL, 18
-NULL, NULL, 20
-NULL, NULL, 20
-NULL, NULL, 22
-"Gendarmerie de Domène", NULL, 25
-NULL, NULL, 27
-"État Major", NULL, 27
-NULL, NULL, 28
-NULL, NULL, 31
-NULL, NULL, 35
-NULL, NULL, 36
-NULL, NULL, 40
-NULL, NULL, 40
-NULL, NULL, 41
+NULL, NULL, 5
+"EHPAD René Fortin", "Centre Long Séjour C.H.R.U. Brest", 19
+NULL, NULL, 24
+NULL, NULL, 25
+NULL, NULL, 25
+NULL, NULL, 30
+"Château", NULL, 30
+NULL, NULL, 37
+NULL, NULL, 43
+NULL, NULL, 46
+"Résidence Antoine Salaun", "Résidence Louise le Roux", 48
+"Brigade Territoriale de Proximité de Saint-Renan", "Centre d'Incendie et de Secours de Saint-Renan", 49
+"Centre d'Incendie et de Secours de Saint-Renan", NULL, 51
+NULL, NULL, 55
+NULL, NULL, 55
+NULL, NULL, 56
+NULL, NULL, 59
+NULL, NULL, 62
+NULL, NULL, 66
+"Résidence Kerlevenez", NULL, 67

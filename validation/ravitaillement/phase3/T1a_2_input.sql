@@ -1,1 +1,0 @@
-SELECT seq, node, edge, cost FROM pgr_dijkstra('SELECT id, source, target, cost, reverse_cost FROM ways', (SELECT MIN(id) FROM ways_vertices_pgr), (SELECT MAX(id) FROM ways_vertices_pgr), directed := true) WHERE edge != -1 LIMIT 10;

@@ -1,0 +1,9 @@
+src, nb_voisins, dist_moy
+"fragilite", 260434, 5658.159406989789
+"retenue_eau", 202178, 5988.795744344027
+"communication", 94294, 5776.099709419445
+"cible_symbolique", 31205, 5491.973433744563
+"infra_critique", 7531, 6044.745983269141
+"zone_militaire", 26, 5210.653846153844
+"port_commerce", 9, 7045.666666666667
+"aerodrome", 8, 4441.125

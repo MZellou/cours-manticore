@@ -1,14 +1,10 @@
- cid | nb_roles |       roles       
------+----------+-------------------
-   2 |        2 | {attaque,defense}
-   3 |        2 | {attaque,defense}
-   4 |        2 | {attaque,defense}
-   5 |        2 | {attaque,defense}
-   6 |        2 | {attaque,defense}
-   8 |        2 | {attaque,defense}
-   9 |        2 | {attaque,defense}
-  10 |        2 | {attaque,defense}
-  11 |        2 | {attaque,defense}
-   1 |        2 | {attaque,defense}
-(10 rows)
-
+10|3|{attaque,defense,logistique}
+0|3|{attaque,defense,logistique}
+1|3|{attaque,defense,logistique}
+4|3|{attaque,defense,logistique}
+5|3|{attaque,defense,logistique}
+6|3|{attaque,defense,logistique}
+7|3|{attaque,defense,logistique}
+8|3|{attaque,defense,logistique}
+9|3|{attaque,defense,logistique}
+12|3|{attaque,defense,logistique}

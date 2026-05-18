@@ -1,0 +1,15 @@
+pylone|retenue_eau|962
+hub_logistique|retenue_eau|668
+hub_logistique|hopital|416
+hub_logistique|cible_symbolique|283
+reservoir_industriel|retenue_eau|259
+source_hydrocarbure|retenue_eau|245
+hub_logistique|transport_public|235
+pylone|hopital|202
+zone_logistique|retenue_eau|199
+stockage_eau|retenue_eau|147
+hub_logistique|secours_decision|131
+source_hydrocarbure|communication|128
+ressource|retenue_eau|99
+hub_logistique|zone_militaire|82
+hub_logistique|securite|82
