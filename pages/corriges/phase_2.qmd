@@ -432,3 +432,128 @@ JOIN ways_vertices_pgr v ON v.id = r.node;
 - `sommets_atteignables` : nombre de nœuds du réseau accessibles en ≤ 10 min. Plus ce nombre est élevé, plus le réseau est dense autour du point de départ.
 - `min_sec` / `max_sec` : l'éventail des temps d'accès. Le plus proche sommet (souvent le point de départ lui-même, coût proche de 0) et le plus éloigné dans le périmètre des 10 min.
 - Le polygone `ST_ConvexHull` visualise la zone de couverture : une forme ronde indique un réseau bien maillé (on peut aller dans toutes les directions) ; une forme étirée indique un réseau contraint (vallée, littoral) ; des "trous" dans le polygone seraient visibles avec un `ST_ConcaveHull` plus précis.
+
+---
+
+## T2.5 — Reality check : POIs isolés (cost = -1) {#t2-5}
+
+**Objectif** : détecter les POIs snappés à un sommet isolé — aucune arête carrossable (cost > 0) n'est rattachée à ce sommet. Ces POIs provoqueront des résultats NULL dans pgr_dijkstra si on ne les traite pas avant la Phase 3.
+
+```sql
+-- POIs dont aucun sommet adjacent n'est carrossable
+SELECT mp.nom, mp.role, mp.geom
+FROM mission_pois mp
+JOIN ways_vertices_pgr v ON mp.snap_vertex_id = v.id
+WHERE NOT EXISTS (
+    SELECT 1 FROM ways w
+    WHERE (w.source = v.id OR w.target = v.id)
+    AND w.cost > 0
+);
+-- Résultat attendu : 0 à 15 POIs selon l'EPCI (ponts, quais, zones piétonnes)
+```
+
+**Variante avec comptage des arêtes carrossables** :
+
+```sql
+SELECT p.nom, p.role,
+       count(w.id) FILTER (WHERE w.cost > 0) AS edges_carrossables
+FROM mission_pois p
+CROSS JOIN LATERAL (
+    SELECT id FROM ways_vertices_pgr ORDER BY geom <-> p.geom LIMIT 1
+) v
+LEFT JOIN ways w ON w.source = v.id OR w.target = v.id
+GROUP BY p.id, p.nom, p.role
+HAVING count(w.id) FILTER (WHERE w.cost > 0) = 0;
+```
+
+**Explication** :
+
+- `snap_vertex_id` est la colonne ajoutée en T2. Si elle n'existe pas encore, utilisez le `CROSS JOIN LATERAL` de la variante.
+- `count(w.id) FILTER (WHERE w.cost > 0) = 0` : toutes les arêtes du sommet ont `cost = -1` — ce sommet est hors réseau voiture.
+- Un aéroport (tarmac r2gg) ou un quai portuaire retourne typiquement 0 arêtes carrossables : les 4 arêtes autour sont tarmac ou zone piétonne, toutes à `cost = -1`.
+
+**Interprétation** :
+
+- 0 résultat = parfait, tous les POIs sont accessibles voiture.
+- Quelques résultats = cas normaux (aéroports, zones portuaires). Stratégie recommandée : documenter et marquer `inatteignable_voiture = true`, ne pas exclure.
+- > 15 résultats = vérifier le snap (T2) — possible que `LIMIT 1` ait choisi un mauvais vertex.
+
+---
+
+## T6 — Sanity check Neo4j {#t6--sanity-check-neo4j}
+
+**Objectif** : vérifier que la migration `02_migrate_to_neo4j.py` a bien fonctionné avant d'aller plus loin. Un graphe mal migré produit des résultats Cypher silencieusement faux.
+
+**Compter les nœuds par label** :
+
+```cypher
+MATCH (n) RETURN labels(n) AS label, count(*) AS nb ORDER BY nb DESC;
+-- Exemple Brest : ClasseOntologie: 156, POI: 1824
+-- Si POI = 0 : la migration des POIs a échoué
+-- Si ClasseOntologie = 0 : l'ontologie n'a pas été chargée
+```
+
+**Compter les relations par type** :
+
+```cypher
+MATCH ()-[r]->() RETURN type(r) AS relation, count(*) AS nb ORDER BY nb DESC;
+-- Exemple Brest : DISTANCE: 1090702, EST_SOUS_TYPE_DE: 312
+-- Si DISTANCE = 0 : les POIs ne sont pas connectés entre eux
+-- Si EST_SOUS_TYPE_DE = 0 : l'ontologie est chargée mais pas reliée
+```
+
+**Orphelins POI (sans relation sortante)** :
+
+```cypher
+MATCH (p:POI) WHERE NOT (p)-[:DISTANCE]->()
+RETURN p.role, count(*) AS nb_orphelins;
+-- Attendu : 0–10 orphelins (cas bord de bbox ou snap raté)
+-- Si > 20 : vérifier le seuil de distance dans 02_migrate_to_neo4j.py
+```
+
+**Tableau réflexion SQL vs Graphe — réponses instructeur** :
+
+| Tâche | SQL (PostGIS/pgRouting) | Cypher (Neo4j) | Verdict |
+|-------|------------------------|-----------------|---------|
+| Hiérarchie ontologique 3 niveaux | `WITH RECURSIVE` (~15 lignes, jointure récursive sur `parent_id`) | `[:EST_SOUS_TYPE_DE*]` (1 ligne, traversal natif) | **Cypher gagne** (lisibilité, performance sur hiérarchies profondes) |
+| Tous les chemins entre 2 POIs | `pgr_dijkstra` + CTE pour reconstruire (> 20 lignes) | `allShortestPaths()` (3 lignes) | **Cypher gagne** (exploration multi-chemins native) |
+| Centralité betweenness | Impossible directement en SQL pur (nécessite N² appels Dijkstra) | `gds.betweenness.stream()` (5 lignes) | **Cypher gagne** (algorithme natif GDS) |
+| Jointure spatiale (POIs dans rayon) | `ST_DWithin` (< 1 ms sur index GIST) | Calcul distance haversine sur chaque paire (lent sans index spatial) | **SQL gagne** (index GIST, opération spatiale native) |
+| Chemin via nœud intermédiaire | Deux sous-requêtes `pgr_dijkstra` + jointure (> 30 lignes) | `shortestPath()` × 2 ou pattern chaîné (8 lignes) | **Cypher gagne** (pattern déclaratif) |
+
+**Explication des concepts** :
+
+- **`labels(n)`** : retourne la liste des labels d'un nœud (`["POI"]`, `["ClasseOntologie"]`). Quand `n` porte plusieurs labels, la liste a plusieurs éléments.
+- **`type(r)`** : retourne le type d'une relation sous forme de chaîne (`"DISTANCE"`, `"EST_SOUS_TYPE_DE"`).
+- **Pourquoi `DISTANCE: 1090702` ?** : le script de migration crée une relation `:DISTANCE` pour chaque paire de POIs dans un rayon donné. Sur Brest, 1824 POIs × voisinage moyen ~600 = ~1,1M de relations.
+
+---
+
+## T12 — Débat résultats {#t12--dbat-rsultats}
+
+**Objectif** : structurer la réflexion collective à partir des mesures réelles de l'EPCI.
+
+**Structure de réponse recommandée** (5 min par sous-question, 15 min total) :
+
+**1. Y a-t-il des requêtes où SQL est clairement meilleur ?**
+
+Oui : toutes les opérations spatiales. `ST_DWithin`, `ST_Buffer`, `ST_ConvexHull`, `ST_ClusterDBSCAN` — PostGIS avec index GIST est indépassable sur ce domaine. Exemple mesuré : requête 4 du benchmark (POIs à < 500m d'une route) = 12 ms en SQL vs > 5 s en Cypher (sans index spatial natif).
+
+**2. Y a-t-il des requêtes impossibles dans un des outils ?**
+
+Quasi-impossibles en SQL :
+- Betweenness centrality : nécessite N²/2 appels `pgr_dijkstra` (avec 200 POIs = 20 000 requêtes).
+- Tous les chemins de longueur variable sans boucle : `WITH RECURSIVE` n'a pas de protection cycle native.
+
+Quasi-impossibles en Cypher :
+- `ST_DWithin` avec indexation spatiale (index GIST).
+- Agrégats complexes avec fenêtres (`OVER (PARTITION BY ... ORDER BY ...)`).
+
+**3. Si vous deviez choisir un seul outil, lequel ?**
+
+Réponse attendue des étudiants : **PostGIS/pgRouting** pour ce cours, car :
+- Les données BDTOPO sont fondamentalement **géospatiales** — SQL reste le langage naturel.
+- pgRouting couvre le routage.
+- Neo4j apporte une vraie valeur sur les hiérarchies et la betweenness, mais l'écosystème SQL est plus complet.
+
+Si le graphe ontologique était très profond (> 5 niveaux) ou si les requêtes de parcours dominaient, Neo4j l'emporterait.

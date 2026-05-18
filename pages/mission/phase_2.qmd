@@ -358,17 +358,40 @@ MERGE (o:ClasseOntologie {sql_name: 'construction_lineaire',
 - Bonus : ajoute un index secondaire sur `(p:POI) ON (p.role)` et `PROFILE` une requête filtrée par rôle avant/après.
 :::
 
-### T6 — Réflexion : SQL vs Graphe vs Les deux
+### T6 — Sanity check Neo4j + Réflexion SQL vs Graphe
 
-| Tâche | Quel outil ? | Pourquoi ? |
-|-------|-------------|------------|
-| Trouver les hôpitaux dans un polygone EPCI | PostGIS (SQL) | `ST_Intersects` est natif |
-| Trouver le plus court chemin entre 2 points | pgRouting (graphe dans SQL) | Dijkstra nécessite un graphe |
-| Explorer une hiérarchie de types sur 3 niveaux | Neo4j (Cypher) | `[:EST_SOUS_TYPE_DE*]` vs `WITH RECURSIVE` |
-| Mapper un POI au sommet le plus proche | PostGIS (SQL) | `ORDER BY geom <-> poi.geom` |
-| Trouver tous les chemins entre 2 nœuds d'ontologie | Neo4j (Cypher) | `allShortestPaths` natif |
+::: {.callout-important}
+**Obligatoire (20 min)** — À faire avant T7.
+:::
 
-> **Conclusion** : dans la vraie vie, on combine SQL (géométrie, filtres) et graphe (parcours, routage). Aucun des deux n'est suffisant seul.
+**Sanity check (5 min) :** Vérifiez que la migration a bien fonctionné.
+
+```cypher
+// Compter les nœuds par label
+MATCH (n) RETURN labels(n) AS label, count(*) AS nb ORDER BY nb DESC;
+
+// Compter les relations par type
+MATCH ()-[r]->() RETURN type(r) AS relation, count(*) AS nb ORDER BY nb DESC;
+
+// Vérifier qu'aucun POI n'est orphelin (sans relation sortante)
+MATCH (p:POI) WHERE NOT (p)-[:DISTANCE]->() RETURN p.role, count(*) AS nb_orphelins;
+```
+
+**Réflexion (15 min) :** Remplissez ce tableau à partir de votre expérience Phases 1 et 2.
+
+| Tâche | SQL (PostGIS/pgRouting) | Cypher (Neo4j) | Verdict |
+|-------|------------------------|-----------------|---------|
+| Hiérarchie ontologique 3 niveaux | `WITH RECURSIVE` (15 lignes) | `[:EST_SOUS_TYPE_DE*]` (1 ligne) | |
+| Tous les chemins entre 2 POIs | `pgr_dijkstra` + post-processing | `allShortestPaths()` | |
+| Centralité betweenness | Impossible directement | `gds.betweenness.stream()` | |
+| Jointure spatiale (POIs dans rayon) | `ST_DWithin` (< 1s sur index GIST) | `DISTANCE` + filter (lent si pas d'index) | |
+| Chemin via nœud intermédiaire | 2× `pgr_dijkstra` | `shortestPath()` × 2 ou pattern `(a)-[*]->(b)-[*]->(c)` | |
+
+::: {.callout-tip}
+**NoSQL par la pratique :** Pour quelle(s) tâche(s) Cypher vous a-t-il **vraiment** facilité la vie ? Notez votre réponse — vous en aurez besoin en Phase 3 T4.
+:::
+
+→ [Corrigé](../corriges/phase_2.qmd#t6--sanity-check-neo4j)
 
 ---
 

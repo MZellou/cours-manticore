@@ -189,6 +189,30 @@ Vous mesurerez **`Execution Time`** côté SQL et **`db hits`** côté Cypher.
 
 ---
 
+## Conversion de types et gestion des NULL
+
+BDTOPO stocke certaines colonnes comme `TEXT` même quand les valeurs sont numériques (`importance`, `nombre_de_voies`, `largeur`). Tenter de trier ou agréger sans conversion provoque soit une erreur, soit un tri lexicographique silencieusement faux (`"9" > "10"`).
+
+```sql
+-- CAST direct : convertit un texte en entier
+-- Plante avec une erreur si la valeur n'est pas convertible
+CAST(importance AS INTEGER)
+-- ou équivalent court :
+importance::INTEGER
+
+-- Gestion sécurisée : transformer la chaîne vide en NULL avant cast
+NULLIF(importance, '')::INTEGER   -- '' → NULL, puis cast
+
+-- Pour les valeurs potentiellement non-numériques (ex: 'NC', 'nd') :
+CASE WHEN importance ~ '^\d+$' THEN importance::INTEGER ELSE NULL END
+```
+
+::: {.callout-tip}
+**Règle pratique** : avant d'agréger ou de trier une colonne BDTOPO qui devrait être numérique, vérifiez son type réel avec `\d nom_table` (psql) ou `SELECT pg_typeof(importance) FROM ma_table LIMIT 1`. Si c'est `text`, utilisez `NULLIF(..., '')::INTEGER` pour éviter les erreurs sur les lignes mal renseignées.
+:::
+
+---
+
 ## Pour aller plus loin
 
 - [GraphDB 101](graphdb_101.qmd) — pourquoi la traversée graphe est en `O(1)`

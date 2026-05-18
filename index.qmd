@@ -57,7 +57,7 @@ Briefing général
 
 | Phase | Mode | Thème | Durée |
 |-------|------|-------|-------|
-| 🔍 [Phase 1 — Reconnaissance](pages/mission/phase_1.qmd) | Solo (par rôle) | POIs critiques (PostGIS) | 4h |
+| 🔍 [Phase 1 — Reconnaissance](pages/mission/phase_1.qmd) | Solo (par rôle) | POIs critiques (PostGIS) | 6h |
 | 🗺️ [Phase 2 — Cartographie](pages/mission/phase_2.qmd) | Groupe | Routes + graphe (pgRouting + Neo4j) | 5h |
 | 📊 [Phase 3 — Simulation](pages/mission/phase_3.qmd) | Groupe | Benchmark SQL vs Cypher + attaque | 5h |
 

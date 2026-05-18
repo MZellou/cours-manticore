@@ -154,9 +154,36 @@ def benchmark_spatial(pg_conn, neo_driver):
 # CARTE DE SITUATION
 # =============================================================================
 
-def generate_situation_map(pg_conn, role, output_path="data/carte_situation.png"):
-    print_section(f"CARTE — Génération de la carte de situation ({role})")
+def generate_situation_map(
+    epci: str,
+    layers: list = ("attaque", "defense", "logistique"),
+    output_path: str | None = None,
+    basemap: bool = True,
+) -> str:
+    """Génère la Carte de Situation Commune pour un EPCI.
 
+    Args:
+        epci: Nom ou SIREN (9 chiffres) de l'EPCI.
+        layers: Rôles à afficher, dans l'ordre de superposition (dernier = dessus).
+        output_path: Chemin PNG de sortie. Défaut : data/carte_situation_{epci}.png
+        basemap: Afficher un fond de carte CartoDB Positron via contextily.
+
+    Returns:
+        Chemin absolu du fichier PNG généré.
+    """
+    if output_path is None:
+        output_path = f"data/carte_situation_{epci}.png"
+
+    # Mapping legacy rôles pre-refactor → logistique
+    LEGACY = {"ravitaillement": "logistique", "energie": "logistique"}
+
+    pg_conn = psycopg2.connect(
+        host=os.getenv("PG_HOST", os.getenv("POSTGIS_HOST", "localhost")),
+        port=os.getenv("PG_PORT", os.getenv("POSTGIS_PORT", 5432)),
+        dbname=os.getenv("PG_DB", os.getenv("POSTGIS_DB", "bdtopo_manticore")),
+        user=os.getenv("PG_USER", os.getenv("POSTGIS_USER", "postgres")),
+        password=os.getenv("PG_PASSWORD", os.getenv("POSTGIS_PASSWORD", "manticore2026")),
+    )
     try:
         import geopandas as gpd
         from shapely import wkb
@@ -164,44 +191,84 @@ def generate_situation_map(pg_conn, role, output_path="data/carte_situation.png"
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        # POIs — ST_AsBinary pour récupérer en bytes (pas en hex string)
+        # Résolution bbox EPCI
+        with pg_conn.cursor() as cur:
+            cur.execute(
+                "SELECT ST_AsText(ST_Extent(geometrie)) FROM epci WHERE code_siren = %s OR nom_officiel ILIKE %s",
+                (epci, epci),
+            )
+            bbox_wkt = cur.fetchone()[0]
+
+        # POIs avec mapping legacy
         with pg_conn.cursor() as cur:
             cur.execute("""
-                SELECT role, source, nature, nom, ST_AsBinary(geom)
-                FROM mission_pois WHERE geom IS NOT NULL
-            """)
+                SELECT role, nom, ST_AsBinary(geom)
+                FROM mission_pois
+                WHERE geom IS NOT NULL
+                  AND (%s IS NULL OR ST_Within(geom, ST_SetSRID(ST_GeomFromText(%s), 2154)))
+            """, (bbox_wkt, bbox_wkt))
             rows = cur.fetchall()
+    finally:
+        pg_conn.close()
 
-        if not rows:
-            print("  [SKIP] Aucun POI à cartographier.")
-            return
+    if not rows:
+        print("  [SKIP] Aucun POI à cartographier.")
+        return os.path.abspath(output_path)
 
-        gdf = gpd.GeoDataFrame(
-            [{"role": r[0], "source": r[1], "nature": r[2], "nom": r[3],
-              "geometry": wkb.loads(bytes(r[4]))} for r in rows],
-            crs="EPSG:2154"
-        ).to_crs(epsg=3857)
+    # Normalisation des rôles legacy
+    records = []
+    for role_val, nom, geom_bytes in rows:
+        role_norm = LEGACY.get(role_val, role_val)
+        records.append({"role": role_norm, "nom": nom, "geometry": wkb.loads(bytes(geom_bytes))})
 
-        fig, ax = plt.subplots(1, 1, figsize=(14, 10))
+    gdf = gpd.GeoDataFrame(records, crs="EPSG:2154").to_crs(epsg=3857)
 
-        colors = {"attaque": "red", "defense": "blue", "logistique": "green"}
-        for r, color in colors.items():
-            mask = gdf["role"] == r
-            if mask.any():
-                gdf[mask].plot(ax=ax, color=color, markersize=30, alpha=0.7, label=r.upper())
+    fig, ax = plt.subplots(1, 1, figsize=(14, 10))
 
-        ax.set_title(f"OPÉRATION MANTICORE — Carte de situation\nRôle : {role.upper()}", fontsize=14, fontweight="bold")
-        ax.legend(loc="upper right")
-        ax.set_axis_off()
+    # Couches : logistique < defense < attaque (zorder croissant)
+    layer_styles = {
+        "logistique": {"color": "#2196F3", "marker": "s", "zorder": 1},
+        "defense":    {"color": "#4CAF50", "marker": "^", "zorder": 2},
+        "attaque":    {"color": "#F44336", "marker": "X", "zorder": 3},
+    }
+    for layer in layers:
+        style = layer_styles.get(layer, {"color": "grey", "marker": "o", "zorder": 1})
+        mask = gdf["role"] == layer
+        if mask.any():
+            gdf[mask].plot(
+                ax=ax, color=style["color"], marker=style["marker"],
+                markersize=30, alpha=0.7, label=layer.upper(), zorder=style["zorder"],
+            )
 
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        fig.savefig(output_path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
-        print(f"  → Carte sauvegardée : {output_path}")
+    # Fond de carte optionnel
+    if basemap:
+        try:
+            import contextily as ctx
+            ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+        except Exception:
+            pass  # contextily absent ou erreur réseau — on continue sans fond
 
-    except ImportError:
-        print("  [SKIP] geopandas/matplotlib non installés.")
-        print("  Installer avec : uv add geopandas matplotlib")
+    ax.set_title(f"Situation tactique — {epci}", fontsize=14, fontweight="bold")
+    ax.legend(loc="upper right")
+    ax.set_axis_off()
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    fig.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    abs_path = os.path.abspath(output_path)
+    print(f"  → Carte sauvegardée : {abs_path}")
+    return abs_path
+
+
+def generate_situation_map_legacy(pg_conn, role, output_path="data/carte_situation.png"):
+    """Wrapper déprécié — utiliser generate_situation_map(epci=...) à la place."""
+    import warnings
+    warnings.warn(
+        "generate_situation_map(pg_conn, role, ...) est déprécié. "
+        "Utiliser generate_situation_map(epci=...) à la place.",
+        DeprecationWarning, stacklevel=2,
+    )
+    return generate_situation_map(epci=role, output_path=output_path)
 
 # =============================================================================
 # MAIN
@@ -209,16 +276,15 @@ def generate_situation_map(pg_conn, role, output_path="data/carte_situation.png"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--role", choices=ROLES, required=True)
-    parser.add_argument("--map", default=None, help="Chemin carte PNG (défaut: data/carte_situation_<role>.png)")
+    parser.add_argument("--epci", required=True, help="Nom ou SIREN de l'EPCI")
+    parser.add_argument("--map", default=None, help="Chemin carte PNG (défaut: data/carte_situation_<epci>.png)")
+    parser.add_argument("--no-basemap", action="store_true", help="Désactiver le fond de carte contextily")
     args = parser.parse_args()
-    if args.map is None:
-        args.map = f"data/carte_situation_{args.role}.png"
 
     print(f"""
   ============================================================
    OPÉRATION MANTICORE — Phase 3 : Benchmark & Carte
-   Rôle : {args.role.upper()}
+   EPCI : {args.epci}
   ============================================================
     """)
 
@@ -227,7 +293,12 @@ if __name__ == "__main__":
     try:
         benchmark_ontology(pg_conn, neo_driver)
         benchmark_spatial(pg_conn, neo_driver)
-        generate_situation_map(pg_conn, args.role, args.map)
     finally:
         pg_conn.close()
         neo_driver.close()
+
+    generate_situation_map(
+        epci=args.epci,
+        output_path=args.map,
+        basemap=not args.no_basemap,
+    )

@@ -134,6 +134,19 @@ RETURN cible.nom, cible.nature;
 | Chemins à N sauts max | Requête récursive complexe | `(a)-[:REL*1..N]->(b)` |
 | Traversal avec filtre | Multiple CTEs empilés | `MATCH ... WHERE` à chaque pattern |
 
+### Ce que Neo4j fait, que SQL ne peut pas faire (facilement)
+
+| Problème | SQL | Neo4j/Cypher |
+|----------|-----|--------------|
+| **Hiérarchie non bornée** | `WITH RECURSIVE` (verbeux, O(n²) sur grands arbres) | `[:EST_SOUS_TYPE_DE*]` (O(degré)) |
+| **Tous les plus courts chemins** | N² appels Dijkstra + UNION | `allShortestPaths()` natif |
+| **Centralité betweenness** | Impossible en une requête SQL standard | `CALL gds.betweenness.stream()` en 3 lignes |
+| **Pattern multi-sauts** | `JOIN JOIN JOIN…` (complexité exponentielle) | `(a)-[*1..5]->(b)` linéaire |
+
+::: {.callout-tip}
+**Le moment « aha ! »** viendra en Phase 3 T1 quand vous calculerez la betweenness centrality de 1800 nœuds en 3 lignes Cypher — ce qu'aucune requête SQL standard ne peut faire.
+:::
+
 ---
 
 ## Algorithmes de graphe

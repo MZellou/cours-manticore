@@ -12,6 +12,7 @@ dependencies = [
     "neo4j",
     "python-dotenv",
     "matplotlib",
+    "contextily",
     "duckdb>=1.5.2",
 ]
 

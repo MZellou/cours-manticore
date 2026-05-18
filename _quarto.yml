@@ -88,6 +88,9 @@ website:
         - pages/corriges/phase_2.qmd
         - pages/corriges/phase_3.qmd
         - pages/corriges/bonus.qmd
+        - pages/corriges/role_attaque.qmd
+        - pages/corriges/role_defense.qmd
+        - pages/corriges/role_logistique.qmd
 
     - title: "Référence"
       style: docked

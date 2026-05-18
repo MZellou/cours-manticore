@@ -1,0 +1,481 @@
+---
+title: "Corrigé — Rôle Logistique"
+order: 7
+---
+# Corrigé — Rôle Logistique
+
+> Solutions des questions bonus du rôle Logistique (volet flux d'approvisionnement + volet énergie). Les requêtes supposent que `mission_pois` contient les POIs `role = 'logistique'` chargés en Phase 1.
+
+---
+
+## B1 — Ports et zones industrielles : chaîne logistique
+
+**Question** : quels ports de commerce sont à moins de 3 km d'une zone industrielle ?
+
+```sql
+SELECT p.toponyme AS port, p.nature_detaillee AS type_port,
+       z.toponyme AS zone, z.nature AS type_zone,
+       round(ST_Distance(p.geometrie, z.geometrie)::numeric, 0) AS dist_m
+FROM equipement_de_transport p
+JOIN zone_d_activite_ou_d_interet z
+  ON ST_DWithin(p.geometrie, z.geometrie, 3000)
+WHERE p.nature = 'Port'
+  AND p.nature_detaillee IN ('Port de commerce', 'Port de pêche')
+  AND z.nature IN ('Zone industrielle', "Zone d'activités")
+ORDER BY dist_m;
+```
+
+**Variante depuis `mission_pois`** (après Phase 1) :
+
+```sql
+SELECT mp.nom AS port,
+       z.toponyme AS zone_industrielle,
+       round(ST_Distance(mp.geom, z.geometrie)::numeric, 0) AS dist_m
+FROM mission_pois mp
+JOIN zone_d_activite_ou_d_interet z
+  ON ST_DWithin(mp.geom, z.geometrie, 3000)
+WHERE mp.role = 'logistique' AND mp.source = 'port'
+  AND z.nature IN ('Zone industrielle', "Zone d'activités")
+ORDER BY dist_m;
+```
+
+**Explication** :
+
+- `nature_detaillee` : colonne BDTOPO qui affine le type. Pour les ports, les valeurs pertinentes sont `'Port de commerce'`, `'Port de pêche'`, `'Halte fluviale'` — les ports de plaisance ne sont pas logistiquement pertinents.
+- Le couple (port, zone industrielle) représente une **chaîne logistique directe** : les marchandises débarquent au port et rejoignent la zone industrielle sans passer par le réseau autoroutier principal.
+
+**Interprétation** :
+
+- Distance < 500 m = lien logistique immédiat (quai-à-quai).
+- Distance entre 500 m et 3 km = desserte possible par navette ou convoi léger.
+- Ces couples sont à identifier comme **hubs d'approvisionnement** dans le rapport Phase 3.
+
+---
+
+## B2 — Voies ferrées fret : accessibilité
+
+**Question** : combien de tronçons de voie ferrée "Fret" croisent l'EPCI ? Quelle est leur longueur totale ?
+
+```sql
+SELECT count(*) AS nb_troncons,
+       round(sum(ST_Length(geometrie))::numeric / 1000, 1) AS longueur_km
+FROM troncon_de_voie_ferree
+WHERE usage IN ('Fret', 'Voyageur et fret')
+  AND ST_Intersects(geometrie, (SELECT geom FROM epci LIMIT 1));
+```
+
+**Variante — gares fret sur ces voies** :
+
+```sql
+SELECT count(*) AS gares_fret
+FROM equipement_de_transport
+WHERE nature IN ('Gare fret uniquement', 'Gare voyageurs et fret')
+  AND ST_Intersects(geometrie, (SELECT geom FROM epci LIMIT 1));
+```
+
+**Explication** :
+
+- `ST_Length(geometrie)` : retourne la longueur en mètres d'une géométrie linéaire (SRID 2154). Division par 1000 pour obtenir des km.
+- `(SELECT geom FROM epci LIMIT 1)` : récupère le polygone de l'EPCI. Si votre table EPCI s'appelle différemment, adaptez (ex: `epci_zone`, `commune_epci`).
+- `usage IN ('Fret', 'Voyageur et fret')` : inclut les voies mixtes voyageurs+fret, pas seulement les voies fret pures.
+
+**Interprétation** :
+
+- `longueur_km` élevée = réseau ferroviaire fret bien développé. Ces voies sont des corridors d'approvisionnement alternatifs à la route — à protéger en Phase 3.
+- `gares_fret = 0` : votre EPCI n'a pas de gare fret opérationnelle. Le ravitaillement dépend entièrement de la route (fragilité logistique).
+
+---
+
+## B3 — Capacité de stockage
+
+**Question** : quel est le volume total de réservoirs industriels dans l'EPCI ?
+
+```sql
+SELECT nature, count(*) AS nb,
+       coalesce(sum(volume), 0) AS volume_total_m3
+FROM reservoir
+WHERE nature = 'Réservoir industriel'
+  AND ST_Intersects(geometrie, (SELECT geom FROM epci LIMIT 1))
+GROUP BY nature;
+```
+
+**Variante — tous les types de réservoirs** :
+
+```sql
+SELECT nature, count(*) AS nb,
+       coalesce(sum(volume), 0) AS volume_total_m3
+FROM reservoir
+WHERE ST_Intersects(geometrie, (SELECT geom FROM epci LIMIT 1))
+GROUP BY nature
+ORDER BY volume_total_m3 DESC;
+```
+
+**Explication** :
+
+- `volume` : colonne numérique en m³. Elle peut être NULL si non renseignée dans la BDTOPO — `coalesce(sum(volume), 0)` évite un résultat NULL pour la somme.
+- Les réservoirs industriels stockent carburant, matières premières, produits chimiques. Ce sont des cibles logistiques prioritaires : les protéger maintient la capacité de production.
+
+**Interprétation** :
+
+- Volume total élevé = l'EPCI a une capacité de stockage industrielle significative. Si les réservoirs sont concentrés (un seul cluster), leur destruction simultanée est plus impactante.
+- `volume = NULL` sur de nombreuses lignes : la BDTOPO ne renseigne pas systématiquement les volumes. Mentionner cette lacune dans le rapport.
+
+---
+
+## B4 — Matrice port ↔ gare fret
+
+**Question** : pour chaque port de commerce, quelle est la gare fret la plus proche ?
+
+```sql
+SELECT p.toponyme AS port, g.toponyme AS gare_proche,
+       round(ST_Distance(p.geometrie, g.geometrie)::numeric, 0) AS dist_m
+FROM equipement_de_transport p
+CROSS JOIN LATERAL (
+    SELECT toponyme, geometrie
+    FROM equipement_de_transport g2
+    WHERE g2.nature IN ('Gare fret uniquement', 'Gare voyageurs et fret')
+    ORDER BY g2.geometrie <-> p.geometrie LIMIT 1
+) g
+WHERE p.nature = 'Port' AND p.nature_detaillee = 'Port de commerce'
+ORDER BY dist_m;
+```
+
+**Explication** :
+
+- `CROSS JOIN LATERAL` : pour chaque port, la sous-requête cherche la gare fret la plus proche. L'opérateur KNN `<->` utilise l'index GIST — bien plus rapide qu'un `ORDER BY ST_Distance(...)`.
+- `LIMIT 1` dans la sous-requête : ne retenir que la gare la plus proche. Sans LIMIT, chaque port serait associé à toutes les gares (résultat explosif).
+
+**Interprétation** :
+
+- Distance port-gare < 5 km = connexion intermodale directe (mer + fer). Ces hubs sont les nœuds les plus résilients du réseau logistique.
+- Distance > 20 km = connexion intermodale difficile. Le fret débarqué devra passer entièrement par la route pour atteindre la gare.
+
+---
+
+## B5 — Réseau fluvial pour le transport de masse
+
+**Question** : quels tronçons de cours d'eau permanents traversent ou bordent une zone industrielle ?
+
+```sql
+SELECT
+    c.toponyme AS cours_eau,
+    c.caractere_permanent,
+    z.toponyme AS zone_industrielle,
+    z.nature AS type_zone
+FROM cours_d_eau c
+JOIN zone_d_activite_ou_d_interet z
+    ON ST_Intersects(c.geometrie, z.geometrie)
+WHERE c.caractere_permanent IS TRUE
+  AND z.nature = 'Zone industrielle'
+ORDER BY c.toponyme;
+```
+
+**Interprétation** :
+
+- Un résultat non vide = votre EPCI a un transport fluvial exploitable pour l'industrie.
+- En Phase 3, si les routes sont coupées, ces voies fluviales sont des alternatives. Leur présence dans le rapport renforce la résilience logistique.
+
+---
+
+## B6 — Hubs logistiques combinés
+
+**Question** : quelles aires de repos sont à moins de 1 km d'une zone industrielle ?
+
+```sql
+SELECT
+    a.toponyme AS aire_repos,
+    z.toponyme AS zone_industrielle,
+    round(ST_Distance(a.geometrie, z.geometrie)::numeric, 0) AS distance_m
+FROM equipement_de_transport a
+JOIN zone_d_activite_ou_d_interet z
+    ON ST_DWithin(a.geometrie, z.geometrie, 1000)
+WHERE a.nature = 'Aire de repos ou de service'
+  AND z.nature = 'Zone industrielle'
+ORDER BY distance_m;
+```
+
+**Variante étendue — hub triple (port + gare + entrepôt dans rayon 2 km)** :
+
+```sql
+-- Ports qui ont à la fois une gare fret ET une zone industrielle dans 2 km
+SELECT p.toponyme AS port,
+       g.toponyme AS gare,
+       z.toponyme AS zone_ind
+FROM equipement_de_transport p
+JOIN equipement_de_transport g
+    ON ST_DWithin(p.geometrie, g.geometrie, 2000)
+    AND g.nature IN ('Gare fret uniquement', 'Gare voyageurs et fret')
+JOIN zone_d_activite_ou_d_interet z
+    ON ST_DWithin(p.geometrie, z.geometrie, 2000)
+    AND z.nature IN ('Zone industrielle', "Zone d'activités")
+WHERE p.nature = 'Port'
+  AND p.nature_detaillee IN ('Port de commerce', 'Port de pêche')
+ORDER BY p.toponyme;
+```
+
+**Explication de la variante** :
+
+- Le triple (port + gare fret + zone industrielle) dans un rayon de 2 km identifie un **hub logistique multimodal** : mer + fer + stockage. Ce sont les nœuds les plus critiques du réseau d'approvisionnement.
+- En Phase 3 : protéger ce hub = protéger 3 infrastructures simultanément. Le cibler = interrompre 3 flux en une seule opération.
+
+---
+
+## B7 — Postes HT et hôpitaux : qui dépend de qui ?
+
+**Question** : quels postes de transformation critiques (importance ≤ 3) sont à moins de 1 km d'un hôpital ?
+
+```sql
+SELECT pt.nature AS importance, pt.importance AS niveau,
+       h.toponyme AS hopital,
+       round(ST_Distance(pt.geometrie, h.geometrie)::numeric, 0) AS dist_m
+FROM poste_de_transformation pt
+JOIN zone_d_activite_ou_d_interet h
+  ON ST_DWithin(pt.geometrie, h.geometrie, 1000)
+WHERE CAST(pt.importance AS INTEGER) <= 3
+  AND h.nature IN ('Hôpital', 'Établissement hospitalier')
+ORDER BY pt.importance, dist_m;
+```
+
+**Interprétation** :
+
+- Un poste de transformation d'importance 1 à moins de 500 m d'un hôpital = alimentation électrique critique. Sa destruction coupe l'hôpital du réseau (sauf groupe électrogène).
+- En Phase 3 simulation : ce poste est une cible intermédiaire pour le rôle Attaque (pas besoin de détruire l'hôpital, suffit de couper le poste).
+
+---
+
+## B8 — Lignes THT et routes : points de fragilité croisés
+
+**Question** : combien de routes sont croisées par une ligne 400 kV ?
+
+```sql
+SELECT l.voltage, count(*) AS routes_croisees
+FROM ligne_electrique l
+JOIN troncon_de_route r
+  ON ST_Intersects(l.geometrie, r.geometrie)
+WHERE l.voltage IN ('400 kV', '225 kV')
+GROUP BY l.voltage;
+```
+
+**Variante — routes d'importance ≤ 2** :
+
+```sql
+SELECT l.voltage,
+       count(*) FILTER (WHERE CAST(r.importance AS INTEGER) <= 2) AS routes_nationales,
+       count(*) AS toutes_routes
+FROM ligne_electrique l
+JOIN troncon_de_route r ON ST_Intersects(l.geometrie, r.geometrie)
+WHERE l.voltage IN ('400 kV', '225 kV')
+GROUP BY l.voltage;
+```
+
+**Interprétation** :
+
+- Un croisement ligne THT × autoroute = double vulnérabilité : la route et la ligne peuvent être affectées par le même incident (tempête, sabotage).
+- Ces croisements sont aussi des points d'entretien réglementés (zones de survol aérien restreint) — données utiles pour le rôle Attaque.
+
+---
+
+## B9 — Centrales nucléaires : rayon d'influence
+
+**Question** : dans un rayon de 20 km autour de chaque centrale, combien de POIs de chaque rôle ?
+
+```sql
+SELECT 'Centrale ' || c.toponyme AS centrale, p.role, count(*) AS pois
+FROM zone_d_activite_ou_d_interet c
+JOIN mission_pois p
+  ON ST_DWithin(c.geometrie, p.geom, 20000)
+WHERE c.nature = 'Centrale électrique'
+GROUP BY c.toponyme, p.role
+ORDER BY c.toponyme, pois DESC;
+```
+
+**Interprétation** :
+
+- Beaucoup de POIs Attaque dans ce rayon = zone très sensible (nombreuses cibles à protéger autour de la centrale).
+- Peu de POIs Défense dans ce rayon = manque de ressources défensives autour de la centrale — vulnérabilité majeure.
+
+---
+
+## B10 — Mix énergétique de l'EPCI
+
+**Question** : comptez les éoliennes, barrages, transformateurs et centrales.
+
+```sql
+SELECT 'Éolienne' AS source, count(*) AS nb
+FROM construction_ponctuelle WHERE nature = 'Éolienne'
+UNION ALL
+SELECT 'Barrage', count(*)
+FROM construction_surfacique WHERE nature = 'Barrage'
+UNION ALL
+SELECT 'Poste HT critique', count(*)
+FROM poste_de_transformation WHERE CAST(importance AS INTEGER) <= 3
+UNION ALL
+SELECT 'Centrale électrique', count(*)
+FROM zone_d_activite_ou_d_interet WHERE nature = 'Centrale électrique';
+```
+
+**Interprétation** :
+
+- EPCI avec beaucoup d'éoliennes = production décentralisée, plus résiliente (une éolienne détruite = faible impact).
+- EPCI avec peu de postes HT = réseau concentré, fragile (un poste clé → panne en cascade).
+- Le ratio `nb_centrales / nb_postes` donne une idée de la concentration de la production.
+
+---
+
+## B11 — Pylônes et postes : complétude du réseau
+
+**Question** : quel est le ratio pylônes / postes HT par secteur de 5 km × 5 km ?
+
+```sql
+SELECT
+    ST_SnapToGrid(p.geom, 5000) AS secteur,
+    count(*) FILTER (WHERE p.source = 'pylone') AS nb_pylones,
+    count(*) FILTER (WHERE p.source = 'poste_ht') AS nb_postes,
+    CASE
+        WHEN count(*) FILTER (WHERE p.source = 'poste_ht') > 0
+        THEN round(
+            count(*) FILTER (WHERE p.source = 'pylone')::numeric /
+            count(*) FILTER (WHERE p.source = 'poste_ht')::numeric, 1
+        )
+        ELSE NULL
+    END AS ratio_pylones_par_poste
+FROM mission_pois p
+WHERE p.role = 'logistique'
+  AND p.source IN ('pylone', 'poste_ht')
+GROUP BY ST_SnapToGrid(p.geom, 5000)
+ORDER BY ratio_pylones_par_poste DESC NULLS LAST;
+```
+
+**Explication** :
+
+- `ST_SnapToGrid(geom, 5000)` : arrondit les coordonnées au multiple de 5 km le plus proche, créant une grille virtuelle sans table supplémentaire.
+- `count(*) FILTER (WHERE condition)` : filtre conditionnel PostgreSQL — plus lisible et performant qu'un `SUM(CASE WHEN ...)`.
+- `NULLS LAST` : les secteurs sans poste (ratio NULL) apparaissent en fin de liste.
+
+**Interprétation** :
+
+- Ratio > 10 = réseau peu maillé dans ce secteur (rural, montagneux). Une coupure de ligne affecte une grande zone.
+- Secteurs avec `nb_postes = 0` = dépendants d'un poste distant — vulnérables à une coupure de liaison.
+
+---
+
+## B12 — Risque cascade : postes HT et inondations
+
+**Question** : quels postes HT sont dans un rayon de 1 km d'un cours d'eau permanent ?
+
+```sql
+SELECT
+    p.nom AS poste,
+    p.nature AS importance_poste,
+    c.toponyme AS cours_eau,
+    round(ST_Distance(p.geom, c.geometrie)::numeric, 0) AS distance_m
+FROM mission_pois p
+JOIN cours_d_eau c
+    ON ST_DWithin(p.geom, c.geometrie, 1000)
+WHERE p.role = 'logistique'
+  AND p.source = 'poste_ht'
+  AND c.caractere_permanent = 'Oui'
+ORDER BY distance_m;
+```
+
+**Interprétation** :
+
+- Distance < 200 m = zone de risque immédiat (crue centennale peut atteindre le poste).
+- Ces postes sont des cibles prioritaires pour la **Défense** (protection contre inondation = digue, déviation cours d'eau) et pour l'**Attaque** (une simple rupture de digue peut déclencher l'effet cascade sans intervention directe).
+
+---
+
+## B13 — Interdépendances : barrages et écluses
+
+**Question** : quels barrages ont une écluse à moins de 1 km ?
+
+```sql
+SELECT
+    b.toponyme AS barrage,
+    e.toponyme AS ecluse,
+    round(ST_Distance(b.geometrie, e.geometrie)::numeric, 0) AS distance_m
+FROM construction_surfacique b
+JOIN construction_surfacique e
+    ON ST_DWithin(b.geometrie, e.geometrie, 1000)
+WHERE b.nature = 'Barrage'
+  AND e.nature = 'Ecluse'
+ORDER BY distance_m;
+```
+
+**Explication** :
+
+- **Auto-jointure sur la même table** : `b` et `e` référencent `construction_surfacique`. On leur donne deux rôles différents via les alias. La jointure spatiale cherche les paires (barrage, écluse) proches.
+- Un barrage + écluse adjacent = complexe hydro-énergétique mixte. Sa vulnérabilité est double : production d'électricité (barrage) + navigation (écluse).
+
+**Interprétation** :
+
+- Ces couples sont les candidates à la **protection prioritaire** en Phase 3 T7.
+- Un seul incident (explosion, sabotage) peut simultanément arrêter la production hydroélectrique et bloquer la navigation fluviale.
+
+---
+
+## B14 — Postes HT et zones industrielles : dépendance énergétique
+
+**Question** : quels postes HT (importance ≤ 3) sont à moins de 2 km d'une zone industrielle ?
+
+```sql
+SELECT
+    pt.toponyme AS poste_ht,
+    CAST(pt.importance AS INTEGER) AS importance,
+    z.toponyme AS zone_industrielle,
+    round(ST_Distance(pt.geometrie, z.geometrie)::numeric, 0) AS distance_m
+FROM poste_de_transformation pt
+JOIN zone_d_activite_ou_d_interet z
+    ON ST_DWithin(pt.geometrie, z.geometrie, 2000)
+WHERE z.nature = 'Zone industrielle'
+  AND CAST(pt.importance AS INTEGER) <= 3
+ORDER BY importance, distance_m;
+```
+
+**Interprétation** :
+
+- Un poste HT d'importance 1 à moins de 500 m d'une zone industrielle majeure = lien d'alimentation critique. Sa perte arrête simultanément plusieurs entreprises.
+- En Phase 3 simulation d'attaque : ce couple (poste, zone) permet de modéliser l'effet domino — destruction du poste → arrêt industriel → rupture de la chaîne d'approvisionnement.
+
+---
+
+## B15 — Canalisations hydrocarbures proches d'un port de commerce
+
+**Question** : quels ports de commerce ont une canalisation d'hydrocarbures dans un rayon de 500 m ?
+
+```sql
+SELECT
+    c.toponyme AS canalisation,
+    c.nature AS type_canalisation,
+    p.toponyme AS port,
+    round(ST_Distance(c.geometrie, p.geometrie)::numeric, 0) AS distance_m
+FROM canalisation c
+JOIN equipement_de_transport p
+    ON ST_DWithin(c.geometrie, p.geometrie, 500)
+WHERE c.nature = 'Hydrocarbures'
+  AND p.nature = 'Port'
+  AND p.nature_detaillee = 'Port de commerce'
+ORDER BY distance_m;
+```
+
+**Variante — triplet port + canalisation + réservoir** :
+
+```sql
+SELECT p.toponyme AS port,
+       c.toponyme AS canalisation,
+       r.nature AS stockage
+FROM equipement_de_transport p
+JOIN canalisation c
+    ON ST_DWithin(p.geometrie, c.geometrie, 5000)
+    AND c.nature = 'Hydrocarbures'
+JOIN reservoir r
+    ON ST_DWithin(p.geometrie, r.geometrie, 2000)
+    AND r.nature = 'Réservoir industriel'
+WHERE p.nature = 'Port'
+  AND p.nature_detaillee = 'Port de commerce';
+```
+
+**Interprétation** :
+
+- Le triplet (port + canalisation + réservoir) identifie un **hub d'import carburant stratégique** : le carburant arrive par mer, est stocké dans le réservoir, et transite par la canalisation.
+- Ce hub est une cible double usage : cible prioritaire pour l'Attaque (fort impact économique) et priorité de protection maximale pour la Défense.

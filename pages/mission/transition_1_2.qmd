@@ -139,6 +139,27 @@ Nettoyez ensuite : `MATCH (x:TestNode) DELETE x`
 `WITH` pipe les résultats d'une clause à la suivante (comme un `|` Unix ou un CTE SQL).
 `reduce()` accumule une valeur sur une liste — ici, la somme des distances d'un chemin.
 
+::: {.callout-note}
+**`reduce()` — syntaxe** : `reduce(accumulateur = valeur_initiale, élément IN liste | expression)`
+
+Exemples progressifs pour s'échauffer :
+
+```cypher
+// Somme simple d'une liste
+RETURN reduce(s = 0, x IN [1, 2, 3, 4] | s + x) AS somme;
+// → 10
+
+// Compter les nœuds d'un chemin
+MATCH p = (a:Person {name: 'Tom Hanks'})-[*1..2]-(b)
+RETURN reduce(n = 0, x IN nodes(p) | n + 1) AS nb_noeuds
+LIMIT 5;
+
+// En Phase 2+, on somme les distances le long d'un chemin routier :
+// reduce(d = 0.0, r IN relationships(path) | d + r.meters)
+```
+:::
+
+
 ```cypher
 MATCH path = (a:Person {name: 'Tom Hanks'})-[:ACTED_IN]->(m:Movie)
 WITH path, m, length(path) AS nb_sauts
@@ -170,6 +191,23 @@ Vous savez maintenant :
 - [ ] Piper des clauses avec `WITH` et accumuler avec `reduce()`
 
 > **Phase 2 = appliquer exactement ces patterns sur BDTOPO réel.** Les nœuds s'appellent `:POI` et `:ClasseOntologie`, les relations `[:EST_SOUS_TYPE_DE]` et `[:DISTANCE]`, mais la syntaxe Cypher est identique.
+
+---
+
+## Ce que vous savez faire maintenant → Phase 2
+
+::: {.callout-important}
+**Vous venez de pratiquer les patterns clés de Cypher sur un petit graphe jouet. Phase 2 = les mêmes patterns sur BDTOPO réel.**
+
+| Cypher Lab (Movies) | Phase 2 (BDTOPO) |
+|---------------------|-------------------|
+| `(:Person)-[:ACTED_IN]->(:Movie)` | `(:POI {role:'attaque'})-[:DISTANCE]->(:POI {role:'defense'})` |
+| `MATCH path = ()-[*1..3]->()` | Chemins multi-sauts sur le graphe routier |
+| `MERGE (n:Person {name: $name})` | `MERGE (p:POI {cleabs: $cleabs})` |
+| `reduce(s=0, n IN nodes(path) | s + 1)` | `reduce(d=0.0, r IN rels(path) | d + r.meters)` |
+
+Le graphe BDTOPO a 2 types de relations : `EST_SOUS_TYPE_DE` (ontologie hiérarchique) et `DISTANCE` (réseau routier pondéré). Vous saurez les requêter.
+:::
 
 ---
 

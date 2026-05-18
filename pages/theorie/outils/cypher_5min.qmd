@@ -76,6 +76,22 @@ RETURN p.role AS role, count(*) AS n
 ORDER BY n DESC;
 ```
 
+### Index Neo4j
+
+Comme en SQL, un index accélère les recherches sur une propriété. Sans index, chaque `MATCH` ou `MERGE` fait un `AllNodesScan` (O(n)) — avec index, c'est un `NodeIndexSeek` (O(log n)).
+
+```cypher
+// Créer un index sur la propriété cleabs des POIs
+CREATE INDEX poi_cleabs IF NOT EXISTS FOR (p:POI) ON (p.cleabs);
+
+// Vérifier les index existants
+SHOW INDEXES;
+```
+
+::: {.callout-tip}
+**Quand créer un index ?** Avant un `MERGE` massif ou un `MATCH` filtrant sur une propriété fixe. En Phase 2 T5, cet index rend les imports `MERGE (p:POI {cleabs: $cleabs})` ~10× plus rapides. Le `PROFILE` d'une requête montre le `db hits` : avec index il chute de O(n) à O(log n).
+:::
+
 ---
 
 ## Direction des relations

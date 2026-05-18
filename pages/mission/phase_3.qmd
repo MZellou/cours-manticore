@@ -425,7 +425,7 @@ from scripts.benchmark_comparison import generate_situation_map
 generate_situation_map(
     epci="<votre EPCI>",  # ex. "Brest Métropole"
     layers=["attaque", "defense", "logistique"],
-    output="exports/carte_situation_<epci>.png"
+    output_path="exports/carte_situation_<epci>.png"
 )
 ```
 

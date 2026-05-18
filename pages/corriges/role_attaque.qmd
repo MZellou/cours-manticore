@@ -1,0 +1,335 @@
+---
+title: "Corrigé — Rôle Attaque"
+order: 5
+---
+# Corrigé — Rôle Attaque
+
+> Solutions des questions bonus du rôle Attaque. Les requêtes supposent que `mission_pois` contient les POIs `role = 'attaque'` chargés en Phase 1.
+
+---
+
+## B1 — Couverture aérienne
+
+**Question** : combien de ports sont à moins de 5 km d'un aérodrome international/national ?
+
+```sql
+SELECT a.toponyme AS aero, e.toponyme AS port,
+       ST_Distance(a.geometrie, e.geometrie) AS dist_m
+FROM aerodrome a
+JOIN equipement_de_transport e
+  ON ST_DWithin(a.geometrie, e.geometrie, 5000)
+WHERE a.categorie IN ('Internationale', 'Nationale')
+  AND e.nature = 'Port';
+```
+
+**Variante multi-rayons** :
+
+```sql
+SELECT '5km' AS rayon, count(*) FROM aerodrome a
+JOIN equipement_de_transport e ON ST_DWithin(a.geometrie, e.geometrie, 5000)
+WHERE a.categorie IN ('Internationale', 'Nationale') AND e.nature = 'Port'
+UNION ALL
+SELECT '10km', count(*) FROM aerodrome a
+JOIN equipement_de_transport e ON ST_DWithin(a.geometrie, e.geometrie, 10000)
+WHERE a.categorie IN ('Internationale', 'Nationale') AND e.nature = 'Port'
+UNION ALL
+SELECT '20km', count(*) FROM aerodrome a
+JOIN equipement_de_transport e ON ST_DWithin(a.geometrie, e.geometrie, 20000)
+WHERE a.categorie IN ('Internationale', 'Nationale') AND e.nature = 'Port';
+```
+
+**Explication** :
+
+- `ST_DWithin(g1, g2, d)` retourne `TRUE` si la distance entre `g1` et `g2` est ≤ `d` mètres. Il utilise l'index GIST — bien plus rapide que `ST_Distance(...) < 5000`.
+- `categorie IN ('Internationale', 'Nationale')` : filtre les petits aérodromes locaux (planeur, ULM) qui n'ont pas de capacité opérationnelle stratégique.
+- La variante multi-rayons (`UNION ALL`) trace la courbe port/rayon : si peu de ports à 5 km mais beaucoup à 20 km, la couverture aérienne est existante mais indirecte.
+
+**Interprétation** :
+
+- Chaque ligne = un couple (aérodrome, port) avec la distance. Les couples les plus proches sont les plus critiques : l'aérodrome peut couvrir le port en quelques minutes.
+- Un résultat vide : votre EPCI n'a pas de port commercial proche d'un aérodrome majeur (EPCI inland). Dans ce cas, la question de couverture aérienne portuaire ne s'applique pas.
+
+---
+
+## B2 — Forces militaires par cluster
+
+**Question** : où sont les concentrations de gendarmeries et casernes ? Utiliser ST_ClusterDBSCAN.
+
+```sql
+WITH forces AS (
+    SELECT ST_Force2D(geometrie) AS geom, nature, toponyme
+    FROM zone_d_activite_ou_d_interet
+    WHERE categorie = 'Administratif ou militaire'
+      AND nature IN ('Gendarmerie', 'Caserne', 'Camp militaire non clos')
+),
+clustered AS (
+    SELECT *, ST_ClusterDBSCAN(geom, eps := 3000, minpoints := 2) OVER () AS cid
+    FROM forces
+)
+SELECT cid, count(*) AS nb_forces, array_agg(toponyme) AS sites
+FROM clustered WHERE cid IS NOT NULL
+GROUP BY cid ORDER BY nb_forces DESC;
+```
+
+**Explication** :
+
+- `ST_ClusterDBSCAN(geom, eps, minpoints) OVER ()` : fonction fenêtre PostGIS qui attribue un ID de cluster à chaque point. `eps = 3000` = rayon en mètres pour considérer deux points comme voisins. `minpoints = 2` = au moins 2 voisins pour former un cluster (sinon le point est un outlier, `cid = NULL`).
+- `WHERE cid IS NOT NULL` : exclut les forces isolées (outliers). Seuls les clusters denses sont conservés.
+- `array_agg(toponyme)` : agrège les noms des sites dans un tableau PostgreSQL — pratique pour voir d'un coup les sites qui forment chaque cluster.
+
+**Interprétation** :
+
+- Un cluster avec `nb_forces = 5` dans un rayon de 3 km est une concentration militaire significative — cible prioritaire.
+- Les outliers (`cid IS NULL`) sont des forces isolées, moins dangereuses individuellement mais potentiellement utiles comme relais.
+
+---
+
+## B3 — Tour de contrôle vs aérodromes
+
+**Question** : chaque aérodrome majeur a-t-il une tour de contrôle à proximité ?
+
+```sql
+SELECT a.toponyme, a.categorie,
+       (SELECT count(*) FROM equipement_de_transport e
+        WHERE e.nature = 'Tour de contrôle aérien'
+          AND ST_DWithin(e.geometrie, a.geometrie, 1000)) AS tours_proches
+FROM aerodrome a
+WHERE a.categorie IN ('Internationale', 'Nationale');
+```
+
+**Variante — aérodromes sans tour** :
+
+```sql
+SELECT a.toponyme AS aero_sans_tour, a.categorie
+FROM aerodrome a
+WHERE a.categorie IN ('Internationale', 'Nationale')
+  AND NOT EXISTS (
+    SELECT 1 FROM equipement_de_transport e
+    WHERE e.nature = 'Tour de contrôle aérien'
+      AND ST_DWithin(e.geometrie, a.geometrie, 1000)
+  );
+```
+
+**Explication** :
+
+- La **sous-requête corrélée** dans le `SELECT` est exécutée une fois par ligne d'aérodrome. Elle compte les tours dans un rayon de 1 km (distance physique raisonnable pour une tour de contrôle sur le même aérodrome).
+- `NOT EXISTS` : retourne TRUE si la sous-requête ne trouve aucune ligne — aérodrome sans tour dans les données BDTOPO. Peut signifier soit l'absence réelle, soit une lacune de données.
+
+**Interprétation** :
+
+- Un aérodrome avec `tours_proches = 0` est opérable sans contrôle centralisé — ou la tour est absente des données. Dans les deux cas, c'est une vulnérabilité.
+- Détruire une tour de contrôle isole l'aérodrome plus efficacement que détruire la piste (la piste peut être réparée, sans tour les aéronefs ne peuvent pas atterrir sans VFR).
+
+---
+
+## B4 — Vitesse d'accès aux cibles
+
+**Question** : quelle est la vitesse moyenne des routes à moins de 2 km de chaque cible ?
+
+```sql
+SELECT p.nom AS cible, p.nature,
+       round(avg(r.vitesse_moyenne_vl)::numeric, 1) AS vitesse_moy_kmh
+FROM mission_pois p
+JOIN troncon_de_route r ON ST_DWithin(p.geom, r.geometrie, 2000)
+WHERE p.role = 'attaque'
+GROUP BY p.nom, p.nature
+ORDER BY vitesse_moy_kmh;
+```
+
+**Interprétation** :
+
+- `vitesse_moy_kmh` faible (< 40 km/h) = la cible est dans une zone urbaine dense ou mal desservie. Temps d'intervention lent = cible plus facile à atteindre discrètement.
+- `vitesse_moy_kmh` élevée (> 80 km/h) = axes rapides, intervention rapide possible dans les deux sens (attaque et riposte).
+- Les cibles avec la vitesse la plus basse sont prioritaires pour une approche discrète (profil Attaque).
+
+---
+
+## B5 — Ponts et tunnels : choke points du réseau
+
+**Question** : combien de ponts et tunnels traversent des routes d'importance ≤ 2 (nationales) ?
+
+```sql
+SELECT
+    c.nature,
+    c.toponyme AS nom_ouvrage,
+    r.nature AS type_route,
+    r.importance
+FROM construction_lineaire c
+JOIN troncon_de_route r
+    ON ST_Intersects(c.geometrie, r.geometrie)
+WHERE c.nature IN ('Pont', 'Tunnel')
+  AND CAST(r.importance AS INTEGER) <= 2
+ORDER BY c.nature, r.importance;
+```
+
+**Explication** :
+
+- `CAST(r.importance AS INTEGER) <= 2` : l'importance est stockée en VARCHAR dans la BDTOPO (valeurs '1', '2', ..., '5'). Sans CAST, la comparaison est alphabétique et incorrecte ('3' < '2' = FALSE, '10' < '2' = TRUE en alphanumérique).
+- `ST_Intersects` : détecte la présence d'une intersection géométrique (le pont *croise* la route). Retourne TRUE même si le chevauchement est partiel.
+
+**Interprétation** :
+
+- Un pont sur une autoroute (importance 1) est un choke point critique : sa destruction coupe un axe majeur et force des détours de plusieurs dizaines de km.
+- Ces résultats alimentent directement T5-T8 de la Phase 3 : les choke points Attaque sont les arêtes à couper en priorité.
+
+---
+
+## B6 — Antennes relais : couverture communication
+
+**Question** : y a-t-il des zones de l'EPCI sans antenne à moins de 3 km ?
+
+```sql
+SELECT ST_SnapToGrid(geom, 5000) AS carreau,
+       count(*) AS nb_antennes
+FROM mission_pois
+WHERE role = 'attaque' AND source = 'antenne'
+GROUP BY ST_SnapToGrid(geom, 5000)
+ORDER BY nb_antennes;
+```
+
+**Variante — zones blanches explicites** :
+
+```sql
+-- Trouver les POIs Attaque qui n'ont aucune antenne dans 3 km
+SELECT p.nom, p.nature
+FROM mission_pois p
+WHERE p.role = 'attaque'
+  AND NOT EXISTS (
+    SELECT 1 FROM mission_pois a
+    WHERE a.source = 'antenne'
+      AND ST_DWithin(p.geom, a.geom, 3000)
+  );
+```
+
+**Interprétation** :
+
+- Les carreaux avec `nb_antennes = 1` sont des zones fragiles : une seule antenne les couvre, sa destruction crée une zone blanche.
+- La variante montre les cibles elles-mêmes qui sont en zone blanche — elles peuvent être attaquées sans risque d'alerte par réseau radio.
+
+---
+
+## B7 — Risque inondation
+
+**Question** : quelles cibles sont à moins de 500 m d'une retenue d'eau ?
+
+```sql
+SELECT
+    p.nom AS cible,
+    p.nature,
+    s.nature AS type_retenue,
+    round(ST_Distance(p.geom, s.geom)::numeric, 0) AS distance_m
+FROM mission_pois p
+JOIN surface_hydrographique s
+    ON ST_DWithin(p.geom, s.geom, 500)
+WHERE p.role = 'attaque'
+  AND s.nature IN ('Retenue', 'Retenue-barrage', 'Lac')
+ORDER BY distance_m;
+```
+
+**Interprétation** :
+
+- Distance < 100 m : la cible est en zone inondable immédiate. Une rupture de barrage ou une crue la rendrait inaccessible et potentiellement détruite sans intervention directe.
+- Ces cibles sont à mentionner dans le rapport Phase 3 comme "vulnérabilité naturelle", distincte des vulnérabilités réseau.
+
+---
+
+## B8 — Degré de connectivité
+
+**Question** : classez vos cibles par degré (combien d'autres cibles à moins de 5 km).
+
+```sql
+WITH cibles AS (
+    SELECT cleabs, nom, nature, geom
+    FROM mission_pois WHERE role = 'attaque'
+)
+SELECT c1.nom AS cible, c1.nature AS type,
+       count(*) AS degre
+FROM cibles c1
+JOIN cibles c2 ON ST_DWithin(c1.geom, c2.geom, 5000)
+  AND c1.cleabs != c2.cleabs
+GROUP BY c1.cleabs, c1.nom, c1.nature
+ORDER BY degre DESC;
+```
+
+**Explication** :
+
+- **Self-join** : on joint `mission_pois` avec elle-même. `c1` = la cible analysée, `c2` = ses voisins. `c1.cleabs != c2.cleabs` évite le self-match (une cible n'est pas son propre voisin).
+- En SQL, ce self-join est O(n²) sur le nombre de POIs. Sur 200 POIs : 40 000 paires à évaluer. PostGIS avec index GIST le fait en quelques centaines de ms — acceptable. Sur 200 000 POIs, il faudrait passer à Neo4j.
+- **Bridge Neo4j** : en graphe, le degré est natif. `MATCH (p:POI {role:'attaque'})-[:DISTANCE]-(n) RETURN p.nom, count(n) AS degre` — O(degré) par nœud, pas O(n²).
+
+**Interprétation** :
+
+- La cible avec le plus haut degré est le **point névralgique** : si elle tombe, elle entraîne une cascade (ses voisins perdent leur liaison principale). En Phase 3, c'est la première arête à couper.
+
+---
+
+## B9 — Attaque en cascade
+
+**Question** : si on détruit un pont, quelles cibles deviennent inaccessibles ?
+
+```sql
+WITH ponts AS (
+    SELECT cleabs, toponyme, ST_Force2D(geometrie) AS geom
+    FROM construction_lineaire WHERE nature = 'Pont'
+),
+troncons_coupes AS (
+    SELECT p.toponyme AS pont_detruit, r.cleabs AS troncon_id
+    FROM ponts p
+    JOIN troncon_de_route r ON ST_Intersects(p.geom, r.geometrie)
+),
+cibles_isolees AS (
+    SELECT tc.pont_detruit, m.nom AS cible_perdue, m.nature
+    FROM troncons_coupes tc
+    JOIN mission_pois m ON ST_DWithin(m.geom,
+        (SELECT geometrie FROM troncon_de_route WHERE cleabs = tc.troncon_id), 200)
+    WHERE m.role = 'attaque'
+)
+SELECT pont_detruit, count(*) AS cibles_perdues,
+       array_agg(DISTINCT nature) AS types_perdus
+FROM cibles_isolees
+GROUP BY pont_detruit
+ORDER BY cibles_perdues DESC;
+```
+
+**Interprétation** :
+
+- Le pont avec le plus de `cibles_perdues` est la cible stratégique optimale : une seule destruction maximise le nombre de cibles isolées.
+- Ce raisonnement est à croiser avec T1 Phase 3 (betweenness) : un pont très fréquenté (betweenness élevée) et isolant de nombreuses cibles est doublement stratégique.
+
+---
+
+## B10 — Cypher sneak peek
+
+**Question** : trouvez en Cypher toutes les cibles à 2 sauts d'un aérodrome.
+
+**SQL** (équivalent — 2 sauts = aérodrome → voisin_A → voisin_B) :
+
+```sql
+SELECT DISTINCT b.cleabs, b.nom, b.source
+FROM mission_pois a
+JOIN mission_pois v1 ON ST_DWithin(a.geom, v1.geom, 5000)
+  AND a.cleabs != v1.cleabs
+JOIN mission_pois b ON ST_DWithin(v1.geom, b.geom, 5000)
+  AND v1.cleabs != b.cleabs
+WHERE a.source = 'aerodrome' AND a.role = 'attaque'
+  AND b.role = 'attaque';
+```
+
+**Cypher** :
+
+```cypher
+MATCH (a:POI {source: 'aerodrome', role: 'attaque'})-[:DISTANCE*2]->(c:POI {role: 'attaque'})
+RETURN DISTINCT c.nom, c.source
+LIMIT 10;
+```
+
+**Comparaison** :
+
+| Critère | SQL | Cypher |
+|---------|-----|--------|
+| Lignes de code | ~8 lignes, 3 jointures | 3 lignes, 1 pattern |
+| Gestion des cycles | `c1.cleabs != c2.cleabs` (manuel) | Natif (pas de boucle possible sur `*2`) |
+| Lisibilité | Énumère chaque saut | Déclare le pattern `*2` |
+| Performance | O(n²) par niveau | O(degré) par nœud |
+
+**Leçon** : SQL doit *nommer* chaque étape intermédiaire (`v1`). Cypher laisse le moteur gérer le traversal et l'accumulation — c'est la différence entre **procédural** (SQL) et **déclaratif** (Cypher) pour les chemins.

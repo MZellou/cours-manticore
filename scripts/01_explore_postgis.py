@@ -416,6 +416,7 @@ def ex2_poi_by_role(conn, role):
                     geom GEOMETRY(Geometry, 2154)
                 );
                 CREATE INDEX IF NOT EXISTS mission_pois_geom_idx ON mission_pois USING GIST (geom);
+                DELETE FROM mission_pois WHERE role NOT IN ('attaque', 'defense', 'logistique');
                 DELETE FROM mission_pois WHERE role = '{role}';
                 INSERT INTO mission_pois (role, source, cleabs, categorie, nature, nom, geom)
                 SELECT '{role}', source, cleabs, categorie, nature, toponyme, geom

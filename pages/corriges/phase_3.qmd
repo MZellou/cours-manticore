@@ -77,24 +77,22 @@ spec = importlib.util.spec_from_file_location(
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
-# Connexion PostGIS
-import psycopg2
-pg_conn = psycopg2.connect(
-    host="localhost", port=5432,
-    dbname="bdtopo_manticore", user="postgres", password="manticore2026"
+# Générer la carte (connexion lue depuis les variables d'environnement)
+mod.generate_situation_map(
+    epci="<votre EPCI>",   # ex. "Brest Métropole" ou SIREN 9 chiffres
+    layers=["attaque", "defense", "logistique"],
+    output_path="exports/carte_situation.png"
 )
-
-# Générer la carte pour votre rôle
-mod.generate_situation_map(pg_conn, "logistique", "exports/carte_situation.png")
 ```
 
 ### Paramètres de `generate_situation_map()`
 
 | Paramètre | Type | Défaut | Description |
 |-----------|------|--------|-------------|
-| `pg_conn` | `connection` | requis | Connexion psycopg2 à PostGIS |
-| `role` | `str` | requis | Rôle pour le titre (`'attaque'`, `'defense'`, `'logistique'`) |
-| `output_path` | `str` | `'data/carte_situation.png'` | Chemin du fichier PNG en sortie |
+| `epci` | `str` | requis | Nom ou SIREN de l'EPCI |
+| `layers` | `list[str]` | `['attaque', 'defense', 'logistique']` | Rôles à afficher (ordre = superposition) |
+| `output_path` | `str \| None` | `data/carte_situation_{epci}.png` | Chemin du fichier PNG en sortie |
+| `basemap` | `bool` | `True` | Fond CartoDB Positron via contextily |
 
 ### Étape 3 — Ordre des couches et couleurs
 
@@ -121,6 +119,99 @@ exports/carte_situation_<epci>.png
 ```
 
 Partagez ce fichier avec votre groupe avant la présentation orale. La légende est générée automatiquement à partir des couleurs de chaque rôle.
+
+---
+
+## T0 — État initial du graphe (baseline) {#t0--tat-initial}
+
+**Objectif** : mesurer l'état de santé du graphe **avant** toute simulation. Sans ces valeurs de référence, les deltas de la Partie B n'ont pas de sens pédagogique.
+
+**1. % d'arêtes impassables (cost = -1)** :
+
+```sql
+SELECT
+    COUNT(*) FILTER (WHERE cost = -1) AS nb_impassables,
+    COUNT(*) AS nb_total,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE cost = -1) / COUNT(*), 1) AS pct_impassable
+FROM ways;
+-- Résultat attendu Brest : ~28 % (pistes, sentiers, tarmac aéroport, voies privées)
+-- < 15 % = EPCI très urbanisé (réseau carrossable dense)
+-- > 35 % = EPCI montagneux ou rural avec beaucoup de chemins
+```
+
+**2. Nombre de composantes connexes dans le graphe carrossable** :
+
+```sql
+SELECT count(DISTINCT component) AS nb_composantes
+FROM pgr_connectedComponents(
+    'SELECT id, source, target, cost, reverse_cost FROM ways WHERE cost > 0'
+);
+-- Résultat attendu : 1–5 composantes
+-- 1 = réseau entièrement connecté (idéal)
+-- > 1 = îles, péninsules, zones militaires closes, routes sans connexion avec le reste
+```
+
+**3. POIs non connectés à la composante principale** :
+
+```sql
+WITH main_component AS (
+    SELECT component, count(*) AS nb
+    FROM pgr_connectedComponents(
+        'SELECT id, source, target, cost, reverse_cost FROM ways WHERE cost > 0'
+    )
+    GROUP BY component ORDER BY nb DESC LIMIT 1
+),
+poi_components AS (
+    SELECT mp.role, pc.component
+    FROM mission_pois mp
+    JOIN ways_vertices_pgr v ON mp.snap_vertex_id = v.id
+    JOIN pgr_connectedComponents(
+        'SELECT id, source, target, cost, reverse_cost FROM ways WHERE cost > 0'
+    ) pc ON v.id = pc.node
+)
+SELECT pc.role, count(*) AS nb_isoles
+FROM poi_components pc
+WHERE pc.component != (SELECT component FROM main_component)
+GROUP BY pc.role;
+-- Si snap_vertex_id n'existe pas encore : utilisez le CROSS JOIN LATERAL de T2
+```
+
+**Explication des concepts** :
+
+- **Baseline** : ces trois métriques (pct_impassable, nb_composantes, nb_isoles) constituent la **ligne de base**. En T6 (coupure de 3 arêtes), vous les remesurez. Le delta = impact de l'attaque.
+- **`pgr_connectedComponents`** : identifie les composantes connexes d'un graphe non orienté. Deux sommets dans la même composante sont reliés par un chemin. Deux sommets dans des composantes différentes ne le sont pas — aucun Dijkstra ne peut les relier.
+- **Pourquoi filtrer `cost > 0`** : on analyse le graphe **carrossable** uniquement. Sans ce filtre, les arêtes à -1 créent des pseudo-connexions entre sommets que Dijkstra ne peut pas emprunter — les composantes seraient artificiellement fusionnées.
+
+**Interprétation** :
+
+- Notez ces 3 valeurs dans le rapport avant de toucher quoi que ce soit. Elles serviront de référence pour T6 et T9.
+- Si `nb_isoles > 0` : ces POIs retourneront NULL dans tous les `pgr_dijkstra` de la simulation. Anticipez dans votre analyse (les mentionner comme "hors réseau voiture").
+- Un réseau déjà fragmenté (nb_composantes > 1) est plus vulnérable : une seule coupure sur un pont reliant deux composantes peut isoler 30 % de l'EPCI.
+
+---
+
+## T4 — Synthèse : quand utiliser quoi {#t4--synthse}
+
+**Objectif** : compléter le tableau de décision à partir de l'expérience accumulée sur les 3 phases.
+
+| Situation | Outil recommandé | Pourquoi |
+|-----------|-----------------|---------|
+| Filtrer des POIs par attributs (nature, catégorie) | PostGIS / SQL | `WHERE` + index B-tree ; Neo4j peut faire ça mais SQL est plus naturel pour les attributs |
+| Calculer un buffer spatial (`ST_Buffer`) | PostGIS / SQL | Opération géométrique native ; pas d'équivalent en Cypher |
+| Trouver le plus court chemin routier | pgRouting (SQL) | Dijkstra sur graphe métrique avec coûts en secondes/mètres |
+| Parcourir une hiérarchie de types | Neo4j (Cypher) | `[:EST_SOUS_TYPE_DE*]` traverse n niveaux en 1 ligne ; `WITH RECURSIVE` SQL = 15 lignes |
+| Centralité / betweenness d'un nœud | Neo4j GDS (Cypher) | `gds.betweenness.stream()` ; SQL = N² appels Dijkstra, infaisable en pratique |
+| Joindre des données géographiques | PostGIS / SQL | `ST_Intersects`, `ST_DWithin` avec index GIST — pas d'équivalent natif en Neo4j |
+| Requête pattern matching (chemin multi-étapes) | Neo4j (Cypher) | `(a)-[:DISTANCE*1..3]-(b)` est déclaratif ; SQL nécessite des CTE récursives avec gestion des cycles |
+| Agrégation statistique (COUNT, AVG, GROUP BY) | PostGIS / SQL | SQL est fait pour ça ; Cypher peut agréger mais moins expressif pour les fenêtres et pivots |
+
+**Réponse courte** :
+
+- **SQL gagne** : spatial (index GIST), attributs, agrégats.
+- **Cypher gagne** : hiérarchies, chemins variables, centralité réseau.
+- **pgRouting** : routage métrique (Dijkstra pondéré par les coûts réels).
+
+Ces trois outils sont **complémentaires** — Phases 1 à 3 les ont utilisés dans leur domaine de prédilection.
 
 ---
 
@@ -641,4 +732,62 @@ ORDER BY degre DESC;
   - **Réponse** : non, pas forcément (cf. exemple du pont à degré 2 mais betweenness maximale). C'est pourquoi les deux mesures sont nécessaires pour une analyse complète.
   - Si les listes se recouvrent beaucoup : votre réseau a des nœuds qui sont à la fois hubs locaux ET passages obligés globaux — les couper serait doublement catastrophique.
   - Si elles sont disjointes : vous avez deux types de vulnérabilité distincts.
+
+---
+
+## T11 — Carte de situation finale {#t11--carte-de-situation-finale}
+
+**Objectif** : générer la Carte de Situation Commune qui superpose les POIs des 3 rôles, les choke points, et l'impact de la simulation.
+
+```bash
+python scripts/04_benchmark_comparison.py --role <votre_role> --map data/carte_situation.png
 ```
+
+**Ou depuis Python directement** :
+
+```python
+import psycopg2, importlib.util, os
+
+pg_conn = psycopg2.connect(
+    host="localhost", port=5432,
+    dbname="bdtopo_manticore", user="postgres", password="manticore2026"
+)
+
+spec = importlib.util.spec_from_file_location(
+    "benchmark", os.path.join("scripts", "04_benchmark_comparison.py")
+)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+# Signature : generate_situation_map(pg_conn, role, output_path)
+mod.generate_situation_map(pg_conn, "attaque", "exports/carte_situation.png")
+```
+
+**La carte doit montrer** :
+
+- POIs des 3 rôles (couleurs : rouge = attaque, vert = défense, bleu = logistique)
+- Choke points identifiés en T1 (marqueurs spéciaux)
+- Routes normales vs routes coupées (arêtes à `cost = -1` après simulation)
+- POIs isolés après les coupures (marqueurs creux)
+
+**Vérification avant génération** :
+
+```sql
+-- S'assurer que les 3 rôles sont bien présents
+SELECT role, count(*) FROM mission_pois GROUP BY role ORDER BY role;
+-- Attendu : 3 lignes, chacune > 0
+
+-- S'assurer que la simulation a bien été appliquée (des arêtes coupées)
+SELECT count(*) FROM ways WHERE cost = -1;
+-- Attendu : > valeur baseline T0 (quelques arêtes de plus que le 28% initial)
+```
+
+::: {.callout-tip}
+Si `generate_situation_map()` échoue avec une erreur de signature, vérifiez la version du script `04_benchmark_comparison.py`. La signature peut avoir évolué — consultez `python scripts/04_benchmark_comparison.py --help` ou lisez les premières lignes de la fonction.
+:::
+
+**Étapes en cas de problème** :
+
+1. Vérifier que les 3 Parquets de rôles ont bien été importés (import croisé Phase 2)
+2. Vérifier que `ways_backup` existe (sauvegarde T5 — si non, restaurer depuis le Gold Dump)
+3. Vérifier que Neo4j est bien démarré (`docker compose ps`)

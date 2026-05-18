@@ -99,16 +99,18 @@ python scripts/03_routing_pgrouting.py --role logistique
 Compare les performances SQL vs Cypher et génère la carte finale.
 
 ```bash
-python scripts/04_benchmark_comparison.py --role attaque
-python scripts/04_benchmark_comparison.py --role attaque --map data/carte.png
+python scripts/04_benchmark_comparison.py --epci "Brest Métropole"
+python scripts/04_benchmark_comparison.py --epci 242900314 --map data/carte.png
+python scripts/04_benchmark_comparison.py --epci "Brest Métropole" --no-basemap
 ```
 
 **Options** :
 
 | Option | Défaut | Description |
 |--------|--------|-------------|
-| `--role` | requis | Rôle pour le filtrage |
-| `--map` | `data/carte_situation.png` | Chemin de sortie de la carte |
+| `--epci` | requis | Nom ou SIREN de l'EPCI |
+| `--map` | `data/carte_situation_<epci>.png` | Chemin de sortie de la carte |
+| `--no-basemap` | — | Désactiver le fond CartoDB (contextily) |
 
 **Ce qu'il fait** :
 
@@ -125,8 +127,9 @@ Fonction principale pour la T-Synthèse (Phase 3) : fusionne les POIs des 3 rôl
 ```python
 def generate_situation_map(
     epci: str,
-    layers: list[str] = ['attaque', 'defense', 'logistique'],
-    output_path: str | None = None
+    layers: list[str] = ("attaque", "defense", "logistique"),
+    output_path: str | None = None,
+    basemap: bool = True,
 ) -> str:
     """
     Génère la Carte de Situation Commune pour un EPCI.
@@ -137,6 +140,8 @@ def generate_situation_map(
                 (dernier = couche du dessus). Défaut : les 3 rôles.
         output_path: Chemin du PNG de sortie. Si None, utilise
                      data/carte_situation_{epci}.png.
+        basemap: Afficher fond CartoDB Positron via contextily (défaut True).
+                 Ignoré si contextily n'est pas installé.
 
     Returns:
         Chemin absolu du fichier PNG généré.

@@ -105,3 +105,10 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 - **Vary per-role prompts:** Repeating the same question structure across roles (e.g., "propose an LPG schema") feels redundant even with different contexts. Vary the angle per role.
 - **Check git history on refactor cues:** When user says "check last commit," recent merges (e.g., 4→3 roles) reveal architectural intent that overrides assumptions about current structure.
 - **Stale indexes after refactor:** Index/reference pages drift after structural changes. Flag as quick post-refactor cleanup.
+- **Parallel agent audit:** Launching 8+ subagents simultaneously for domain-specific audits (scripts, content, data, pedagogy, tests, docs, cross-references) found 40+ issues in one pass. Deep reviews should use parallel agent squads.
+- **Dead test suites rot silently:** Cypher tests were vacuous, SQL tests silently swallowed errors, conftest had stale role names → 0% effective coverage. Verify tests assert something by running with intentional breakage.
+- **Data pipeline path drift:** `00_setup.py` defaulted to `poi_source/` (3.5GB national) but students receive `epci_extracts/` (per-EPCI). Now auto-detects. Rule: after data pipeline refactor, trace actual file paths end-to-end.
+- **Contradictory docs > no docs:** Nuclear plants had 3 contradictory statements. Rule: after aligning code↔docs, grep ALL mentions across `*.qmd`, `*.md`, `*.py` for single source of truth.
+- **Quarto code fences:** This project uses `sql` fences for all code blocks (including Cypher). `cypher` fences don't exist in the setup. Do NOT flag as errors.
+- **Student-facing API mismatches are P0:** After any function signature change, grep corrigés + mission files for calls to that function.
+- **Post-merge role rebalance:** Merging roles inherits ~2x workload. Proactively trim or redistribute tasks immediately.

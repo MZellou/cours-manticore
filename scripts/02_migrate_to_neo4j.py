@@ -40,8 +40,14 @@ def get_neo_driver():
 # MIGRATION ONTOLOGIE
 # =============================================================================
 
-def clear_db(tx):
-    tx.run("MATCH (n) DETACH DELETE n")
+def clear_db(session):
+    session.run("""
+        CALL apoc.periodic.iterate(
+            'MATCH (n) RETURN n',
+            'DETACH DELETE n',
+            {batchSize: 1000, iterateList: true}
+        )
+    """)
 
 def load_databases(tx, df):
     # parent_db_name dans les niveaux Object/Detail référence le sql_name → on l'index aussi.
@@ -135,7 +141,7 @@ def demo_apoc_queries(session):
         MATCH (a:POI), (b:POI)
         WHERE id(a) < id(b)
         WITH a, b LIMIT 1
-        CALL apoc.path.dijkstra(a, b, 'DISTANCE', 'meters') YIELD path, weight
+        CALL apoc.algo.dijkstra(a, b, 'DISTANCE', 'meters') YIELD path, weight
         RETURN weight AS distance_m, [n IN nodes(path) | n.nom] AS route
     """)
     try:
@@ -161,8 +167,8 @@ if __name__ == "__main__":
 
     try:
         with neo_driver.session() as session:
-            # 1. Nettoyage + ontologie
-            session.execute_write(clear_db)
+            # 1. Nettoyage + ontologie (APOC paginé pour éviter OOM sur gros graphes)
+            clear_db(session)
             print("  → Base Neo4j nettoyée.")
 
             df_db = pd.read_parquet(f"{LOCAL_DATA}/bdtopo_database.parquet")

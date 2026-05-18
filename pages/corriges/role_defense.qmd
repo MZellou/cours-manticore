@@ -1,0 +1,347 @@
+---
+title: "Corrigé — Rôle Défense"
+order: 6
+---
+# Corrigé — Rôle Défense
+
+> Solutions des questions bonus du rôle Défense. Les requêtes supposent que `mission_pois` contient les POIs `role = 'defense'` chargés en Phase 1.
+
+---
+
+## B1 — Hôpitaux et gares : réseau d'évacuation
+
+**Question** : quels hôpitaux sont à moins de 1 km d'une gare (évacuation ferroviaire) ?
+
+```sql
+SELECT h.toponyme AS hopital, g.toponyme AS gare,
+       round(ST_Distance(h.geometrie, g.geometrie)::numeric, 0) AS dist_m
+FROM zone_d_activite_ou_d_interet h
+JOIN equipement_de_transport g
+  ON ST_DWithin(h.geometrie, g.geometrie, 1000)
+WHERE h.nature IN ('Hôpital', 'Établissement hospitalier')
+  AND g.nature LIKE 'Gare%'
+ORDER BY dist_m;
+```
+
+**Hôpitaux SANS gare à moins de 1 km** :
+
+```sql
+SELECT h.toponyme AS hopital_sans_gare
+FROM zone_d_activite_ou_d_interet h
+WHERE h.nature IN ('Hôpital', 'Établissement hospitalier')
+  AND NOT EXISTS (
+    SELECT 1 FROM equipement_de_transport g
+    WHERE g.nature LIKE 'Gare%'
+      AND ST_DWithin(h.geometrie, g.geometrie, 1000)
+  );
+```
+
+**Depuis `mission_pois`** (après Phase 1) :
+
+```sql
+SELECT h.nom AS hopital, g.toponyme AS gare,
+       round(ST_Distance(h.geom, g.geometrie)::numeric, 0) AS dist_m
+FROM mission_pois h
+JOIN equipement_de_transport g
+  ON ST_DWithin(h.geom, g.geometrie, 1000)
+WHERE h.role = 'defense' AND h.source = 'hopital'
+  AND g.nature LIKE 'Gare%'
+ORDER BY dist_m;
+```
+
+**Explication** :
+
+- `g.nature LIKE 'Gare%'` : filtre tous les types de gares en une seule expression (`'Gare voyageurs uniquement'`, `'Gare voyageurs et fret'`, `'Gare maritime'`…). Un `IN (...)` serait plus strict mais nécessiterait de lister tous les cas.
+- `NOT EXISTS` : anti-jointure — retourne les hôpitaux pour lesquels la sous-requête retourne 0 lignes. Plus lisible qu'un `LEFT JOIN ... WHERE g.id IS NULL`.
+
+**Interprétation** :
+
+- Les hôpitaux avec une gare à < 500 m ont une évacuation ferroviaire directe — profil de résilience élevé.
+- Les hôpitaux sans gare dépendent uniquement de la route. En Phase 3, couper les routes autour de ces hôpitaux les isole complètement.
+
+---
+
+## B2 — Ponts critiques sur les axes principaux
+
+**Question** : combien de ponts sont sur des routes d'importance ≤ 2 (nationales) ?
+
+```sql
+SELECT c.toponyme AS pont, r.nature AS route_nature,
+       CAST(r.importance AS INTEGER) AS importance
+FROM construction_surfacique c
+JOIN troncon_de_route r
+  ON ST_Intersects(c.geometrie, r.geometrie)
+WHERE c.nature = 'Pont'
+  AND CAST(r.importance AS INTEGER) <= 2
+ORDER BY importance, c.toponyme;
+```
+
+**Variante — compter par niveau d'importance** :
+
+```sql
+SELECT CAST(r.importance AS INTEGER) AS importance,
+       count(*) AS nb_ponts
+FROM construction_surfacique c
+JOIN troncon_de_route r ON ST_Intersects(c.geometrie, r.geometrie)
+WHERE c.nature = 'Pont'
+  AND CAST(r.importance AS INTEGER) <= 2
+GROUP BY r.importance
+ORDER BY importance;
+```
+
+**Explication** :
+
+- `construction_surfacique` pour les ponts (vs `construction_lineaire` utilisé en Attaque B5) : les ponts peuvent être représentés comme des surfaces (leur emprise au sol) ou comme des lignes (leur axe). La table dépend de la saisie BDTOPO — vérifiez les deux si les résultats sont insuffisants.
+- `CAST(r.importance AS INTEGER)` : identique à Attaque B5. Importance 1 = autoroute, 2 = nationale, 3 = départementale principale.
+
+**Interprétation** :
+
+- Un pont sur une autoroute (importance 1) est à la fois une cible Attaque et un point de protection Défense prioritaire.
+- Ces ponts sont les candidats naturels pour la **stratégie défensive** de T7 Phase 3 : protéger en priorité les 5 arêtes critiques du graphe.
+
+---
+
+## B3 — Buffer de sécurité autour des hôpitaux
+
+**Question** : combien de POIs d'autres rôles tombent dans un rayon de 500 m autour d'un hôpital ?
+
+```sql
+WITH hopital_buffers AS (
+    SELECT nom AS hopital, ST_Buffer(geom, 500) AS buffer
+    FROM mission_pois
+    WHERE role = 'defense' AND source = 'hopital'
+)
+SELECT h.hopital, count(*) AS pois_dans_buffer,
+       array_agg(DISTINCT p.role) AS roles_presents
+FROM hopital_buffers h
+JOIN mission_pois p ON ST_Intersects(p.geom, h.buffer)
+WHERE p.role != 'defense'
+GROUP BY h.hopital
+ORDER BY pois_dans_buffer DESC;
+```
+
+**Variante depuis les tables sources** :
+
+```sql
+WITH hopital_buffers AS (
+    SELECT toponyme, ST_Buffer(geometrie, 500) AS buffer
+    FROM zone_d_activite_ou_d_interet
+    WHERE nature IN ('Hôpital', 'Établissement hospitalier')
+)
+SELECT h.toponyme AS hopital, count(*) AS pois_dans_buffer
+FROM hopital_buffers h
+JOIN mission_pois p ON ST_Intersects(p.geom, h.buffer)
+WHERE p.role != 'defense'
+GROUP BY h.toponyme
+ORDER BY pois_dans_buffer DESC;
+```
+
+**Explication** :
+
+- `ST_Buffer(geom, 500)` : crée un polygone circulaire de rayon 500 m autour du point de l'hôpital. Unité : mètres (SRID 2154, Lambert-93 projeté).
+- `ST_Intersects(p.geom, h.buffer)` : vérifie si un POI est à l'intérieur du buffer. Équivalent à `ST_DWithin(p.geom, h.geom, 500)` mais `ST_Buffer` matérialise la géométrie — utile si on veut réutiliser le buffer dans plusieurs jointures.
+- `array_agg(DISTINCT p.role)` : liste les rôles présents dans le buffer (ex: `['attaque', 'logistique']`).
+
+**Interprétation** :
+
+- Un hôpital avec des POIs Attaque dans son buffer de 500 m est une cible immédiate : l'Attaque a des ressources à proximité.
+- Un hôpital avec des POIs Logistique dans son buffer a un accès énergétique ou logistique direct — avantage pour la Défense (ravitaillement rapide).
+
+---
+
+## B4 — Densité de forces de l'ordre par zone
+
+**Question** : quel est le ratio gendarmerie / caserne par km² dans l'EPCI ?
+
+```sql
+SELECT count(*) AS nb_forces,
+       round(ST_Area(e.geom)::numeric / 1000000, 1) AS superficie_km2,
+       round(count(*)::numeric / (ST_Area(e.geom) / 1000000), 2) AS densite_par_km2
+FROM mission_pois p, epci e
+WHERE p.role = 'defense'
+  AND p.source IN ('secours_decision')
+  AND ST_Intersects(p.geom, e.geom)
+GROUP BY e.geom;
+```
+
+**Interprétation** :
+
+- Densité < 0.1 forces/km² = EPCI rural peu couvert (maillage lâche).
+- Densité > 1 forces/km² = EPCI urbain dense (bonne couverture réactive).
+- Comparez avec les EPCIs voisins dans le groupe pour calibrer votre analyse.
+
+---
+
+## B5 — Casernes de pompiers : maillage du territoire
+
+**Question** : y a-t-il des zones non couvertes à plus de 10 km d'une caserne ?
+
+```sql
+WITH pompiers AS (
+    SELECT geom FROM mission_pois
+    WHERE role = 'defense' AND source = 'secours_decision'
+      AND nature ILIKE '%pompier%'
+),
+zones_couvertes AS (
+    SELECT ST_Union(ST_Buffer(geom, 10000)) AS couverture
+    FROM pompiers
+)
+SELECT
+    round(ST_Area(ST_Difference(e.geom, z.couverture))::numeric / 1000000, 1) AS zone_non_couverte_km2,
+    round(ST_Area(e.geom)::numeric / 1000000, 1) AS superficie_totale_km2
+FROM epci e, zones_couvertes z;
+```
+
+**Explication** :
+
+- `ST_Union(ST_Buffer(...))` : fusionne tous les disques de 10 km en un seul polygone d'union. Sans `ST_Union`, les zones se chevaucheraient et seraient comptées plusieurs fois dans `ST_Area`.
+- `ST_Difference(A, B)` : soustrait B de A. Résultat = parties de l'EPCI non couvertes par les pompiers.
+- `ST_Area(...) / 1000000` : convertit m² en km² (1 km² = 10⁶ m²).
+
+**Interprétation** :
+
+- `zone_non_couverte_km2 / superficie_totale_km2` = % du territoire hors couverture.
+- Ces zones sont des angles morts pour les secours : en Phase 3, une coupure de route dans ces zones isole définitivement une portion du territoire.
+
+---
+
+## B6 — Réseau d'évacuation souterrain
+
+**Question** : quels hôpitaux sont connectés à une station de métro/tram à moins de 500 m ?
+
+```sql
+SELECT
+    h.nom AS hopital,
+    e.nature AS type_transport,
+    e.nom AS station,
+    round(ST_Distance(h.geom, e.geom)::numeric, 0) AS distance_m
+FROM mission_pois h
+JOIN equipement_de_transport e
+    ON ST_DWithin(h.geom, e.geom, 500)
+WHERE h.role = 'defense'
+  AND h.source = 'hopital'
+  AND e.nature IN ('Station de métro', 'Station de tramway')
+ORDER BY distance_m;
+```
+
+**Interprétation** :
+
+- Hôpitaux avec station < 200 m : évacuation possible sans ambulance (patients mobiles, équipes médicales).
+- Si la requête est vide : votre EPCI n'a pas de réseau souterrain, ou les hôpitaux sont trop loin. C'est une fragilité documentée dans le rapport.
+
+---
+
+## B7 — Chaîne d'évacuation comme chemin
+
+**Question** : identifiez les hôpitaux qui ont une gare à < 1 km ET un aérodrome à < 15 km.
+
+```sql
+SELECT h.toponyme AS hopital,
+       g.toponyme AS gare_proche,
+       round(ST_Distance(h.geometrie, g.geometrie)::numeric, 0) AS dist_gare_m
+FROM zone_d_activite_ou_d_interet h
+JOIN equipement_de_transport g
+  ON ST_DWithin(h.geometrie, g.geometrie, 1000)
+  AND g.nature ILIKE 'Gare%'
+WHERE h.nature IN ('Hôpital', 'Établissement hospitalier')
+  AND EXISTS (
+    SELECT 1 FROM aerodrome a
+    WHERE a.categorie IN ('Internationale', 'Nationale')
+      AND ST_DWithin(h.geometrie, a.geometrie, 15000)
+  )
+ORDER BY dist_gare_m;
+```
+
+**Bridge Neo4j** :
+
+```cypher
+MATCH path = (h:POI {source: 'hopital'})-[:DISTANCE*1..2]->(target:POI)
+WHERE (target.source = 'gare' AND EXISTS { (h)-[:DISTANCE]->(target) })
+   OR (target.source = 'aerodrome')
+RETURN h.nom, [n IN nodes(path) | n.nom] AS chaine
+LIMIT 20;
+```
+
+**Explication** :
+
+- `EXISTS (SELECT 1 FROM aerodrome ...)` : anti-boucle SQL — vérifie qu'il *existe* un aérodrome à portée sans retourner les données de l'aérodrome. Plus performant qu'une jointure quand on veut juste vérifier la présence.
+- **Avantage Cypher** : le pattern `(h)-[:DISTANCE*1..2]->(target)` explore 1 à 2 sauts en une ligne — la chaîne d'évacuation hôpital → gare → aéroport est déclarée, pas énumérée.
+
+---
+
+## B8 — Couverture croisée : graphe bipartite
+
+**Question** : quels hôpitaux sont orphelins (0 pompier à 5 km) ? Quel pompier couvre le plus d'hôpitaux ?
+
+```sql
+-- Graphe pompiers ↔ hôpitaux
+SELECT p.nom AS pompier, h.nom AS hopital,
+       round(ST_Distance(p.geom, h.geom)::numeric, 0) AS dist_m
+FROM mission_pois p
+JOIN mission_pois h ON ST_DWithin(p.geom, h.geom, 5000)
+WHERE p.source = 'secours_decision'
+  AND h.source = 'hopital'
+ORDER BY p.nom, dist_m;
+```
+
+```sql
+-- Hôpitaux orphelins
+SELECT h.nom AS hopital_orphelin
+FROM mission_pois h
+WHERE h.source = 'hopital'
+  AND NOT EXISTS (
+    SELECT 1 FROM mission_pois p
+    WHERE p.source = 'secours_decision'
+      AND ST_DWithin(p.geom, h.geom, 5000)
+  );
+```
+
+```sql
+-- Pompier le plus central (couvre le plus d'hôpitaux)
+SELECT p.nom AS pompier, count(*) AS hopitaux_couverts
+FROM mission_pois p
+JOIN mission_pois h ON ST_DWithin(p.geom, h.geom, 5000)
+WHERE p.source = 'secours_decision' AND h.source = 'hopital'
+GROUP BY p.nom
+ORDER BY hopitaux_couverts DESC LIMIT 1;
+```
+
+**Bridge Neo4j** :
+
+```cypher
+// Pompier le plus central
+MATCH (p:POI {source: 'secours_decision'})-[:DISTANCE]-(h:POI {source: 'hopital'})
+RETURN p.nom, count(h) AS hopitaux_couverts
+ORDER BY hopitaux_couverts DESC LIMIT 1;
+```
+
+**Interprétation** :
+
+- Le pompier qui couvre le plus d'hôpitaux est le **hub de sécurité** : le protéger est prioritaire (si ce centre tombe, plusieurs hôpitaux deviennent orphelins simultanément).
+- En Phase 3 T7, ce centre de secours est une arête à protéger en priorité.
+
+---
+
+## B9 — Relations directionnelles
+
+**Question** : proposez 3 types de relations orientées pour le rôle Défense.
+
+Pas de code — réflexion architecturale.
+
+**Proposition de relations** :
+
+| Relation | Direction | Sémantique |
+|----------|-----------|------------|
+| `(:Hôpital)-[:EVACUE_VERS]->(:Gare)` | Hôpital → Gare | L'hôpital *utilise* la gare pour évacuer ses patients |
+| `(:Pompier)-[:PROTEGE]->(:Hôpital)` | Pompier → Hôpital | Le centre de secours *couvre* l'hôpital dans son rayon d'action |
+| `(:Antenne)-[:DEGAGE_VERS]->(:Hôpital)` | Antenne → Hôpital | L'antenne *sert* l'hôpital pour les communications d'urgence |
+
+**Pourquoi la direction importe** :
+
+- `EVACUE_VERS` est **asymétrique** : le flux va de l'hôpital vers la gare, pas l'inverse. Une requête `(h)-[:EVACUE_VERS]->(g)` représente la chaîne d'évacuation ; `(g)-[:EVACUE_VERS]->(h)` n'a pas de sens métier.
+- `PROTEGE` est **directionnel mais non réciproque** : le pompier protège l'hôpital, pas l'inverse. Si on inversait, le sens serait "l'hôpital protège le pompier" — sémantique incorrecte.
+- `DEGAGE_VERS` implique une **contrainte directionnelle logistique** : l'antenne envoie le signal, l'hôpital le reçoit. La direction encode qui est l'émetteur.
+
+**Avantage sur SQL** :
+
+En SQL, `A JOIN B` est toujours symétrique. Pour modéliser la direction, il faut des conventions de nommage (colonne `source_id`, `target_id`) ou des CHECK constraints — invisible dans la requête. En Neo4j, la direction est dans le modèle lui-même et lisible dans chaque `MATCH`.

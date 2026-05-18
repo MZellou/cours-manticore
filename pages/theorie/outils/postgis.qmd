@@ -159,9 +159,9 @@ CREATE INDEX idx_pois_geom ON mission_pois USING GIST (geom);
 
 ---
 
-## `ST_ClusterDBSCAN` — clustering spatial
+## Clustering spatial — ST_ClusterDBSCAN
 
-DBSCAN groupe les points denses **sans avoir à fixer le nombre de clusters**. Deux paramètres seulement :
+DBSCAN (Density-Based Spatial Clustering) regroupe les points denses **sans avoir à fixer le nombre de clusters**. Les points trop isolés sont des outliers (cluster `-1`). Deux paramètres seulement :
 
 | Paramètre | Sens |
 |-----------|------|
@@ -176,7 +176,13 @@ SELECT
   ST_ClusterDBSCAN(geom, eps := 2000, minpoints := 2) OVER () AS cluster_id
 FROM mission_pois
 WHERE role = 'attaque';
+-- cluster_id = -1  → point isolé (outlier, pas assez de voisins dans eps)
+-- cluster_id >= 0  → appartient au cluster numéroté
 ```
+
+::: {.callout-note}
+`ST_ClusterDBSCAN` est une **fonction de fenêtrage** (`OVER ()`). Elle ne filtre pas les outliers — elle leur assigne `-1`. Pour ne garder que les clusters réels : `WHERE cluster_id >= 0`.
+:::
 
 ### Comment choisir `eps` et `minpoints` ?
 
