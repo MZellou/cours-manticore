@@ -210,14 +210,9 @@ Les 13 EPCIs sont choisis pour maximiser la **diversité géographique et théma
 - **Métropoles intérieures** : Lyon, Tours
 - Taille variée : de Dunkerque (~34k routes) à Nantes (~142k routes)
 
-### 3.2 Centrales nucléaires proches
+### 3.2 Centrales électriques
 
-Les centrales ne sont PAS dans BDTOPO. Coordonnées approximatives utilisées :
-
-| Centrale | Coords | EPCI le plus proche |
-|---|---|---|
-| Gravelines | (2.14, 51.0) | CU de Dunkerque |
-| Flamanville | (-1.85, 49.55) | CA du Cotentin |
+Les centrales électriques (dont nucléaires) sont dans BDTOPO via `zone_d_activite_ou_d_interet` WHERE `nature = 'Centrale électrique'`. Selon l'EPCI, certaines peuvent être proches mais hors périmètre — utilisez `ST_DWithin` avec un rayon large pour les capter.
 
 ### 3.3 Matrice POI par EPCI
 

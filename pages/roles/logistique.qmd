@@ -209,14 +209,8 @@ Résolvez au moins 3 de ces questions. Documentez vos requêtes.
 
 À la fin de la Phase 1, exportez vos POIs dans le dossier partagé du groupe (clé USB, Drive, dossier réseau de la salle) :
 
-```sql
--- Export depuis PostGIS (si votre client supporte COPY TO)
-COPY (SELECT * FROM mission_pois WHERE role = 'logistique')
-TO '/tmp/mission_pois_logistique.parquet' WITH (FORMAT PARQUET);
-```
-
 ```python
-# Alternative Python / DuckDB
+# Export via DuckDB (méthode recommandée)
 import duckdb
 duckdb.execute("""
     COPY (SELECT * FROM postgres_scan('host=localhost dbname=bdtopo_manticore',

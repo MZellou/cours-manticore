@@ -24,7 +24,7 @@ order: 9
 
 **Effectif variable** : N groupes de 3 (1 EPCI / groupe). L'instructeur affecte les EPCIs au démarrage en fonction du nombre de groupes présents.
 
-Catalogue des 10 EPCIs disponibles (affecter selon la taille de la session) :
+Catalogue des 13 EPCIs disponibles (affecter selon la taille de la session) :
 
 | EPCI | Profil tactique | Particularité Phase 3 |
 |------|-----------------|----------------------|
@@ -38,6 +38,9 @@ Catalogue des 10 EPCIs disponibles (affecter selon la taille de la session) :
 | CA du Pays Basque | Frontière Espagne + montagne | Topographie contrainte |
 | Métropole Rouen Normandie | Vallée Seine | Corridors fluviaux |
 | Bordeaux Métropole | Estuaire Gironde | Réseau portuaire |
+| Nantes Métropole | Estuaire Loire | Réseau dense (142k routes) |
+| Métropole de Lyon | Métropole intérieure | Plus grand EPCI (86k routes) |
+| Tours Métropole Val de Loire | Val de Loire | Réseau modéré, bon pour petits groupes |
 
 Chaque groupe de 3 étudiants : 1 Attaque, 1 Défense, 1 Logistique.
 

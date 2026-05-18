@@ -32,8 +32,27 @@ order: 8
 | **EPSG:4326** | WGS84 — coordonnées GPS (latitude/longitude) |
 | **ST_Intersects** | Teste si deux géométries se croisent |
 | **ST_DWithin** | Teste si deux géométries sont dans un rayon donné |
+| **ST_Distance** | Calcule la distance entre deux géométries |
+| **ST_Buffer** | Crée une zone tampon autour d'une géométrie |
 | **ST_ClusterDBSCAN** | Algorithme de clustering spatial (density-based) |
 | **ST_Transform** | Convertit entre systèmes de coordonnées |
+| **GIST** | Generalized Search Tree — index spatial utilisé par PostGIS |
+| **KNN** | K-Nearest Neighbors — recherche des k plus proches voisins (`<->` en SQL) |
+| **WITH RECURSIVE** | CTE récursive en SQL — parcourt une hiérarchie (ontologie) |
+| **CROSS JOIN LATERAL** | Jointure latérale — pour chaque ligne de gauche, exécute une sous-requête |
+
+## Graphes
+
+| Terme | Définition |
+|-------|------------|
+| **MERGE** | Cypher : crée un nœud/relation s'il n'existe pas (idempotent) |
+| **UNWIND** | Cypher : déplie une liste en lignes (équivalent de `UNNEST`) |
+| **OPTIONAL MATCH** | Cypher : LEFT JOIN équivalent — retourne NULL si pas de match |
+| **apoc.path.subgraphAll** | APOC : retourne tous les nœuds/relations atteignables depuis un point |
+| **GDS** | Graph Data Science — plugin Neo4j pour les algorithmes de graphe |
+| **pgr_dijkstra** | pgRouting : plus court chemin (Dijkstra) entre deux nœuds |
+| **pgr_connectedComponents** | pgRouting : composantes connexes du graphe |
+| **pgr_dijkstraCostMatrix** | pgRouting : matrice de distances entre N sources et M cibles |
 
 ## Données
 
@@ -52,10 +71,10 @@ order: 8
 |-------|------------|
 | **Neo4j** | Base de données graphe (Java) utilisée dans ce cours pour l'ontologie et les traversées |
 | **APOC** | Awesome Procedures On Cypher — plugin Neo4j avec 400+ algorithmes |
+| **DuckDB** | Base de données analytique in-process — utilisée pour lire/écrire des Parquets |
+| **Parquet** | Format de stockage colonnaire efficace — utilisé pour échanger les POIs entre rôles |
 | **r2gg** | Route-Graph-Generator — convertit les tronçons BDTOPO en graphe navigable |
 | **Gold Dumps** | Dumps SQL pré-calculés du graphe r2gg (tables `ways` + `ways_vertices_pgr`) |
-| **Codestral** | Assistant IA de Mistral — utilisé pour générer des requêtes SQL/Cypher |
-| **Marp** | Convertisseur Markdown → slides HTML/PDF |
 
 ## Concepts du TD
 

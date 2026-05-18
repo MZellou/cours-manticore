@@ -81,8 +81,11 @@ Si vous êtes bloqué, consultez — l'objectif est de comprendre, pas de bloque
 
 ## Avant de démarrer : la théorie
 
-Avant la Phase 1, parcourez ces pages (15 min total) :
+Avant la Phase 1, parcourez ces pages (20 min total) :
 
 - [Pourquoi ce cours](../theorie/fondements/pourquoi.qmd) — fondations
-- [PostGIS — essentiels](../theorie/outils/postgis.qmd) — pour la Phase 1
+- [PostGIS — essentiels](../theorie/outils/postgis.qmd) — pour la Phase 1 (inclut DuckDB + Parquet)
 - [Modèle BDTOPO](../theorie/fondements/modele_bdtopo.qmd) — les données
+- [SQL — limites & EXPLAIN](../theorie/outils/sql_recursion.qmd) — pour la T1 ontologique
+
+> Entre Phase 1 et Phase 2, vous lirez [GraphDB 101](../theorie/outils/graphdb_101.qmd) et [Cypher en 5 min](../theorie/outils/cypher_5min.qmd) — ne les sautez pas, ils préparent le Cypher Lab.

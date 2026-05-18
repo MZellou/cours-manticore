@@ -557,7 +557,7 @@ SELECT
 FROM cours_d_eau c
 JOIN zone_d_activite_ou_d_interet z
     ON ST_Intersects(c.geometrie, z.geometrie)
-WHERE c.caractere_permanent = 'Oui'              -- ne garder que les cours pérennes
+WHERE c.caractere_permanent IS TRUE              -- ne garder que les cours pérennes
   AND z.nature = 'Zone industrielle'
 ORDER BY c.toponyme;
 ```
@@ -566,9 +566,9 @@ ORDER BY c.toponyme;
 
 - `cours_d_eau` : table BDTOPO de tous les cours d'eau : fleuves, rivières, ruisseaux, canaux… Chaque segment a :
   - `toponyme` : nom du cours d'eau (ex: "Seine", "Rhône")
-  - `caractere_permanent` : 'Oui' si le cours d'eau coule toute l'année, 'Non' s'il est intermittent (sec une partie de l'année)
+  - `caractere_permanent` : `TRUE` si le cours d'eau coule toute l'année, `FALSE` s'il est intermittent (sec une partie de l'année). C'est un BOOLEAN dans PostGIS.
   - `geometrie` : ligne représentant le tracé du cours d'eau
-- `caractere_permanent = 'Oui'` : filtre crucial. Un cours d'eau intermittent n'est pas fiable pour le transport car navigable seulement une partie de l'année. On ne garde que les permanents, qui sont navigables en continu.
+- `caractere_permanent IS TRUE` : filtre crucial. Un cours d'eau intermittent n'est pas fiable pour le transport car navigable seulement une partie de l'année. On ne garde que les permanents, qui sont navigables en continu.
 - `ST_Intersects(cours_d_eau, zone_industrielle)` : teste si le cours d'eau traverse la zone industrielle (ou la longe). Si oui, la zone a un accès direct à la voie d'eau.
 
 **Interprétation des résultats** :
@@ -816,10 +816,10 @@ SELECT
     c.nature AS type_canalisation,
     p.toponyme AS port,
     round(ST_Distance(c.geometrie, p.geometrie)::numeric, 0) AS distance_m
-FROM construction_lineaire c
+FROM canalisation c
 JOIN equipement_de_transport p
     ON ST_DWithin(c.geometrie, p.geometrie, 500)
-WHERE c.nature IN ('Canalisation', 'Pipeline')
+WHERE c.nature = 'Hydrocarbures'
   AND p.nature = 'Port'
   AND p.nature_detaillee = 'Port de commerce'
 ORDER BY distance_m;

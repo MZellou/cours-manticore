@@ -99,13 +99,8 @@ def load_pois_from_postgis(tx, pois):
             poi.lon = p.lon
     """, pois=pois)
 
-def create_distance_edges(tx, edges):
-    """Crée les relations de distance entre POIs proches."""
-    tx.run("""
-        UNWIND $edges AS e
-        MATCH (a:POI {cleabs: e.from}), (b:POI {cleabs: e.to})
-        MERGE (a)-[r:DISTANCE {meters: e.distance}]->(b)
-    """, edges=edges)
+# NOTE: Distance edges are now created inline via batched spatial pre-filter
+# (see main block below). The old create_distance_edges() is removed.
 
 # =============================================================================
 # EXEMPLES APOC
@@ -140,7 +135,7 @@ def demo_apoc_queries(session):
         MATCH (a:POI), (b:POI)
         WHERE id(a) < id(b)
         WITH a, b LIMIT 1
-        CALL apoc.algo.dijkstra(a, b, 'DISTANCE', 'meters') YIELD path, weight
+        CALL apoc.path.dijkstra(a, b, 'DISTANCE', 'meters') YIELD path, weight
         RETURN weight AS distance_m, [n IN nodes(path) | n.nom] AS route
     """)
     try:

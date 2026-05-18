@@ -1,23 +1,29 @@
+# ⚠️ AVERTISSEMENT : OSRM et Valhalla nécessitent des données dans leur format propre (.osrm, tiles Valhalla).
+# Les gold dumps SQL ne sont PAS compatibles. Ces services sont optionnels pour le TD.
+# Pour les activer, générez les données spécifiques (OSM → .osrm / Valhalla tiles) pour votre EPCI.
+
 services:
-  # Moteur OSRM (Statique, très rapide)
+  # Moteur OSRM (Statique, très rapide) — NÉCESSITE un fichier .osrm
   osrm:
     image: osrm/osrm-backend
     container_name: manticore-osrm
     restart: unless-stopped
+    profiles: ["routing"]
     ports:
       - "5000:5000"
     volumes:
-      - ./data/gold_dumps:/data
+      - ./data/routing:/data
     command: osrm-routed --algorithm mld /data/manticore.osrm
 
-  # Moteur Valhalla (Dynamique, flexible)
+  # Moteur Valhalla (Dynamique, flexible) — NÉCESSITE des tiles Valhalla
   valhalla:
     image: ghcr.io/valhalla/valhalla:latest
     container_name: manticore-valhalla
     restart: unless-stopped
+    profiles: ["routing"]
     ports:
       - "8002:8002"
     volumes:
-      - ./data/gold_dumps:/custom_files
+      - ./data/routing:/custom_files
     environment:
       - serve_tiles=True

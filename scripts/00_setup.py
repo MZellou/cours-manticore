@@ -24,15 +24,18 @@ import psycopg2
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
+from dotenv import load_dotenv
 from psycopg2.extras import execute_values
 from shapely import prepared, wkb
-from shapely.geometry import box
+
+load_dotenv()
 
 # =============================================================================
 # CONFIG
 # =============================================================================
 
 DEFAULT_SOURCE = "data/poi_source"
+EPCI_EXTRACTS = "data/epci_extracts"
 LOCAL_DATA = "data"
 
 TARGET_TABLES = [
@@ -463,7 +466,8 @@ def main():
         "--list-epci", action="store_true", help="Lister les EPCI disponibles"
     )
     parser.add_argument(
-        "--source", default=DEFAULT_SOURCE, help="Dossier source des Parquets BDTOPO"
+        "--source", default=None,
+        help="Dossier source des Parquets BDTOPO (défaut: auto-detect)"
     )
     parser.add_argument(
         "--skip-spatial-filter", action="store_true",
@@ -488,6 +492,17 @@ def main():
     print(f"\n[MANTICORE] Préparation de l'EPCI : {name} ({siren})")
     print(f"BBOX: {bbox}")
 
+    # Auto-detect source: prefer epci_extracts/{siren} over poi_source
+    if args.source:
+        source = args.source
+    elif os.path.isdir(f"{EPCI_EXTRACTS}/{siren}"):
+        source = f"{EPCI_EXTRACTS}/{siren}"
+        args.skip_spatial_filter = True  # epci_extracts are pre-filtered
+        print(f"[SOURCE] Auto-detecté: {source} (pré-filtré)")
+    else:
+        source = DEFAULT_SOURCE
+        print(f"[SOURCE] Source nationale: {source}")
+
     prep_geom = prepared.prep(geom)
     skip_sf = args.skip_spatial_filter
     conn = get_conn()
@@ -498,7 +513,7 @@ def main():
     # 2. Boucle sur les tables
     total = 0
     for table_name in TARGET_TABLES:
-        p_path = f"{args.source}/{table_name}.parquet"
+        p_path = f"{source}/{table_name}.parquet"
         if not os.path.exists(p_path):
             print(f"  [SKIP] {table_name} (fichier absent)")
             continue

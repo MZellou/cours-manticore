@@ -212,4 +212,30 @@ WHERE role = 'attaque';
 
 - [Modèle BDTOPO](../fondements/modele_bdtopo.qmd) — quelles tables, quels champs
 - [pgRouting et r2gg](pgrouting.qmd) — passer du spatial au graphe routier
-- [SQL : limites de la récursion](../avance/sql_recursion.qmd) — pour comprendre le besoin de Cypher
+- [SQL : limites & EXPLAIN](sql_recursion.qmd) — pour comprendre le besoin de Cypher
+
+---
+
+## Annexe : DuckDB + Parquet (pour la Phase 1)
+
+Le TD utilise **DuckDB** pour explorer les fichiers Parquet BDTOPO avant de les charger dans PostGIS. DuckDB est une base analytique in-process (pas de serveur) qui lit nativement le format Parquet.
+
+```sql
+-- Lancer DuckDB en CLI
+duckdb
+
+-- Lister les tables dans un fichier Parquet (équivalent de \d)
+DESCRIBE SELECT * FROM read_parquet('data/poi_source/aerodrome.parquet');
+
+-- Compter les lignes
+SELECT count(*) FROM read_parquet('data/poi_source/aerodrome.parquet');
+
+-- Cross-join deux Parquets (utile pour l'ontologie)
+SELECT o.name AS objet, d.name AS detail
+FROM read_parquet('data/ontologie/bdtopo_objects.parquet') o
+JOIN read_parquet('data/ontologie/bdtopo_details.parquet') d
+  ON d.parent_obj_name = o.name
+LIMIT 10;
+```
+
+> **Parquet** est un format de stockage colonnaire (comme CSV mais compressé et typé). Il est standard dans l'écosystème data et remplace avantageusement CSV pour les gros volumes.

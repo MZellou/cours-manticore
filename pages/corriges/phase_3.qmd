@@ -67,26 +67,34 @@ SELECT role, count(*) FROM mission_pois GROUP BY role ORDER BY role;
 ### Étape 2 — Générer la Carte de Situation Commune
 
 ```python
-from scripts.script_04_benchmark_comparison import generate_situation_map
+from scripts import __path__  # noqa — assure scripts/ dans sys.path
+import importlib.util, sys, os
 
-# Appel minimal — nom de l'EPCI de votre groupe
-generate_situation_map(epci='Brest Métropole')
-
-# Appel complet avec options
-generate_situation_map(
-    epci='Brest Métropole',
-    layers=['attaque', 'defense', 'logistique'],  # ordre des couches (de bas en haut)
-    output_path='exports/carte_situation_brest.png'
+# Charger le module script
+spec = importlib.util.spec_from_file_location(
+    "benchmark", os.path.join("scripts", "04_benchmark_comparison.py")
 )
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+# Connexion PostGIS
+import psycopg2
+pg_conn = psycopg2.connect(
+    host="localhost", port=5432,
+    dbname="bdtopo_manticore", user="postgres", password="manticore2026"
+)
+
+# Générer la carte pour votre rôle
+mod.generate_situation_map(pg_conn, "logistique", "exports/carte_situation.png")
 ```
 
 ### Paramètres de `generate_situation_map()`
 
 | Paramètre | Type | Défaut | Description |
 |-----------|------|--------|-------------|
-| `epci` | `str` | requis | Nom ou code SIREN de l'EPCI (doit être chargé dans PostGIS) |
-| `layers` | `list[str]` | `['attaque','defense','logistique']` | Rôles à afficher et ordre de superposition |
-| `output_path` | `str \| None` | `data/carte_situation.png` | Chemin du fichier PNG en sortie |
+| `pg_conn` | `connection` | requis | Connexion psycopg2 à PostGIS |
+| `role` | `str` | requis | Rôle pour le titre (`'attaque'`, `'defense'`, `'logistique'`) |
+| `output_path` | `str` | `'data/carte_situation.png'` | Chemin du fichier PNG en sortie |
 
 ### Étape 3 — Ordre des couches et couleurs
 

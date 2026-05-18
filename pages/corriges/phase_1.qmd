@@ -207,8 +207,11 @@ Consultez votre page rôle pour les tables et filtres spécifiques :
 ## T3 — Ajouter des critères de criticité
 
 ```sql
+-- Ajouter la colonne criticité
+ALTER TABLE mission_pois ADD COLUMN IF NOT EXISTS critique BOOLEAN DEFAULT FALSE;
+
 -- Postes électriques critiques
-UPDATE mission_pois SET categorie = 'critique'
+UPDATE mission_pois SET critique = TRUE
 WHERE role = 'logistique' AND source = 'poste_ht'
   AND CAST(nature AS INTEGER) <= 3;
 

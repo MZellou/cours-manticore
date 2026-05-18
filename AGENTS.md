@@ -89,7 +89,7 @@ route-graph-generator/     # IGNF r2gg submodule — used by admin_generate_gold
 - **BDTOPO SRID:** Parquet geometries are WGS84 (4326), NOT Lambert-93 (2154). Always `ST_SetSRID(geom, 4326)` after loading.
 - **r2gg without FDW:** Use `sql/bdtopo_v3.3_local.sql` (no Foreign Data Wrapper) — reads tables directly from same DB. Must `CREATE SCHEMA pgr_{siren}` before pivot2pgrouting.
 - **r2gg deps:** Patch `requirements/base.txt` to use `psycopg2-binary` instead of `psycopg2`. `matieres_dangereuses_interdites` is TEXT in parquet, needs CASE cast to BOOLEAN in SQL.
-- **Nuclear plants:** Not in BDTOPO — injected as custom POIs at setup.
+- **Nuclear plants:** In BDTOPO as `zone_d_activite_ou_d_interet` WHERE `nature = 'Centrale électrique'`. Loaded automatically by 00_setup.py. Some may be outside the EPCI boundary — use `ST_DWithin` with a large radius.
 - **Role queries:** Each role has specific table+filter combos (see `reference/glossaire.qmd`).
 - **Avoid backslashes in f-strings** (compatibility issues with SQL strings).
 - **Site:** Quarto website deployed to GitHub Pages via `.github/workflows/quarto.yml`. Source files at root (`*.qmd`), built to `_site/`. Theory pages under `theorie/`, mission pages under `mission/`, roles under `roles/`, corrigés under `corriges/`. Slides in `slides/` use `{{< include >}}` to reuse theory content.

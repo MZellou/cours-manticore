@@ -149,6 +149,8 @@ Résultat : tables `ways` (arêtes) et `ways_vertices_pgr` (sommets).
 
 Les centrales électriques (dont nucléaires) sont présentes dans BDTOPO via la table `zone_d_activite_ou_d_interet` avec `nature = 'Centrale électrique'`. Elles sont chargées automatiquement lors du setup avec les autres tables BDTOPO.
 
+> **Note** : toutes les centrales ne sont pas dans BDTOPO — seules celles présentes comme `zone_d_activite_ou_d_interet` y figurent. Pour les centrales proches de votre EPCI mais hors de son périmètre, utilisez un rayon de recherche (`ST_DWithin`).
+
 ---
 
 ## Référence complète

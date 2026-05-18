@@ -196,8 +196,19 @@ FROM mission_pois p;
 | `pgr_dijkstra` | Plus court chemin point-à-point |
 | `pgr_dijkstraCostMatrix` | **Matrice** de distances entre N sources et M cibles (Phase 2 T10) |
 | `pgr_drivingDistance` | **Isochrone** : tous les nœuds atteignables sous un coût max (Phase 2 T11) |
-| `pgr_connectedComponents` | Composantes connexes du graphe (Phase 3 T9) |
+| `pgr_connectedComponents` | **Composantes connexes** : groupes de nœuds connectés entre eux (Phase 3 T9). Réponse à : "si on coupe ce pont, y a-t-il des nœuds isolés ?" |
 | `pgr_aStar` | Variante avec heuristique géographique (plus rapide pour les longues distances) |
+
+### `pgr_connectedComponents` en détail
+
+```sql
+SELECT * FROM pgr_connectedComponents(
+    'SELECT id, source, target, cost, reverse_cost FROM ways'
+);
+-- Retourne : component (id du groupe), node_id (sommet)
+-- Tous les nœuds avec le même component sont connectés entre eux.
+-- Compter les groupes : SELECT component, count(*) FROM ... GROUP BY 1
+```
 
 ---
 

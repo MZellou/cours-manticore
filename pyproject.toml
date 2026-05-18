@@ -8,9 +8,9 @@ dependencies = [
     "geopandas",
     "pandas",
     "pyarrow",
+    "shapely",
     "neo4j",
     "python-dotenv",
-    "ipykernel",
     "matplotlib",
     "duckdb>=1.5.2",
 ]
@@ -26,6 +26,7 @@ packages = ["scripts"]
 dev-dependencies = [
     "jupyter",
     "notebook",
+    "ipykernel",
     "pytest>=8",
     "pytest-xdist",
 ]
