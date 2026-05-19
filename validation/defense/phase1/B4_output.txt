@@ -1,3 +1,3 @@
-Maison de retraite|711
-Hôpital|437
-Etablissement hospitalier|195
+Maison de retraite|675
+Hôpital|321
+Etablissement hospitalier|255

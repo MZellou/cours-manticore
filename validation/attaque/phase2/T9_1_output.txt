@@ -1,6 +1,6 @@
 etapes, sauts
-["Aéroport de Brest-Bretagne", "Brigade Territoriale de Proximité de Guipavas"], 1
-["Aéroport de Brest-Bretagne", "Brigade Territoriale de Proximité de Guipavas", "Brigade Territoriale de Proximité du Relecq-Kerhuon"], 2
-["Aéroport de Brest-Bretagne", "Brigade Territoriale de Proximité de Guipavas", "Brigade Territoriale de Proximité du Relecq-Kerhuon", NULL], 3
-["Aéroport de Brest-Bretagne", "Brigade Territoriale de Proximité de Guipavas", "Brigade Territoriale de Proximité du Relecq-Kerhuon", "Brigade Territoriale de Proximité de Plougastel-Daoulas"], 3
-["Aéroport de Brest-Bretagne", "Brigade Territoriale de Proximité de Guipavas", "Brigade Territoriale de Proximité du Relecq-Kerhuon", NULL], 3
+[NULL, NULL], 1
+[NULL, NULL, NULL], 2
+[NULL, NULL, NULL, NULL], 3
+[NULL, NULL, NULL, NULL], 3
+[NULL, NULL, NULL, NULL], 3

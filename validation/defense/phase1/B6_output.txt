@@ -1,10 +1,10 @@
+securite|securite|0
+securite|secours_decision|0
 hopital|hopital|0
-etranglement|eau_potable|0
+hopital|hopital|0
+hopital|hopital|0
 hopital|hopital|0
 communication|secours_decision|0
-communication|eau_potable|0
-secours_decision|securite|3
-etranglement|etranglement|4
-pont|hopital|4
-pont|pont|5
-pont|eau_potable|12
+communication|securite|0
+hopital|hopital|0
+pont|pont|0

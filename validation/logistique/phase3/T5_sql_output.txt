@@ -1,14 +1,18 @@
-Limit  (cost=17736.42..17736.47 rows=20 width=84) (actual time=571.213..571.217 rows=20 loops=1)
-  ->  Sort  (cost=17736.42..17737.47 rows=423 width=84) (actual time=571.211..571.212 rows=20 loops=1)
+Limit  (cost=330808.60..330808.65 rows=20 width=84) (actual time=18716.951..18716.953 rows=20 loops=1)
+  ->  Sort  (cost=330808.60..330865.14 rows=22615 width=84) (actual time=18701.469..18701.471 rows=20 loops=1)
         Sort Key: (round((st_distance(p1.geom, p2.geom))::numeric, 0))
         Sort Method: top-N heapsort  Memory: 26kB
-        ->  Nested Loop  (cost=0.27..17725.16 rows=423 width=84) (actual time=0.292..552.464 rows=121758 loops=1)
-              ->  Seq Scan on mission_pois p1  (cost=0.00..94.80 rows=938 width=282) (actual time=0.142..0.332 rows=938 loops=1)
+        ->  Nested Loop  (cost=0.27..330206.83 rows=22615 width=84) (actual time=0.637..18325.738 rows=2547851 loops=1)
+              ->  Seq Scan on mission_pois p1  (cost=0.00..424.52 rows=3545 width=424) (actual time=0.395..1.593 rows=3545 loops=1)
                     Filter: (role = 'logistique'::text)
-                    Rows Removed by Filter: 886
-              ->  Index Scan using mission_pois_geom_idx on mission_pois p2  (cost=0.27..13.15 rows=1 width=282) (actual time=0.042..0.358 rows=130 loops=938)
+                    Rows Removed by Filter: 2097
+              ->  Index Scan using mission_pois_geom_idx on mission_pois p2  (cost=0.27..13.24 rows=1 width=424) (actual time=0.051..2.729 rows=719 loops=3545)
                     Index Cond: (geom && st_expand(p1.geom, '5000'::double precision))
                     Filter: ((role = 'logistique'::text) AND (p1.cleabs < cleabs) AND st_dwithin(p1.geom, geom, '5000'::double precision))
-                    Rows Removed by Filter: 468
-Planning Time: 8.886 ms
-Execution Time: 571.281 ms
+                    Rows Removed by Filter: 1190
+Planning Time: 14.709 ms
+JIT:
+  Functions: 11
+  Options: Inlining false, Optimization false, Expressions true, Deforming true
+  Timing: Generation 1.515 ms (Deform 0.848 ms), Inlining 0.000 ms, Optimization 1.052 ms, Emission 14.435 ms, Total 17.002 ms
+Execution Time: 18745.837 ms

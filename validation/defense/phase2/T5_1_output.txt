@@ -3,9 +3,9 @@ NULL, NULL, 0
 NULL, NULL, 0
 NULL, NULL, 0
 NULL, NULL, 0
-"Brigade Territoriale de Proximité de Saint-Renan", "Brigade Territoriale de Proximité de Saint-Renan", 0
-"Brigade Territoriale de Proximité de Guipavas", "Brigade Territoriale de Proximité de Guipavas", 0
 NULL, NULL, 0
 NULL, NULL, 0
 NULL, NULL, 0
-"Brigade Territoriale de Proximité de Guilers", "Brigade Territoriale de Proximité de Guilers", 0
+NULL, NULL, 0
+NULL, NULL, 0
+NULL, NULL, 0

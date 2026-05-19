@@ -3,4 +3,4 @@ etapes, sauts
 [NULL, NULL, NULL], 2
 [NULL, NULL, NULL, NULL], 3
 [NULL, NULL, NULL, NULL], 3
-[NULL, NULL, NULL, "Brigade Territoriale de Proximité du Relecq-Kerhuon"], 3
+[NULL, NULL, NULL, NULL], 3

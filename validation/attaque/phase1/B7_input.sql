@@ -1,1 +1,1 @@
-SELECT source, ROUND(AVG(ST_X(ST_Centroid(geom)))::numeric, 4) AS avg_lon, ROUND(AVG(ST_Y(ST_Centroid(geom)))::numeric, 4) AS avg_lat FROM mission_pois WHERE role = 'attaque' GROUP BY source ORDER BY source;
+SELECT source, ROUND(AVG(ST_X(ST_Centroid(geom)))::numeric, 4) AS avg_x, ROUND(AVG(ST_Y(ST_Centroid(geom)))::numeric, 4) AS avg_y FROM mission_pois WHERE role = 'attaque' GROUP BY source ORDER BY source;

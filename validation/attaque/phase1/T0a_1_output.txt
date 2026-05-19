@@ -1,8 +1,8 @@
-Culture et loisirs|280
-Science et enseignement|267
-Sport|190
-Administratif ou militaire|165
-Industriel et commercial|119
-Religieux|70
-Santé|53
-Gestion des eaux|50
+Culture et loisirs|472
+Science et enseignement|296
+Administratif ou militaire|246
+Sport|223
+Industriel et commercial|210
+Religieux|149
+Gestion des eaux|69
+Santé|46

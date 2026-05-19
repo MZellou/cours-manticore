@@ -1,0 +1,7 @@
+Route à 1 chaussée|365
+Route à 2 chaussées|73
+Rond-point|63
+Type autoroutier|55
+Bretelle|46
+Route empierrée|18
+Chemin|2

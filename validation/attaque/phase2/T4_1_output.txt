@@ -1,11 +1,11 @@
 p.nom, q.nom, d.meters
-NULL, NULL, 0
-NULL, NULL, 0
-NULL, NULL, 0
-NULL, NULL, 0
-NULL, NULL, 0
-NULL, NULL, 0
-NULL, NULL, 0
-NULL, NULL, 0
-NULL, NULL, 0
-NULL, NULL, 0
+"Gendarmerie de Goderville", "Gendarmerie de Goderville", 0
+"Gendarmerie Mobile du Havre", "Gendarmerie Mobile du Havre", 0
+"Caserne Garde Dagniaux", "Caserne Garde Dagniaux", 0
+"Cité des Douanes", "Cité des Douanes", 0
+"Gendarmerie de Criquetot-l'Esneval", "Gendarmerie de Criquetot-l'Esneval", 0
+"Gendarmerie d'Étretat", "Gendarmerie d'Étretat", 0
+"Crs 32e Compagnie", "Crs 32e Compagnie", 0
+"Brigade de Recherches du Havre", "Brigade de Recherches du Havre", 0
+"Gendarmerie d'Épouville", "Gendarmerie d'Épouville", 0
+"Peloton Motorisé de Saint-Romain-de-Colbosc", "Peloton Motorisé de Saint-Romain-de-Colbosc", 0

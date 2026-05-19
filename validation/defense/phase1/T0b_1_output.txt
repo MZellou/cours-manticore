@@ -1,9 +1,7 @@
 Aire de triage||Zone industrielle
-Carrefour|Echangeur complet|Zone industrielle
-Carrefour|Rond-point|Zone industrielle
-Carrefour||Zone industrielle
 Parking|Aire de covoiturage|Zone industrielle
+Parking|Parking couvert|Zone industrielle
 Parking|Parking relais|Zone industrielle
 Parking||Zone industrielle
+Port||Zone industrielle
 Service dédié aux véhicules|Borne de rechargement électrique|Zone industrielle
-Station de tramway||Zone industrielle

@@ -1,1 +1,3 @@
-Antenne|98
+Autre construction élevée|210
+Antenne|143
+Phare|6

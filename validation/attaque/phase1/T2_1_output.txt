@@ -1,9 +1,9 @@
-retenue_eau|263
-fragilite|226
-communication|98
-cible_symbolique|28
-zone_militaire|9
-infra_critique|9
-aerodrome|1
-port_commerce|1
+retenue_eau|959
+fragilite|436
+communication|143
+cible_symbolique|108
+infra_critique|51
+noeud_transport|12
+zone_militaire|11
+aerodrome|2
 tour_controle|1

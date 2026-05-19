@@ -47,7 +47,6 @@ Avant de démarrer Phase 1, le groupe se réunit pour poser les bases de la coll
 1. **Tour de table** : qui fait quel rôle ? (selon les préférences de chacun)
 2. **Lecture rapide du profil EPCI** : quels enjeux tactiques sautent aux yeux (port, aéroport, nucléaire, frontière) ?
 3. **Pré-listing des POIs évidents** : chacun note les 3-4 types de POIs les plus pertinents pour son rôle sur cet EPCI.
-4. **Convention d'échange** : où sera le dossier `exports/` du groupe ? (clé USB partagée, Drive, dossier réseau) — c'est le **canal Parquet** utilisé à chaque checkpoint.
 
 ::: {.callout-note title="Pas de BDD partagée"}
 Chaque étudiant fait tourner sa propre stack Docker sur son laptop. La synchronisation se fait par **exports Parquet** aux checkpoints. Nommage standardisé : `mission_pois_<role>.parquet` (ex. `mission_pois_attaque.parquet`).

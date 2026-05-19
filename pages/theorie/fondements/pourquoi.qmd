@@ -3,12 +3,6 @@ title: "Pourquoi ce cours ?"
 order: 1
 ---
 
-# Pourquoi ce cours ?
-
-> Cette page pose les fondations en **15 minutes**. Lisez-la avant le TD — elle explique *pourquoi* on combine PostGIS + pgRouting + Neo4j.
-
----
-
 ## Le problème : la BDTOPO atteint les limites du SQL pur
 
 La **BDTOPO** (IGN) contient :
@@ -82,7 +76,7 @@ Imaginez la BDTOPO répliquée sur **deux serveurs IGN** : un à Saint-Mandé (P
 flowchart LR
   U1[Utilisateur Paris] -->|écrit POI| DC1[(Serveur Saint-Mandé)]
   U2[Utilisateur Lyon] -->|écrit POI| DC2[(Serveur Marne-la-Vallée)]
-  DC1 -.X.-|câble coupé| DC2
+  DC1 x-.-x|câble coupé| DC2
   DC1 --> CHOIX{Que faire ?}
   CHOIX -->|Choix C| BLOCK[Refuser l'écriture<br/>→ cohérent mais indisponible]
   CHOIX -->|Choix A| DIVERGE[Accepter localement<br/>→ disponible mais divergent]

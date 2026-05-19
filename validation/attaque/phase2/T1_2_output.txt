@@ -1,4 +1,4 @@
 role, nb
-"attaque", 636
-"defense", 248
-"logistique", 938
+"attaque", 1723
+"defense", 370
+"logistique", 3545

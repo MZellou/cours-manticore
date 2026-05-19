@@ -118,6 +118,7 @@ format:
     link-external-newwindow: true
     smooth-scroll: true
     fontsize: 1rem
+    css: pages/_mermaid-fix.css
 
 filters:
   - quizdown

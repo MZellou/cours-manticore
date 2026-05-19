@@ -2,10 +2,10 @@ a.nom, b.nom, c.nom
 NULL, NULL, NULL
 NULL, NULL, NULL
 NULL, NULL, NULL
-NULL, NULL, "Parc d'Activités de Kerscao"
 NULL, NULL, NULL
-NULL, NULL, "Polder du Moulin Blanc"
 NULL, NULL, NULL
-NULL, NULL, "Zone Industrielle de Lavallot"
+NULL, NULL, NULL
+NULL, NULL, NULL
+NULL, NULL, NULL
 NULL, NULL, NULL
 NULL, NULL, NULL

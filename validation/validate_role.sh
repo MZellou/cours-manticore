@@ -75,13 +75,13 @@ run_sql "T5_1" "phase1" "SELECT r1.source AS source1, r2.source AS source2, coun
 run_sql "T7_1" "phase1" "WITH clustered AS (SELECT role, source, ST_ClusterDBSCAN(geom, 500, 3) OVER() AS cid FROM mission_pois) SELECT cid, count(DISTINCT role) AS nb_roles, array_agg(DISTINCT role) AS roles FROM clustered WHERE cid IS NOT NULL GROUP BY cid HAVING count(DISTINCT role) > 1 ORDER BY nb_roles DESC LIMIT 10;"
 
 # Bonus tasks (FIX: dollar-quoting for B1, ST_Centroid for B7)
-run_sql "B1" "phase1" "SELECT nature, count(*) FROM construction_ponctuelle WHERE nature IN ('Tour', 'Antenne', \$\$Château d'eau\$\$, 'Éolienne') GROUP BY nature ORDER BY count DESC;"
+run_sql "B1" "phase1" "SELECT nature, count(*) FROM construction_ponctuelle WHERE nature IN ('Antenne', 'Eolienne', 'Phare', 'Autre construction élevée') GROUP BY nature ORDER BY count DESC;"
 run_sql "B2" "phase1" "SELECT count(*) FROM mission_pois p JOIN reservoir r ON ST_DWithin(p.geom, r.geometrie, 3000) WHERE p.role = '$ROLE' AND r.nature = 'Réservoir industriel';"
-run_sql "B3" "phase1" "SELECT count(*) FROM mission_pois p JOIN zone_d_activite_ou_d_interet z ON ST_DWithin(p.geom, z.geometrie, 5000) WHERE p.role = '$ROLE' AND z.categorie = 'Enseignement';"
+run_sql "B3" "phase1" "SELECT count(*) FROM mission_pois p JOIN zone_d_activite_ou_d_interet z ON ST_DWithin(p.geom, z.geometrie, 5000) WHERE p.role = '$ROLE' AND z.categorie = 'Science et enseignement';"
 run_sql "B4" "phase1" "SELECT z.nature, count(*) AS nb FROM zone_d_activite_ou_d_interet z JOIN mission_pois p ON ST_DWithin(z.geometrie, p.geom, 2000) WHERE p.role = '$ROLE' AND z.categorie = 'Santé' GROUP BY z.nature ORDER BY nb DESC;"
 run_sql "B5" "phase1" "WITH clusters AS (SELECT *, ST_ClusterDBSCAN(geom, 1000, 2) OVER() AS cid FROM mission_pois WHERE role = '$ROLE') SELECT cid, count(*) AS nb, ST_AsText(ST_Centroid(ST_Collect(geom))) AS centre FROM clusters WHERE cid IS NOT NULL GROUP BY cid ORDER BY nb DESC LIMIT 5;"
 run_sql "B6" "phase1" "SELECT p1.source, p2.source, ROUND(ST_Distance(p1.geom, p2.geom)::numeric, 0) AS dist_m FROM mission_pois p1 CROSS JOIN mission_pois p2 WHERE p1.role = '$ROLE' AND p2.role = '$ROLE' AND p1.cleabs < p2.cleabs ORDER BY dist_m ASC LIMIT 10;"
-run_sql "B7" "phase1" "SELECT source, ROUND(AVG(ST_X(ST_Centroid(geom)))::numeric, 4) AS avg_lon, ROUND(AVG(ST_Y(ST_Centroid(geom)))::numeric, 4) AS avg_lat FROM mission_pois WHERE role = '$ROLE' GROUP BY source ORDER BY source;"
+run_sql "B7" "phase1" "SELECT source, ROUND(AVG(ST_X(ST_Centroid(geom)))::numeric, 4) AS avg_x, ROUND(AVG(ST_Y(ST_Centroid(geom)))::numeric, 4) AS avg_y FROM mission_pois WHERE role = '$ROLE' GROUP BY source ORDER BY source;"
 
 echo ""
 echo "═══ PHASE 2 — Cartographie Neo4j ═══"
@@ -96,7 +96,7 @@ run_cypher "T1_3" "phase2" "MATCH (c:ClasseOntologie) WHERE c.obj_type = 'Object
 
 # T2 — Ontology tree (FIX: {name:} not {nom:})
 run_cypher "T2_1" "phase2" "MATCH (c:ClasseOntologie {name: 'Bâtiment'})<-[:EST_SOUS_TYPE_DE*1..6]-(child) RETURN child.name, child.obj_type LIMIT 20;"
-run_cypher "T2_2" "phase2" "MATCH path = (root:ClasseOntologie {obj_type: 'Database'})-[:EST_SOUS_TYPE_DE*1..3]->(child) RETURN [n IN nodes(path) | n.name] AS names LIMIT 10;"
+run_cypher "T2_2" "phase2" "MATCH path = (child:ClasseOntologie)-[:EST_SOUS_TYPE_DE*1..3]->(root:ClasseOntologie {obj_type: 'Database'}) RETURN [n IN nodes(path) | n.name] AS names LIMIT 10;"
 
 # T3 — POI details
 run_cypher "T3_1" "phase2" "MATCH (p:POI {role: '$ROLE'}) RETURN p.nom, p.nature, p.source LIMIT 15;"
@@ -116,7 +116,7 @@ run_cypher "T6_1" "phase2" "MATCH (p:POI {role: '$ROLE'}) RETURN p.source, count
 run_cypher "T7_1" "phase2" "MATCH (a:POI {role: '$ROLE'})-[d:DISTANCE]->(b:POI) WHERE b.role <> '$ROLE' RETURN b.role AS other_role, count(*) AS nb_links ORDER BY nb_links DESC LIMIT 10;"
 
 # T8 — Shortest paths
-run_cypher "T8_1" "phase2" "MATCH (a:POI {role: '$ROLE'}), (b:POI {role: '$ROLE'}) WHERE id(a) < id(b) MATCH p = shortestPath((a)-[:DISTANCE*]-(b)) RETURN a.nom, b.nom, length(p) AS hops, reduce(t=0, r IN relationships(p) | t+r.meters) AS dist_m ORDER BY dist_m LIMIT 5;"
+run_cypher "T8_1" "phase2" "MATCH (a:POI {role: '$ROLE'}), (b:POI {role: '$ROLE'}) WHERE id(a) < id(b) WITH a, b LIMIT 50 MATCH p = shortestPath((a)-[:DISTANCE*1..5]-(b)) RETURN a.nom, b.nom, length(p) AS hops, reduce(t=0, r IN relationships(p) | t+r.meters) AS dist_m ORDER BY dist_m LIMIT 5;"
 
 # T9 — Pattern matching (bounded!)
 run_cypher "T9_1" "phase2" "MATCH path = (a:POI {role: '$ROLE'})-[:DISTANCE*1..3]-(b) RETURN [n IN nodes(path) | n.nom] AS etapes, length(path) AS sauts LIMIT 5;"
@@ -142,8 +142,8 @@ run_sql "T1b_1" "phase3" "WITH nearest AS (SELECT p.cleabs, p.nom, (SELECT v.id 
 run_sql "T2a_1" "phase3" "WITH nearest AS (SELECT p.nom, (SELECT v.id FROM ways_vertices_pgr v ORDER BY v.geom <-> p.geom LIMIT 1) AS vid FROM mission_pois p WHERE p.role = '$ROLE' LIMIT 2) SELECT * FROM pgr_ksp('SELECT id, source, target, cost, reverse_cost FROM ways', (SELECT vid FROM nearest LIMIT 1), (SELECT vid FROM nearest OFFSET 1 LIMIT 1), 3, directed := true) LIMIT 10;"
 
 # T2b — Constrained routing (FIX: inline SQL instead of view)
-run_sql "T2b_1" "phase3" "SELECT count(*) AS total, count(*) FILTER (WHERE nature = 'Chemin') AS chemins, count(*) FILTER (WHERE importance = '1' OR importance = '2' OR importance = '3') AS importance_haute FROM ways;"
-run_sql "T2b_2" "phase3" "SELECT * FROM pgr_dijkstra('SELECT id, source, target, CASE WHEN importance IN (''1'',''2'',''3'',''4'') THEN cost ELSE -1 END AS cost, CASE WHEN importance IN (''1'',''2'',''3'',''4'') THEN reverse_cost ELSE -1 END AS reverse_cost FROM ways', (SELECT MIN(id) FROM ways_vertices_pgr), (SELECT MIN(id)+100 FROM ways_vertices_pgr), directed := true) LIMIT 5;"
+run_sql "T2b_1" "phase3" "SELECT count(*) AS total, count(*) FILTER (WHERE nature = 'Chemin') AS chemins, count(*) FILTER (WHERE importance = 1 OR importance = 2 OR importance = 3) AS importance_haute FROM ways;"
+run_sql "T2b_2" "phase3" "SELECT * FROM pgr_dijkstra('SELECT id, source, target, CASE WHEN importance IN (1,2,3,4) THEN cost ELSE -1 END AS cost, CASE WHEN importance IN (1,2,3,4) THEN reverse_cost ELSE -1 END AS reverse_cost FROM ways', (SELECT MIN(id) FROM ways_vertices_pgr), (SELECT MIN(id)+100 FROM ways_vertices_pgr), directed := true) LIMIT 5;"
 
 # T3 — Isochrones (FIX: v.geom)
 run_sql "T3_1" "phase3" "WITH start_v AS (SELECT v.id FROM ways_vertices_pgr v ORDER BY (SELECT geom FROM mission_pois WHERE role = '$ROLE' LIMIT 1) <-> v.geom LIMIT 1) SELECT * FROM pgr_drivingdistance('SELECT id, source, target, cost, reverse_cost FROM ways', (SELECT id FROM start_v), 300, directed := true) LIMIT 20;"

@@ -1,10 +1,10 @@
-10|3|{attaque,defense,logistique}
-0|3|{attaque,defense,logistique}
 1|3|{attaque,defense,logistique}
 4|3|{attaque,defense,logistique}
 5|3|{attaque,defense,logistique}
-6|3|{attaque,defense,logistique}
-7|3|{attaque,defense,logistique}
+2|3|{attaque,defense,logistique}
 8|3|{attaque,defense,logistique}
 9|3|{attaque,defense,logistique}
-12|3|{attaque,defense,logistique}
+11|3|{attaque,defense,logistique}
+15|3|{attaque,defense,logistique}
+6|3|{attaque,defense,logistique}
+21|3|{attaque,defense,logistique}

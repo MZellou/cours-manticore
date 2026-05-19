@@ -1,10 +1,10 @@
 fragilite|retenue_eau|0
-fragilite|infra_critique|0
 fragilite|retenue_eau|0
 fragilite|retenue_eau|0
-aerodrome|retenue_eau|0
-aerodrome|retenue_eau|0
-aerodrome|zone_militaire|0
-aerodrome|tour_controle|0
+fragilite|retenue_eau|0
 aerodrome|communication|0
-fragilite|fragilite|0
+zone_militaire|zone_militaire|0
+fragilite|retenue_eau|0
+aerodrome|tour_controle|0
+fragilite|retenue_eau|0
+fragilite|retenue_eau|0

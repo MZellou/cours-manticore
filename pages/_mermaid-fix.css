@@ -1,0 +1,20 @@
+/* White background for all Mermaid SVGs — visible in both dark & light mode */
+.mermaid svg,
+.cell-output-display svg[id^="mermaid-"] {
+  background: #ffffff !important;
+  padding: 14px;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Dark mode: lighter text color */
+[data-bs-theme="dark"] .mermaid svg text,
+[data-bs-theme="dark"] .cell-output-display svg[id^="mermaid-"] text {
+  fill: #e0e0e0 !important;
+}
+
+/* Dark mode: subgraph / cluster labels */
+[data-bs-theme="dark"] .mermaid .cluster-label text {
+  fill: #c0c0c0 !important;
+}
